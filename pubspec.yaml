@@ -1,0 +1,40 @@
+name: pdks_flutter
+description: "Kurumsal PDKS - Personel Devam Kontrol Sistemi (iOS, Android, Web & Tablet Kiosk)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management & DI
+  provider: ^6.1.2
+
+  # Networking & Serialization
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  crypto: ^3.0.3
+
+  # Donanım, GPS & Güvenlik
+  geolocator: ^13.0.1
+  mobile_scanner: ^5.2.3
+  qr_flutter: ^4.1.0
+  local_auth: ^2.3.0
+
+  # UI, Grafikler & Biçimlendirme
+  intl: ^0.19.0
+  fl_chart: ^0.69.0
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
