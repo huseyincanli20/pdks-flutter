@@ -58,6 +58,7 @@ class AppRoleItem {
 
 class Employee {
   final int id;
+  final String companyId; // Şirket / Tenant Kimliği
   final String fullName;
   final String email;
   final String phone;
@@ -74,6 +75,7 @@ class Employee {
 
   Employee({
     required this.id,
+    this.companyId = 'cmp_acme',
     required this.fullName,
     required this.email,
     this.phone = '+90 555 000 00 00',
@@ -95,6 +97,7 @@ class Employee {
 
   Employee copyWith({
     int? id,
+    String? companyId,
     String? fullName,
     String? email,
     String? phone,
@@ -112,6 +115,7 @@ class Employee {
   }) {
     return Employee(
       id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
       phone: phone ?? this.phone,
@@ -138,6 +142,7 @@ class Employee {
 
     return Employee(
       id: json['id'] ?? 0,
+      companyId: json['companyId'] ?? 'cmp_acme',
       fullName: json['fullName'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '+90 555 000 00 00',
@@ -157,6 +162,7 @@ class Employee {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'companyId': companyId,
       'fullName': fullName,
       'email': email,
       'phone': phone,

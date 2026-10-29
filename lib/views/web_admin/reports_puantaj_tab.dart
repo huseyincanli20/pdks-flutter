@@ -25,7 +25,7 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
     // Gerçek Excel / CSV formatında tablo oluşturulur (UTF-8 BOM ile Türkçe karakter uyumlu)
     final buffer = StringBuffer();
     buffer.write('\uFEFF'); // UTF-8 BOM for Microsoft Excel & Apple Numbers
-    buffer.writeln('T.C. ACME KORPORASYON A.Ş. - PERSONEL AYLIK PUANTAJ VE DEVAM ÇİZELGESİ');
+    buffer.writeln('${pdks.activeCompany.name.toUpperCase()} - PERSONEL AYLIK PUANTAJ VE DEVAM ÇİZELGESİ');
     buffer.writeln('Dönem: Ekim $_selectedYear;Toplam İş Günü: 22 Gün;Standart Mesai: 176 Saat;Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}');
     buffer.writeln('');
     buffer.writeln('Sıra No;Sicil No;Personel Adı Soyadı;Departman;Unvan;Normal Çalışma (Saat);Fazla Mesai (Saat);Eksik Mesai (Saat);Kullanılan İzin (Gün);Kalan İzin (Gün);Toplam Hak Ediş (Saat);Puantaj Onay Durumu');

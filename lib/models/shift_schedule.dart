@@ -1,5 +1,6 @@
 class ShiftSchedule {
   final int id;
+  final String companyId;
   final String title; // örn: Sabah Vardiyası (08:30 - 17:30)
   final String startTime; // "08:30"
   final String endTime;   // "17:30"
@@ -9,6 +10,7 @@ class ShiftSchedule {
 
   ShiftSchedule({
     required this.id,
+    this.companyId = 'cmp_acme',
     required this.title,
     required this.startTime,
     required this.endTime,

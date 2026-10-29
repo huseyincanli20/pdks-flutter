@@ -4,6 +4,7 @@ enum LeaveStatus { pending, approved, rejected }
 
 class LeaveRequest {
   final int id;
+  final String companyId;
   final int employeeId;
   final String employeeName;
   final LeaveType type;
@@ -17,6 +18,7 @@ class LeaveRequest {
 
   LeaveRequest({
     required this.id,
+    this.companyId = 'cmp_acme',
     required this.employeeId,
     required this.employeeName,
     required this.type,

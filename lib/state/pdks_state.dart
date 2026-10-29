@@ -6,6 +6,7 @@ import '../models/leave_request.dart';
 import '../models/shift_schedule.dart';
 import '../models/app_notification.dart';
 import '../models/cafeteria_menu.dart';
+import '../models/company.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/theme/app_theme_type.dart';
@@ -152,12 +153,56 @@ class PdksState extends ChangeNotifier {
     ),
   ];
 
-  // Sistem & Geofence Ayarları (Admin tarafından değiştirilebilir - Sincan / Ankara)
-  double _officeLat = 40.01461;
-  double _officeLng = 32.51520;
-  double _allowedRadiusMeters = 150.0;
-  String _allowedWifiSsid = 'Sirket_Personel';
-  String _officeAddress = 'Fırat Cd. 14, 06946 Sincan Ankara, Türkiye';
+  // Multi-Company (Çoklu Şirket / SaaS Desteği)
+  final List<Company> _companies = [
+    Company(
+      id: 'cmp_acme',
+      code: 'ACME',
+      name: 'ACME Teknoloji ve Bilişim A.Ş.',
+      sector: 'Yazılım & Bilişim Ar-Ge',
+      address: 'Fırat Cd. 14, 06946 Sincan Ankara, Türkiye',
+      officeLat: 40.01461,
+      officeLng: 32.51520,
+      allowedRadiusMeters: 150.0,
+      allowedWifiSsid: 'Sirket_Personel',
+      taxNumber: '0123456789',
+      phone: '+90 312 444 01 02',
+      email: 'iletisim@acmeteknoloji.com',
+      primaryColor: const Color(0xFF2563EB),
+    ),
+    Company(
+      id: 'cmp_nova',
+      code: 'NOVA',
+      name: 'Nova Savunma ve Havacılık A.Ş.',
+      sector: 'Savunma Sanayii & Aviyonik',
+      address: 'ODTÜ Teknokent Silikon Blok No: 4, Çankaya Ankara',
+      officeLat: 39.89160,
+      officeLng: 32.78250,
+      allowedRadiusMeters: 200.0,
+      allowedWifiSsid: 'Nova_Secure_Wifi',
+      taxNumber: '9876543210',
+      phone: '+90 312 210 99 88',
+      email: 'info@novasavunma.com.tr',
+      primaryColor: const Color(0xFF0D9488),
+    ),
+    Company(
+      id: 'cmp_ozdemir',
+      code: 'OZDEMIR',
+      name: 'Özdemir Holding & Lojistik A.Ş.',
+      sector: 'Uluslararası Taşımacılık & Depolama',
+      address: 'Büyükdere Cd. Maslak No: 122, Sarıyer İstanbul',
+      officeLat: 41.11050,
+      officeLng: 29.02030,
+      allowedRadiusMeters: 250.0,
+      allowedWifiSsid: 'Holding_Corporate_Net',
+      taxNumber: '5544332211',
+      phone: '+90 212 333 44 55',
+      email: 'merkez@ozdemirholding.com.tr',
+      primaryColor: const Color(0xFFD97706),
+    ),
+  ];
+
+  String _activeCompanyId = 'cmp_acme';
 
   // Görünüm Teması: Sistem, Aydınlık, Koyu, Lacivert, Zümrüt, Mor, Kehribar
   ThemeMode _themeMode = ThemeMode.system;
@@ -208,10 +253,143 @@ class PdksState extends ChangeNotifier {
     }
   }
 
-  List<Employee> get employees => _employees;
-  List<AttendanceRecord> get records => _records;
-  List<LeaveRequest> get leaves => _leaves;
-  List<ShiftSchedule> get shifts => _shifts;
+  // Multi-Company Getters & Methods
+  List<Company> get companies => List.unmodifiable(_companies);
+  Company get activeCompany =>
+      _companies.firstWhere((c) => c.id == _activeCompanyId, orElse: () => _companies.first);
+  String get activeCompanyId => _activeCompanyId;
+
+  double get officeLat => activeCompany.officeLat;
+  double get officeLng => activeCompany.officeLng;
+  double get allowedRadiusMeters => activeCompany.allowedRadiusMeters;
+  String get allowedWifiSsid => activeCompany.allowedWifiSsid;
+  String get officeAddress => activeCompany.address;
+
+  // Tenant filtrelenmiş veriler (Aktif şirkete ait kayıtlar)
+  List<Employee> get employees =>
+      _employees.where((e) => e.companyId == _activeCompanyId).toList();
+  List<Employee> get allEmployees => List.unmodifiable(_employees);
+  List<AttendanceRecord> get records =>
+      _records.where((r) => r.companyId == _activeCompanyId).toList();
+  List<LeaveRequest> get leaves =>
+      _leaves.where((l) => l.companyId == _activeCompanyId).toList();
+  List<ShiftSchedule> get shifts =>
+      _shifts.where((s) => s.companyId == _activeCompanyId).toList();
+
+  void switchCompany(String companyId) {
+    if (_companies.any((c) => c.id == companyId)) {
+      _activeCompanyId = companyId;
+      // Aktif şirkete ait bir kullanıcıya otomatik geçiş yap
+      final compEmps = _employees.where((e) => e.companyId == companyId).toList();
+      if (compEmps.isNotEmpty) {
+        final sameRole = compEmps.where((e) => e.role == _currentUser.role);
+        _currentUser = sameRole.isNotEmpty ? sameRole.first : compEmps.first;
+      }
+      notifyListeners();
+    }
+  }
+
+  void switchCompanyByCode(String code) {
+    final clean = code.trim().toUpperCase();
+    final idx = _companies.indexWhere((c) => c.code.toUpperCase() == clean);
+    if (idx != -1) {
+      switchCompany(_companies[idx].id);
+    }
+  }
+
+  ({bool success, String message, Company? company}) registerNewCompany({
+    required String name,
+    required String code,
+    required String sector,
+    required String address,
+    required double lat,
+    required double lng,
+    required String wifiSsid,
+    required String adminFullName,
+    required String adminEmail,
+    required String adminPin,
+  }) {
+    final cleanCode = code.trim().toUpperCase();
+    final cleanName = name.trim();
+
+    if (cleanName.isEmpty || cleanCode.isEmpty) {
+      return (success: false, message: 'Şirket adı ve şirket kodu zorunludur.', company: null);
+    }
+
+    if (_companies.any((c) => c.code.toUpperCase() == cleanCode)) {
+      return (success: false, message: '"$cleanCode" şirket kodu zaten kayıtlı.', company: null);
+    }
+
+    final newCompanyId = 'cmp_${DateTime.now().millisecondsSinceEpoch}';
+    final newCompany = Company(
+      id: newCompanyId,
+      code: cleanCode,
+      name: cleanName,
+      sector: sector.trim().isEmpty ? 'Genel' : sector.trim(),
+      address: address.trim().isEmpty ? 'Merkez Ofis' : address.trim(),
+      officeLat: lat,
+      officeLng: lng,
+      allowedWifiSsid: wifiSsid.trim().isEmpty ? '${cleanCode}_Office_Wifi' : wifiSsid.trim(),
+    );
+
+    _companies.add(newCompany);
+
+    // Yeni şirket için varsayılan Admin ve Patron hesabı oluştur
+    final newAdmin = Employee(
+      id: _employees.length + 1,
+      companyId: newCompanyId,
+      fullName: adminFullName.trim().isEmpty ? 'Sistem Yöneticisi' : adminFullName.trim(),
+      email: adminEmail.trim().isEmpty ? 'admin@${cleanCode.toLowerCase()}.com' : adminEmail.trim(),
+      department: 'Bilgi İşlem & IT',
+      title: 'Sistem Yöneticisi',
+      pinCode: adminPin.trim().isEmpty ? '1234' : adminPin.trim(),
+      role: UserRole.admin,
+    );
+
+    final newBoss = Employee(
+      id: _employees.length + 2,
+      companyId: newCompanyId,
+      fullName: 'Yönetim Kurulu Başkanı',
+      email: 'patron@${cleanCode.toLowerCase()}.com',
+      department: 'Yönetim Kurulu',
+      title: 'Genel Müdür / CEO',
+      pinCode: '3456',
+      role: UserRole.boss,
+    );
+
+    _employees.addAll([newAdmin, newBoss]);
+    _activeCompanyId = newCompanyId;
+    _currentUser = newAdmin;
+    notifyListeners();
+
+    return (
+      success: true,
+      message: '"$cleanName" ($cleanCode) şirketi başarıyla oluşturuldu.',
+      company: newCompany,
+    );
+  }
+
+  void updateCompanySettings({
+    required double lat,
+    required double lng,
+    required double radius,
+    required String wifiSsid,
+    String? address,
+    String? name,
+  }) {
+    final idx = _companies.indexWhere((c) => c.id == _activeCompanyId);
+    if (idx != -1) {
+      _companies[idx] = _companies[idx].copyWith(
+        officeLat: lat,
+        officeLng: lng,
+        allowedRadiusMeters: radius,
+        allowedWifiSsid: wifiSsid,
+        address: address ?? _companies[idx].address,
+        name: name ?? _companies[idx].name,
+      );
+      notifyListeners();
+    }
+  }
 
   // Bildirim Getters ve Metotları
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
@@ -279,12 +457,6 @@ class PdksState extends ChangeNotifier {
   List<AppRoleItem> get customRoles => _roles.where((r) => !r.isSystemRole).toList();
   List<AppRoleItem> get rolesSelectableByBoss =>
       _roles.where((r) => r.baseRole != UserRole.admin && r.id != 'role_admin').toList();
-
-  double get officeLat => _officeLat;
-  double get officeLng => _officeLng;
-  double get allowedRadiusMeters => _allowedRadiusMeters;
-  String get allowedWifiSsid => _allowedWifiSsid;
-  String get officeAddress => _officeAddress;
 
   // İK & Patron Dashboard Sayaçları
   int get totalEmployeesCount => _employees.length;
@@ -389,6 +561,7 @@ class PdksState extends ChangeNotifier {
 
     final yemekhane = Employee(
       id: 7,
+      companyId: 'cmp_acme',
       fullName: 'Hasan Usta',
       email: 'yemekhane@sirket.com',
       phone: '+90 533 777 88 99',
@@ -401,13 +574,133 @@ class PdksState extends ChangeNotifier {
       avatarUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
     );
 
+    // NOVA Savunma Personelleri
+    final novaPersonel = Employee(
+      id: 11,
+      companyId: 'cmp_nova',
+      fullName: 'Can Demir',
+      email: 'personel@novasavunma.com.tr',
+      phone: '+90 532 999 11 22',
+      department: 'Aviyonik & Radar',
+      title: 'Kıdemli Sistem Mühendisi',
+      pinCode: '1234',
+      role: UserRole.employee,
+      annualLeaveAllowance: 18,
+      usedLeaveDays: 4,
+    );
+
+    final novaIk = Employee(
+      id: 12,
+      companyId: 'cmp_nova',
+      fullName: 'Ayşe Çelik',
+      email: 'ik@novasavunma.com.tr',
+      phone: '+90 533 888 22 33',
+      department: 'İnsan Kaynakları',
+      title: 'İK & Yetenek Direktörü',
+      pinCode: '2345',
+      role: UserRole.hr,
+      annualLeaveAllowance: 22,
+      usedLeaveDays: 3,
+    );
+
+    final novaPatron = Employee(
+      id: 13,
+      companyId: 'cmp_nova',
+      fullName: 'Dr. Burak Kaya',
+      email: 'patron@novasavunma.com.tr',
+      phone: '+90 530 777 33 44',
+      department: 'Yönetim Kurulu',
+      title: 'Genel Müdür / CEO',
+      pinCode: '3456',
+      role: UserRole.boss,
+      annualLeaveAllowance: 30,
+      usedLeaveDays: 1,
+    );
+
+    final novaAdmin = Employee(
+      id: 14,
+      companyId: 'cmp_nova',
+      fullName: 'Selim Vural',
+      email: 'admin@novasavunma.com.tr',
+      phone: '+90 540 666 44 55',
+      department: 'Bilgi Güvenliği & Siber',
+      title: 'Ağ & Altyapı Mimarı',
+      pinCode: '4567',
+      role: UserRole.admin,
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 0,
+    );
+
+    // ÖZDEMİR Holding Personelleri
+    final ozdemirPersonel = Employee(
+      id: 21,
+      companyId: 'cmp_ozdemir',
+      fullName: 'Murat Yıldız',
+      email: 'personel@ozdemirholding.com.tr',
+      phone: '+90 532 111 55 66',
+      department: 'Depolama & Sevkiyat',
+      title: 'Lojistik Operasyon Uzmanı',
+      pinCode: '1234',
+      role: UserRole.employee,
+      annualLeaveAllowance: 15,
+      usedLeaveDays: 2,
+    );
+
+    final ozdemirIk = Employee(
+      id: 22,
+      companyId: 'cmp_ozdemir',
+      fullName: 'Sevgi Öztürk',
+      email: 'ik@ozdemirholding.com.tr',
+      phone: '+90 533 222 66 77',
+      department: 'İnsan Kaynakları & Bordro',
+      title: 'İK Direktörü',
+      pinCode: '2345',
+      role: UserRole.hr,
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 6,
+    );
+
+    final ozdemirPatron = Employee(
+      id: 23,
+      companyId: 'cmp_ozdemir',
+      fullName: 'Tarık Özdemir',
+      email: 'patron@ozdemirholding.com.tr',
+      phone: '+90 530 333 77 88',
+      department: 'Yönetim Kurulu',
+      title: 'Yönetim Kurulu Başkanı',
+      pinCode: '3456',
+      role: UserRole.boss,
+      annualLeaveAllowance: 30,
+      usedLeaveDays: 0,
+    );
+
+    final ozdemirAdmin = Employee(
+      id: 24,
+      companyId: 'cmp_ozdemir',
+      fullName: 'Cenk Akın',
+      email: 'admin@ozdemirholding.com.tr',
+      phone: '+90 540 444 88 99',
+      department: 'ERP & Sistem Yönetimi',
+      title: 'Sistem Yöneticisi',
+      pinCode: '4567',
+      role: UserRole.admin,
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 2,
+    );
+
     _currentUser = personel; // Varsayılan personel
-    _employees = [personel, ik, patron, admin, diger1, diger2, yemekhane];
+    _employees = [
+      personel, ik, patron, admin, diger1, diger2, yemekhane,
+      novaPersonel, novaIk, novaPatron, novaAdmin,
+      ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
+    ];
 
     final now = DateTime.now();
     _records = [
+      // ACME Kayıtları
       AttendanceRecord(
         id: 101,
+        companyId: 'cmp_acme',
         employeeId: 1,
         employeeName: 'Ahmet Yılmaz',
         type: AttendanceType.checkIn,
@@ -419,6 +712,7 @@ class PdksState extends ChangeNotifier {
       ),
       AttendanceRecord(
         id: 102,
+        companyId: 'cmp_acme',
         employeeId: 2,
         employeeName: 'Zeynep Kaya',
         type: AttendanceType.checkIn,
@@ -430,6 +724,7 @@ class PdksState extends ChangeNotifier {
       ),
       AttendanceRecord(
         id: 103,
+        companyId: 'cmp_acme',
         employeeId: 5,
         employeeName: 'Mehmet Demir',
         type: AttendanceType.checkIn,
@@ -439,11 +734,50 @@ class PdksState extends ChangeNotifier {
         verificationMethod: VerificationMethod.wifiIp,
         note: 'Sirket_Personel Wi-Fi ağı doğrulandı.',
       ),
+      // NOVA Savunma Kayıtları
+      AttendanceRecord(
+        id: 104,
+        companyId: 'cmp_nova',
+        employeeId: 11,
+        employeeName: 'Can Demir',
+        type: AttendanceType.checkIn,
+        timestamp: now.subtract(const Duration(hours: 3, minutes: 10)),
+        calculatedDistanceMeters: 25.0,
+        isLocationVerified: true,
+        verificationMethod: VerificationMethod.geofenceGps,
+        note: 'Nova Savunma Geofence (ODTÜ Teknokent)',
+      ),
+      AttendanceRecord(
+        id: 105,
+        companyId: 'cmp_nova',
+        employeeId: 12,
+        employeeName: 'Ayşe Çelik',
+        type: AttendanceType.checkIn,
+        timestamp: now.subtract(const Duration(hours: 4, minutes: 5)),
+        calculatedDistanceMeters: 12.0,
+        isLocationVerified: true,
+        verificationMethod: VerificationMethod.wifiIp,
+        note: 'Nova_Secure_Wifi güvenli ağ doğrulaması.',
+      ),
+      // ÖZDEMİR Holding Kayıtları
+      AttendanceRecord(
+        id: 106,
+        companyId: 'cmp_ozdemir',
+        employeeId: 21,
+        employeeName: 'Murat Yıldız',
+        type: AttendanceType.checkIn,
+        timestamp: now.subtract(const Duration(hours: 5, minutes: 0)),
+        calculatedDistanceMeters: 55.0,
+        isLocationVerified: true,
+        verificationMethod: VerificationMethod.qrCode,
+        note: 'Maslak Plaza Turnike QR Giriş',
+      ),
     ];
 
     _leaves = [
       LeaveRequest(
         id: 201,
+        companyId: 'cmp_acme',
         employeeId: 1,
         employeeName: 'Ahmet Yılmaz',
         type: LeaveType.annual,
@@ -456,6 +790,7 @@ class PdksState extends ChangeNotifier {
       ),
       LeaveRequest(
         id: 202,
+        companyId: 'cmp_acme',
         employeeId: 6,
         employeeName: 'Elif Şahin',
         type: LeaveType.medical,
@@ -467,11 +802,25 @@ class PdksState extends ChangeNotifier {
         managerComment: 'Rapor incelendi, onaylandı.',
         createdAt: now.subtract(const Duration(days: 2)),
       ),
+      LeaveRequest(
+        id: 203,
+        companyId: 'cmp_nova',
+        employeeId: 11,
+        employeeName: 'Can Demir',
+        type: LeaveType.annual,
+        startDate: now.add(const Duration(days: 20)),
+        endDate: now.add(const Duration(days: 25)),
+        totalDays: 5,
+        reason: 'Yıllık izin talebi',
+        status: LeaveStatus.pending,
+        createdAt: now.subtract(const Duration(hours: 12)),
+      ),
     ];
 
     _shifts = [
       ShiftSchedule(
         id: 1,
+        companyId: 'cmp_acme',
         title: 'Standart Ofis Vardiyası',
         startTime: '08:30',
         endTime: '17:30',
@@ -481,6 +830,7 @@ class PdksState extends ChangeNotifier {
       ),
       ShiftSchedule(
         id: 2,
+        companyId: 'cmp_acme',
         title: 'Geç / Esnek Vardiya',
         startTime: '10:00',
         endTime: '19:00',
@@ -490,12 +840,33 @@ class PdksState extends ChangeNotifier {
       ),
       ShiftSchedule(
         id: 3,
+        companyId: 'cmp_acme',
         title: 'Hafta Sonu Nöbetçi Ekip',
         startTime: '09:00',
         endTime: '15:00',
         breakMinutes: 45,
         activeDays: ['Cumartesi'],
         assignedEmployeeCount: 1,
+      ),
+      ShiftSchedule(
+        id: 4,
+        companyId: 'cmp_nova',
+        title: 'Savunma Ar-Ge Mühendislik Vardiyası',
+        startTime: '08:00',
+        endTime: '17:00',
+        breakMinutes: 60,
+        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
+        assignedEmployeeCount: 4,
+      ),
+      ShiftSchedule(
+        id: 5,
+        companyId: 'cmp_ozdemir',
+        title: 'Lojistik & Operasyon Vardiyası',
+        startTime: '07:30',
+        endTime: '16:30',
+        breakMinutes: 60,
+        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+        assignedEmployeeCount: 4,
       ),
     ];
 
@@ -515,6 +886,7 @@ class PdksState extends ChangeNotifier {
 
     if (found.isNotEmpty) {
       _currentUser = found.first;
+      _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
       notifyListeners();
@@ -523,20 +895,25 @@ class PdksState extends ChangeNotifier {
 
     // 2. Demo kısayolları için kullanıcı adı bazlı kontrol
     Employee? matched;
+    // Aktif şirketin personelleri içinden eşleştir
+    final companyPool = _employees.where((e) => e.companyId == _activeCompanyId).toList();
+    final fallbackPool = companyPool.isNotEmpty ? companyPool : _employees;
+
     if (cleanEmail == 'personel@sirket.com' || cleanEmail == 'personel') {
-      matched = _employees.firstWhere((e) => e.role == UserRole.employee);
+      matched = fallbackPool.firstWhere((e) => e.role == UserRole.employee, orElse: () => _employees.firstWhere((e) => e.role == UserRole.employee));
     } else if (cleanEmail == 'ik@sirket.com' || cleanEmail == 'ik') {
-      matched = _employees.firstWhere((e) => e.role == UserRole.hr);
+      matched = fallbackPool.firstWhere((e) => e.role == UserRole.hr, orElse: () => _employees.firstWhere((e) => e.role == UserRole.hr));
     } else if (cleanEmail == 'patron@sirket.com' || cleanEmail == 'patron') {
-      matched = _employees.firstWhere((e) => e.role == UserRole.boss);
+      matched = fallbackPool.firstWhere((e) => e.role == UserRole.boss, orElse: () => _employees.firstWhere((e) => e.role == UserRole.boss));
     } else if (cleanEmail == 'admin@sirket.com' || cleanEmail == 'admin') {
-      matched = _employees.firstWhere((e) => e.role == UserRole.admin);
+      matched = fallbackPool.firstWhere((e) => e.role == UserRole.admin, orElse: () => _employees.firstWhere((e) => e.role == UserRole.admin));
     } else if (cleanEmail == 'yemekhane@sirket.com' || cleanEmail == 'yemekhane') {
-      matched = _employees.firstWhere((e) => e.role == UserRole.cafeteria);
+      matched = fallbackPool.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => _employees.firstWhere((e) => e.role == UserRole.cafeteria));
     }
 
     if (matched != null) {
       _currentUser = matched;
+      _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
       notifyListeners();
@@ -558,6 +935,7 @@ class PdksState extends ChangeNotifier {
     final newId = _employees.length + 1;
     final newEmployee = Employee(
       id: newId,
+      companyId: _activeCompanyId,
       fullName: fullName,
       email: email,
       phone: phone,
@@ -736,14 +1114,13 @@ class PdksState extends ChangeNotifier {
     required String wifiSsid,
     String? address,
   }) {
-    _officeLat = lat;
-    _officeLng = lng;
-    _allowedRadiusMeters = radius;
-    _allowedWifiSsid = wifiSsid;
-    if (address != null && address.isNotEmpty) {
-      _officeAddress = address;
-    }
-    notifyListeners();
+    updateCompanySettings(
+      lat: lat,
+      lng: lng,
+      radius: radius,
+      wifiSsid: wifiSsid,
+      address: address,
+    );
   }
 
   // Profil Güncelle
@@ -789,6 +1166,7 @@ class PdksState extends ChangeNotifier {
     final now = DateTime.now();
     final newRecord = AttendanceRecord(
       id: DateTime.now().millisecondsSinceEpoch % 10000,
+      companyId: _currentUser.companyId,
       employeeId: _currentUser.id,
       employeeName: _currentUser.fullName,
       type: type,
@@ -824,6 +1202,7 @@ class PdksState extends ChangeNotifier {
     final days = endDate.difference(startDate).inDays + 1;
     final newLeave = LeaveRequest(
       id: DateTime.now().millisecondsSinceEpoch % 10000,
+      companyId: _currentUser.companyId,
       employeeId: _currentUser.id,
       employeeName: _currentUser.fullName,
       type: type,
@@ -847,6 +1226,7 @@ class PdksState extends ChangeNotifier {
       final old = _leaves[index];
       _leaves[index] = LeaveRequest(
         id: old.id,
+        companyId: old.companyId,
         employeeId: old.employeeId,
         employeeName: old.employeeName,
         type: old.type,

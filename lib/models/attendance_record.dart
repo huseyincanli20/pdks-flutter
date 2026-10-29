@@ -4,6 +4,7 @@ enum VerificationMethod { qrCode, geofenceGps, wifiIp, biometricKiosk }
 
 class AttendanceRecord {
   final int id;
+  final String companyId;
   final int employeeId;
   final String employeeName;
   final AttendanceType type;
@@ -18,6 +19,7 @@ class AttendanceRecord {
 
   AttendanceRecord({
     required this.id,
+    this.companyId = 'cmp_acme',
     required this.employeeId,
     required this.employeeName,
     required this.type,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
+import '../company/company_management_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -91,8 +93,146 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _showCompanyPicker(BuildContext context) {
+    final pdks = context.read<PdksState>();
+    final companies = pdks.companies;
+    final active = pdks.activeCompany;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Şirket Seçimi (Çoklu Firma)',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add_business_rounded, size: 18),
+                    label: const Text('Yeni Şirket'),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CompanyManagementScreen()));
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Giriş yapmak istediğiniz kurumsal şirketi belirleyin:',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 14),
+
+              ...companies.map((c) {
+                final isSelected = c.id == active.id;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                      width: isSelected ? 1.8 : 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.apartment_rounded,
+                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                        size: 20,
+                      ),
+                    ),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            c.code,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            c.name,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      '${c.sector} • ${c.address}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF2563EB), size: 22)
+                        : null,
+                    onTap: () {
+                      pdks.switchCompany(c.id);
+                      // Şirketin ilk kullanıcısını forma doldur
+                      final compEmps = pdks.employees;
+                      if (compEmps.isNotEmpty) {
+                        setState(() {
+                          _loginEmailController.text = compEmps.first.email;
+                          _loginPinController.text = compEmps.first.pinCode;
+                        });
+                      }
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pdks = context.watch<PdksState>();
+    final activeCompany = pdks.activeCompany;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1D),
       body: SafeArea(
@@ -124,19 +264,84 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     ),
                     child: const Icon(Icons.fingerprint, color: Colors.white, size: 44),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   const Text(
-                    'PDKS Enterprise',
+                    'PDKS Enterprise SaaS',
                     style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Personel Devam & Mesai Takip Sistemi',
+                    'Çoklu Şirket & Personel Devam Takip Sistemi',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                  // Form Kartı (Apple / Samsung Glass & Card style)
+                  // Aktif Şirket Seçici Rozeti (Multi-Company Selector)
+                  InkWell(
+                    onTap: () => _showCompanyPicker(context),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.18)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              activeCompany.code,
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  activeCompany.name,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  activeCompany.sector,
+                                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Değiştir', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                SizedBox(width: 2),
+                                Icon(Icons.arrow_drop_down, color: Colors.white, size: 16),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Form Kartı (Glass & Card style)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -186,11 +391,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: SizedBox(
-                            height: 450,
+                            height: 470,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
-                                _buildLoginTab(),
+                                _buildLoginTab(pdks),
                                 _buildRegisterTab(),
                               ],
                             ),
@@ -208,7 +413,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildLoginTab() {
+  Widget _buildLoginTab(PdksState pdks) {
+    // Aktif şirkete ait personelleri bul
+    final compEmps = pdks.employees;
+    final personel = compEmps.firstWhere((e) => e.role == UserRole.employee, orElse: () => compEmps.first);
+    final ik = compEmps.firstWhere((e) => e.role == UserRole.hr, orElse: () => compEmps.first);
+    final patron = compEmps.firstWhere((e) => e.role == UserRole.boss, orElse: () => compEmps.first);
+    final admin = compEmps.firstWhere((e) => e.role == UserRole.admin, orElse: () => compEmps.first);
+    final cafeteria = compEmps.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => compEmps.first);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -263,32 +476,35 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
         ),
 
-        const SizedBox(height: 18),
-        const Center(
-          child: Text('Hızlı Rol Girişleri (5 Farklı Mod):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            '${pdks.activeCompany.code} Hızlı Rol Girişleri:',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+          ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
         // 5 Rol Butonu
         Row(
           children: [
             Expanded(
               child: _buildRoleButton(
-                label: 'Personel',
+                label: 'Personel (${personel.fullName.split(' ').first})',
                 icon: Icons.person_outline,
                 color: AppColors.primary,
-                email: 'personel@sirket.com',
-                pin: '1234',
+                email: personel.email,
+                pin: personel.pinCode,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildRoleButton(
-                label: 'İK Paneli',
+                label: 'İK (${ik.fullName.split(' ').first})',
                 icon: Icons.people_outline,
                 color: Colors.indigo,
-                email: 'ik@sirket.com',
-                pin: '2345',
+                email: ik.email,
+                pin: ik.pinCode,
               ),
             ),
           ],
@@ -298,21 +514,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           children: [
             Expanded(
               child: _buildRoleButton(
-                label: 'Patron (CEO)',
+                label: 'Patron (${patron.fullName.split(' ').first})',
                 icon: Icons.workspace_premium_outlined,
                 color: Colors.amber.shade800,
-                email: 'patron@sirket.com',
-                pin: '3456',
+                email: patron.email,
+                pin: patron.pinCode,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildRoleButton(
-                label: 'Süper Admin',
+                label: 'Admin (${admin.fullName.split(' ').first})',
                 icon: Icons.admin_panel_settings_outlined,
                 color: Colors.purple,
-                email: 'admin@sirket.com',
-                pin: '4567',
+                email: admin.email,
+                pin: admin.pinCode,
               ),
             ),
           ],
@@ -321,11 +537,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         SizedBox(
           width: double.infinity,
           child: _buildRoleButton(
-            label: 'Yemekhane Şefi (Mutfak & Menü)',
+            label: 'Yemekhane (${cafeteria.fullName.split(' ').first})',
             icon: Icons.restaurant_menu_rounded,
             color: const Color(0xFFEA580C),
-            email: 'yemekhane@sirket.com',
-            pin: '5678',
+            email: cafeteria.email,
+            pin: cafeteria.pinCode,
           ),
         ),
       ],

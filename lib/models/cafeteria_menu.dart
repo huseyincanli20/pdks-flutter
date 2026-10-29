@@ -1,4 +1,5 @@
 class CafeteriaMenu {
+  final String companyId;
   final DateTime date;
   final String soup;
   final String mainDish;
@@ -12,6 +13,7 @@ class CafeteriaMenu {
   final DateTime updatedAt;
 
   CafeteriaMenu({
+    this.companyId = 'cmp_acme',
     required this.date,
     required this.soup,
     required this.mainDish,
@@ -26,6 +28,7 @@ class CafeteriaMenu {
   }) : updatedAt = updatedAt ?? DateTime.now();
 
   CafeteriaMenu copyWith({
+    String? companyId,
     DateTime? date,
     String? soup,
     String? mainDish,
@@ -39,6 +42,7 @@ class CafeteriaMenu {
     DateTime? updatedAt,
   }) {
     return CafeteriaMenu(
+      companyId: companyId ?? this.companyId,
       date: date ?? this.date,
       soup: soup ?? this.soup,
       mainDish: mainDish ?? this.mainDish,

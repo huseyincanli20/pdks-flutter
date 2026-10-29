@@ -134,17 +134,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildFilterChip(String key, String label) {
     final isSelected = _selectedFilter == key;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipTextColor = isSelected
+        ? Colors.white
+        : (isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B));
+
     return ChoiceChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          color: chipTextColor,
+        ),
+      ),
       selected: isSelected,
+      showCheckmark: false,
       selectedColor: AppColors.primaryOf(context),
+      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-        color: isSelected ? Colors.white : AppColors.text(context),
+        color: chipTextColor,
       ),
       side: BorderSide(
-        color: isSelected ? AppColors.primaryOf(context) : AppColors.cardBorder(context),
+        color: isSelected ? AppColors.primaryOf(context) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
       ),
       onSelected: (_) => setState(() => _selectedFilter = key),
     );

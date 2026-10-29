@@ -149,17 +149,28 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       label = 'Ücretsiz İzin';
                       break;
                   }
+                  final chipTextColor = isSelected
+                      ? Colors.white
+                      : (isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B));
                   return ChoiceChip(
-                    label: Text(label),
+                    label: Text(
+                      label,
+                      style: TextStyle(
+                        color: chipTextColor,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
                     selected: isSelected,
+                    showCheckmark: false,
                     backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     selectedColor: AppColors.primaryOf(context),
                     side: BorderSide(
-                      color: isSelected ? AppColors.primaryOf(context) : AppColors.cardBorder(context),
+                      color: isSelected ? AppColors.primaryOf(context) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                       width: isSelected ? 1.5 : 1,
                     ),
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.text(context),
+                      color: chipTextColor,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
                     onSelected: (val) {

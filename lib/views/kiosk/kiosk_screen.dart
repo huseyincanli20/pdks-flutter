@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/qr_token.dart';
+import '../../state/pdks_state.dart';
 
 class KioskScreen extends StatefulWidget {
   const KioskScreen({super.key});
@@ -63,6 +65,9 @@ class _KioskScreenState extends State<KioskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pdks = context.watch<PdksState>();
+    final activeCompany = pdks.activeCompany;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
@@ -89,16 +94,16 @@ class _KioskScreenState extends State<KioskScreen> {
                           child: const Icon(Icons.corporate_fare, color: Colors.white, size: 28),
                         ),
                         const SizedBox(width: 16),
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ACME CORP A.Ş.',
-                              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                              activeCompany.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                             ),
                             Text(
-                              'Ana Merkez Plaza • Turnike Giriş 1',
-                              style: TextStyle(color: Colors.white60, fontSize: 13),
+                              '${activeCompany.sector} • Turnike Giriş 1',
+                              style: const TextStyle(color: Colors.white60, fontSize: 13),
                             ),
                           ],
                         ),

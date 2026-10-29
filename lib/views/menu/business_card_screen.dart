@@ -164,9 +164,9 @@ END:VCARD''';
     );
   }
 
-  void _shareContact(BuildContext context, Employee user) {
+  void _shareContact(BuildContext context, Employee user, String companyName) {
     Clipboard.setData(ClipboardData(
-      text: '${user.fullName}\n${user.department} - ${user.title}\nTel: ${user.phone}\nE-posta: ${user.email}\nŞirket: ACME TEKNOLOJİ VE HOLDİNG A.Ş.',
+      text: '${user.fullName}\n${user.department} - ${user.title}\nTel: ${user.phone}\nE-posta: ${user.email}\nŞirket: $companyName',
     ));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -178,8 +178,9 @@ END:VCARD''';
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<PdksState>().currentUser;
-    const companyName = 'ACME TEKNOLOJİ VE HOLDİNG A.Ş.';
+    final pdks = context.watch<PdksState>();
+    final user = pdks.currentUser;
+    final companyName = pdks.activeCompany.name;
 
     final vCardData = _generateVCard(
       name: user.fullName,
@@ -313,11 +314,18 @@ END:VCARD''';
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.apartment_rounded, color: Colors.white60, size: 16),
-                      SizedBox(width: 10),
-                      Text(companyName, style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Icon(Icons.apartment_rounded, color: Colors.white60, size: 16),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          companyName,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -395,7 +403,7 @@ END:VCARD''';
                           ),
                           icon: const Icon(Icons.share_rounded, size: 18),
                           label: const Text('Paylaş', style: TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () => _shareContact(context, user),
+                          onPressed: () => _shareContact(context, user, companyName),
                         ),
                       ),
                       const SizedBox(width: 12),
