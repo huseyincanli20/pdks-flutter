@@ -621,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Icon(Icons.lock_rounded, size: 12, color: Colors.amber),
                               SizedBox(width: 4),
                               Text(
-                                'Departman/Unvan İK Korumalı',
+                                'Ad-Soyad/Departman/Unvan İK Korumalı',
                                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber),
                               ),
                             ],
@@ -631,7 +631,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  _buildModernField('Ad Soyad', _nameController, Icons.person_outline_rounded, enabled: _isEditing),
+                  // Ad Soyad: Sadece İK veya Admin Değiştirebilir
+                  if (isHrOrAdmin)
+                    _buildModernField('Ad Soyad', _nameController, Icons.person_outline_rounded, enabled: _isEditing)
+                  else
+                    _buildReadOnlyField(
+                      'Ad Soyad',
+                      user.fullName,
+                      Icons.person_outline_rounded,
+                      lockNote: 'Ad Soyad değişikliği sadece İK tarafından yapılabilir.',
+                    ),
                   const SizedBox(height: 14),
 
                   _buildReadOnlyField('E-Posta Adresi', user.email, Icons.mail_outline_rounded),

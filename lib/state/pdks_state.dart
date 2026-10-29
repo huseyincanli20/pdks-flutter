@@ -1668,8 +1668,11 @@ class PdksState extends ChangeNotifier {
   }) {
     final index = _employees.indexWhere((e) => e.id == _currentUser.id);
 
-    // Güvenlik Kuralı: İK veya Admin haricinde departman ve unvan değiştirilemez!
+    // Güvenlik Kuralı: İK veya Admin haricinde ad-soyad, departman ve unvan değiştirilemez!
     final isHrOrAdmin = _currentUser.role == UserRole.hr || _currentUser.role == UserRole.admin;
+    final finalName = (isHrOrAdmin && fullName.trim().isNotEmpty)
+        ? fullName.trim()
+        : _currentUser.fullName;
     final finalDept = (isHrOrAdmin && department != null && department.trim().isNotEmpty)
         ? department.trim()
         : _currentUser.department;
@@ -1678,7 +1681,7 @@ class PdksState extends ChangeNotifier {
         : _currentUser.title;
 
     final updated = _currentUser.copyWith(
-      fullName: fullName,
+      fullName: finalName,
       phone: phone,
       department: finalDept,
       title: finalTitle,
@@ -1696,6 +1699,64 @@ class PdksState extends ChangeNotifier {
       _employees[index] = updated;
     }
     notifyListeners();
+  }
+
+  /// İK ve Admin Yetkilisi Tarafından Personel Bilgilerini Güncelleme Metodu
+  ({bool success, String message}) updateEmployeeByHr({
+    required int employeeId,
+    required String fullName,
+    required String phone,
+    required String department,
+    required String title,
+    double? baseSalary,
+    UserRole? role,
+    DateTime? hireDate,
+    int? heightCm,
+    int? weightKg,
+    String? shirtSize,
+    String? pantSize,
+    int? shoeSize,
+    String? outerwearSize,
+    int? annualLeaveAllowance,
+  }) {
+    if (_currentUser.role != UserRole.hr &&
+        _currentUser.role != UserRole.boss &&
+        _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Personel bilgilerini yalnızca İK veya Yönetim yetkilisi güncelleyebilir.');
+    }
+
+    final index = _employees.indexWhere((e) => e.id == employeeId);
+    if (index == -1) {
+      return (success: false, message: 'Personel bulunamadı.');
+    }
+
+    final existing = _employees[index];
+    final updated = existing.copyWith(
+      fullName: fullName.trim().isEmpty ? existing.fullName : fullName.trim(),
+      phone: phone.trim().isEmpty ? existing.phone : phone.trim(),
+      department: department.trim().isEmpty ? existing.department : department.trim(),
+      title: title.trim().isEmpty ? existing.title : title.trim(),
+      baseGrossSalary: baseSalary ?? existing.baseGrossSalary,
+      role: role ?? existing.role,
+      hireDate: hireDate ?? existing.hireDate,
+      heightCm: heightCm ?? existing.heightCm,
+      weightKg: weightKg ?? existing.weightKg,
+      shirtSize: shirtSize ?? existing.shirtSize,
+      pantSize: pantSize ?? existing.pantSize,
+      shoeSize: shoeSize ?? existing.shoeSize,
+      outerwearSize: outerwearSize ?? existing.outerwearSize,
+      annualLeaveAllowance: annualLeaveAllowance ?? existing.annualLeaveAllowance,
+    );
+
+    _employees[index] = updated;
+
+    // Eğer o an aktif giriş yapan personel güncellendiyse oturumu senkronize et
+    if (_currentUser.id == employeeId) {
+      _currentUser = updated;
+    }
+
+    notifyListeners();
+    return (success: true, message: '${updated.fullName} personelinin bilgileri başarıyla güncellendi.');
   }
 
   // Giriş / Çıkış Tetikleme

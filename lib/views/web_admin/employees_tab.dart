@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
@@ -464,6 +466,517 @@ class EmployeesTab extends StatelessWidget {
     );
   }
 
+  void _openEmployeeEditSheet(BuildContext context, Employee emp) {
+    final pdks = context.read<PdksState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formKey = GlobalKey<FormState>();
+
+    final nameCtrl = TextEditingController(text: emp.fullName);
+    final phoneCtrl = TextEditingController(text: emp.phone);
+    final deptCtrl = TextEditingController(text: emp.department);
+    final titleCtrl = TextEditingController(text: emp.title);
+    final salaryCtrl = TextEditingController(text: emp.baseGrossSalary.toStringAsFixed(0));
+    final heightCtrl = TextEditingController(text: (emp.heightCm ?? 178).toString());
+    final weightCtrl = TextEditingController(text: (emp.weightKg ?? 75).toString());
+    final leaveAllowanceCtrl = TextEditingController(text: emp.annualLeaveAllowance.toString());
+
+    DateTime hireDate = emp.hireDate ?? emp.registeredAt ?? DateTime(2023, 4, 1);
+    UserRole selectedRole = emp.role;
+    String shirtSize = emp.shirtSize ?? 'L';
+    String pantSize = emp.pantSize ?? '32';
+    int shoeSize = emp.shoeSize ?? 42;
+    String outerwearSize = emp.outerwearSize ?? 'L';
+
+    const shirtSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+    const pantSizes = ['28', '30', '32', '34', '36', '38', '40', '42', '44'];
+    const shoeSizes = [38, 39, 40, 41, 42, 43, 44, 45, 46];
+    const outerwearSizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            14,
+            20,
+            MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: const Color(0xFF2563EB).withOpacity(0.15),
+                    backgroundImage: emp.avatarUrl != null && emp.avatarUrl!.isNotEmpty
+                        ? NetworkImage(emp.avatarUrl!)
+                        : null,
+                    child: emp.avatarUrl == null || emp.avatarUrl!.isEmpty
+                        ? Text(
+                            emp.fullName.isNotEmpty ? emp.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 13),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${emp.fullName} - Bilgileri Düzenle',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(context)),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'İK Yetkili Paneli • Personel Bilgilerini Güncelleme',
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Kişisel & Kurumsal
+                        const Text(
+                          'Kurumsal & İletişim Bilgileri',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2563EB)),
+                        ),
+                        const SizedBox(height: 10),
+
+                        TextFormField(
+                          controller: nameCtrl,
+                          decoration: InputDecoration(
+                            labelText: 'Ad Soyad *',
+                            prefixIcon: const Icon(Icons.person_outline, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Ad Soyad boş bırakılamaz' : null,
+                        ),
+                        const SizedBox(height: 12),
+
+                        TextFormField(
+                          controller: phoneCtrl,
+                          maxLength: 11,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(11),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'Telefon Numarası (En fazla 11 hane) *',
+                            counterText: '',
+                            hintText: '05XX XXX XX XX',
+                            prefixIcon: const Icon(Icons.phone_outlined, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          ),
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Telefon numarası zorunludur' : null,
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: deptCtrl,
+                                decoration: InputDecoration(
+                                  labelText: 'Departman *',
+                                  prefixIcon: const Icon(Icons.business_outlined, size: 20),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                                validator: (v) => v == null || v.trim().isEmpty ? 'Departman boş bırakılamaz' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: titleCtrl,
+                                decoration: InputDecoration(
+                                  labelText: 'Unvan *',
+                                  prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                                validator: (v) => v == null || v.trim().isEmpty ? 'Unvan boş bırakılamaz' : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<UserRole>(
+                                value: selectedRole,
+                                decoration: InputDecoration(
+                                  labelText: 'Yetki Rolü',
+                                  prefixIcon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                                items: UserRole.values.map((role) {
+                                  return DropdownMenuItem(
+                                    value: role,
+                                    child: Text(role.label, style: const TextStyle(fontSize: 13)),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) setModalState(() => selectedRole = val);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: salaryCtrl,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(
+                                  labelText: 'Brüt Maaş (₺)',
+                                  prefixIcon: const Icon(Icons.payments_outlined, size: 20),
+                                  suffixText: '₺',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: hireDate,
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime.now(),
+                                    locale: const Locale('tr', 'TR'),
+                                  );
+                                  if (picked != null) {
+                                    setModalState(() => hireDate = picked);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'İşe İlk Giriş Tarihi',
+                                    prefixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    filled: true,
+                                    fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  ),
+                                  child: Text(
+                                    DateFormat('dd.MM.yyyy').format(hireDate),
+                                    style: TextStyle(fontSize: 13, color: AppColors.text(context)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: leaveAllowanceCtrl,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(
+                                  labelText: 'Yıllık İzin (Gün)',
+                                  prefixIcon: const Icon(Icons.beach_access_rounded, size: 20),
+                                  suffixText: 'Gün',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Fiziksel Bilgiler
+                        const Text(
+                          'Fiziksel Bilgiler (Boy & Kilo)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0284C7)),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: heightCtrl,
+                                maxLength: 3,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(
+                                  labelText: 'Boy',
+                                  counterText: '',
+                                  suffixText: 'cm',
+                                  prefixIcon: const Icon(Icons.height_rounded, size: 20),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: weightCtrl,
+                                maxLength: 3,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(
+                                  labelText: 'Kilo',
+                                  counterText: '',
+                                  suffixText: 'kg',
+                                  prefixIcon: const Icon(Icons.monitor_weight_outlined, size: 20),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  filled: true,
+                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+
+                        // Kıyafet & Zimmet Bedenleri
+                        const Text(
+                          'Kıyafet & Beden Ölçüleri (İş Kıyafeti / Forma)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF8B5CF6)),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Tişört / Gömlek
+                        _buildModalChipSelector(
+                          title: 'Tişört / Gömlek Bedeni',
+                          current: shirtSize,
+                          options: shirtSizes,
+                          color: const Color(0xFF3B82F6),
+                          isDark: isDark,
+                          context: context,
+                          onSelected: (val) => setModalState(() => shirtSize = val),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Pantolon Bedeni
+                        _buildModalChipSelector(
+                          title: 'Pantolon Bedeni',
+                          current: pantSize,
+                          options: pantSizes,
+                          color: const Color(0xFF10B981),
+                          isDark: isDark,
+                          context: context,
+                          onSelected: (val) => setModalState(() => pantSize = val),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // İş Ayakkabısı No
+                        _buildModalChipSelector(
+                          title: 'İş Ayakkabısı Numarası',
+                          current: shoeSize.toString(),
+                          options: shoeSizes.map((e) => e.toString()).toList(),
+                          color: const Color(0xFFF59E0B),
+                          isDark: isDark,
+                          context: context,
+                          onSelected: (val) => setModalState(() => shoeSize = int.parse(val)),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Mont / Yelek
+                        _buildModalChipSelector(
+                          title: 'Mont / Yelek / İş Tulumu',
+                          current: outerwearSize,
+                          options: outerwearSizes,
+                          color: const Color(0xFF8B5CF6),
+                          isDark: isDark,
+                          context: context,
+                          onSelected: (val) => setModalState(() => outerwearSize = val),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Fotoğraf Değiştir Butonu
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                          label: const Text('Profil Fotoğrafını Değiştir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          onPressed: () {
+                            _showEmployeePhotoDialog(context, emp);
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Alt Butonlar
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('İptal', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        if (!formKey.currentState!.validate()) return;
+                        final salary = double.tryParse(salaryCtrl.text.replaceAll('.', '').replaceAll(',', '.')) ?? emp.baseGrossSalary;
+                        final height = int.tryParse(heightCtrl.text.trim()) ?? emp.heightCm;
+                        final weight = int.tryParse(weightCtrl.text.trim()) ?? emp.weightKg;
+                        final leave = int.tryParse(leaveAllowanceCtrl.text.trim()) ?? emp.annualLeaveAllowance;
+
+                        final result = pdks.updateEmployeeByHr(
+                          employeeId: emp.id,
+                          fullName: nameCtrl.text.trim(),
+                          phone: phoneCtrl.text.trim(),
+                          department: deptCtrl.text.trim(),
+                          title: titleCtrl.text.trim(),
+                          baseSalary: salary,
+                          role: selectedRole,
+                          hireDate: hireDate,
+                          heightCm: height,
+                          weightKg: weight,
+                          shirtSize: shirtSize,
+                          pantSize: pantSize,
+                          shoeSize: shoeSize,
+                          outerwearSize: outerwearSize,
+                          annualLeaveAllowance: leave,
+                        );
+
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: result.success ? AppColors.success : AppColors.danger,
+                            behavior: SnackBarBehavior.floating,
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(result.message)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Kaydet ve Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModalChipSelector({
+    required String title,
+    required String current,
+    required List<String> options,
+    required Color color,
+    required bool isDark,
+    required BuildContext context,
+    required ValueChanged<String> onSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+        const SizedBox(height: 4),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: options.map((opt) {
+              final isSelected = opt == current;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: ChoiceChip(
+                  label: Text(opt),
+                  selected: isSelected,
+                  onSelected: (_) => onSelected(opt),
+                  selectedColor: color,
+                  labelStyle: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : AppColors.text(context),
+                  ),
+                  backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                  side: BorderSide(color: isSelected ? color : AppColors.cardBorder(context)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
@@ -663,29 +1176,32 @@ class EmployeesTab extends StatelessWidget {
 
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    onTap: () => _showEmployeePhotoDialog(context, emp),
-                    leading: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: AppColors.primaryOf(context).withOpacity(0.15),
-                          backgroundImage: hasAvatar ? NetworkImage(emp.avatarUrl!) : null,
-                          child: !hasAvatar
-                              ? Text(
-                                  emp.fullName.substring(0, 2).toUpperCase(),
-                                  style: TextStyle(color: AppColors.primaryOf(context), fontWeight: FontWeight.bold),
-                                )
-                              : null,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryOf(context),
-                            shape: BoxShape.circle,
+                    onTap: () => _openEmployeeEditSheet(context, emp),
+                    leading: GestureDetector(
+                      onTap: () => _showEmployeePhotoDialog(context, emp),
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: AppColors.primaryOf(context).withOpacity(0.15),
+                            backgroundImage: hasAvatar ? NetworkImage(emp.avatarUrl!) : null,
+                            child: !hasAvatar
+                                ? Text(
+                                    emp.fullName.substring(0, 2).toUpperCase(),
+                                    style: TextStyle(color: AppColors.primaryOf(context), fontWeight: FontWeight.bold),
+                                  )
+                                : null,
                           ),
-                          child: const Icon(Icons.camera_alt, size: 9, color: Colors.white),
-                        ),
-                      ],
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryOf(context),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 9, color: Colors.white),
+                          ),
+                        ],
+                      ),
                     ),
                     title: Row(
                       children: [
@@ -710,13 +1226,24 @@ class EmployeesTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    subtitle: Text('${emp.department} • ${emp.title}', style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    subtitle: Text('${emp.department} • ${emp.title} • ${emp.phone}', style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Kalan İzin', style: TextStyle(fontSize: 10, color: AppColors.textSub(context))),
-                        Text('${emp.remainingLeaveDays} Gün', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.success)),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('Kalan İzin', style: TextStyle(fontSize: 10, color: AppColors.textSub(context))),
+                            Text('${emp.remainingLeaveDays} Gün', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.success)),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.edit_note_rounded, color: Color(0xFF2563EB), size: 22),
+                          tooltip: 'Personel Bilgilerini Düzenle',
+                          onPressed: () => _openEmployeeEditSheet(context, emp),
+                        ),
                       ],
                     ),
                   );
