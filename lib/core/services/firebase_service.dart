@@ -75,29 +75,72 @@ class FirebaseService {
     return await testConnection();
   }
 
-  /// Firebase Canlı Bağlantı Testi (Ping)
-  Future<bool> testConnection() async {
-    if (!_isEnabled || _projectId.isEmpty) {
+  /// Firebase Canlı Bağlantı ve Sağlık Kontrolü (Detaylı Teşhis)
+  Future<({bool isConnected, String message, int statusCode})> checkConnectionHealth() async {
+    if (!_isEnabled) {
       _isConnected = false;
-      return false;
+      return (
+        isConnected: false,
+        message: 'Firebase bulut eşitlemesi ayarlardan pasife alınmış.',
+        statusCode: 0,
+      );
+    }
+    if (_projectId.trim().isEmpty) {
+      _isConnected = false;
+      return (
+        isConnected: false,
+        message: 'Firebase Project ID alanı boş bırakılamaz.',
+        statusCode: 0,
+      );
     }
 
     try {
-      // Firebase Realtime DB .json ping
-      final uri = Uri.parse('$realtimeDbUrl/status.json');
-      final response = await _client.get(uri).timeout(const Duration(seconds: 3));
+      final uri = Uri.parse('$realtimeDbUrl/.json?shallow=true');
+      final response = await _client.get(uri).timeout(const Duration(seconds: 4));
 
-      // 200 veya 401/403 (proje var ancak auth kuralları aktif) proje varlığını kanıtlar
-      if (response.statusCode >= 200 && response.statusCode < 500) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         _isConnected = true;
-        return true;
+        return (
+          isConnected: true,
+          message: '🟢 Canlı Bağlantı BAŞARILI: Firebase veritabanı aktif ve okuma/yazmaya hazır.',
+          statusCode: response.statusCode,
+        );
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        _isConnected = true;
+        return (
+          isConnected: true,
+          message: '🟡 Proje Mevcut, ancak Güvenlik Kuralları Kilitli (HTTP ${response.statusCode}). Firebase konsolundan Realtime Database Rules sekmesinde read/write kurallarını kontrol ediniz.',
+          statusCode: response.statusCode,
+        );
+      } else if (response.statusCode == 404) {
+        _isConnected = false;
+        return (
+          isConnected: false,
+          message: '🔴 Veritabanı Bulunamadı (HTTP 404): "$_projectId" kimliğine sahip bir veritabanı Google Firebase sunucularında henüz oluşturulmamış. console.firebase.google.com üzerinden projenizi açıp Realtime Database oluşturunuz.',
+          statusCode: 404,
+        );
+      } else {
+        _isConnected = false;
+        return (
+          isConnected: false,
+          message: '⚠️ Firebase sunucu yanıtı: HTTP ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
       }
-    } catch (_) {
-      // Çevrimdışı veya DNS çözülemediğinde
+    } catch (e) {
+      _isConnected = false;
+      return (
+        isConnected: false,
+        message: '⚠️ Bağlantı zaman aşımı veya DNS hatası: $e',
+        statusCode: 500,
+      );
     }
+  }
 
-    _isConnected = false;
-    return false;
+  /// Firebase Canlı Bağlantı Testi (Ping)
+  Future<bool> testConnection() async {
+    final health = await checkConnectionHealth();
+    return health.isConnected;
   }
 
   // ==========================================

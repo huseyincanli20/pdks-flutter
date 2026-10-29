@@ -64,15 +64,13 @@ class _FirebaseConfigSheetState extends State<_FirebaseConfigSheet> {
       isEnabled: _isEnabled,
     );
 
-    final ok = await pdks.testFirebaseConnection();
+    final health = await pdks.checkFirebaseHealth();
 
     if (!mounted) return;
     setState(() {
       _isTesting = false;
-      _testSuccess = ok;
-      _statusMessage = ok
-          ? '✅ Firebase Realtime DB & Firestore bağlantısı BAŞARILI!'
-          : '⚠️ Canlı bağlantı kurulamadı. URL veya internet bağlantınızı kontrol ediniz. (Yerel veritabanı aktif)';
+      _testSuccess = health.isConnected;
+      _statusMessage = health.message;
     });
   }
 

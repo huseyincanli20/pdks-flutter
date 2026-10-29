@@ -1275,6 +1275,12 @@ class PdksState extends ChangeNotifier {
     return ok;
   }
 
+  Future<({bool isConnected, String message, int statusCode})> checkFirebaseHealth() async {
+    final res = await _firebase.checkConnectionHealth();
+    notifyListeners();
+    return res;
+  }
+
   Future<({int employees, int messages, int records, bool success})> syncLocalDbToFirebase() async {
     final res = await _firebase.syncLocalDbToFirebase(_db);
     notifyListeners();
