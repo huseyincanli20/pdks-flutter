@@ -6,7 +6,6 @@ import '../../core/services/location_service.dart';
 import '../../core/services/wifi_network_service.dart';
 import '../../core/services/biometric_service.dart';
 import '../../models/attendance_record.dart';
-import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import 'qr_scanner_screen.dart';
 import 'leave_request_screen.dart';
@@ -172,22 +171,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           ],
         ),
         actions: [
-          // Personel / İK Modu Değiştirici Buton (Kolay test için)
-          PopupMenuButton<UserRole>(
-            tooltip: 'Rol Değiştir (Demo)',
-            icon: const Icon(Icons.swap_horiz, color: AppColors.primary),
-            onSelected: (role) => pdks.switchUserRole(role),
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: UserRole.employee,
-                child: Text('Personel Modu'),
-              ),
-              const PopupMenuItem(
-                value: UserRole.hrAdmin,
-                child: Text('İK Yöneticisi Modu'),
-              ),
-            ],
-          ),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: AppColors.textPrimary),
             onPressed: () {},

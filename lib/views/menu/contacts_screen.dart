@@ -127,7 +127,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 Row(
                   children: [
                     Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    if (emp.role == UserRole.hrAdmin) ...[
+                    if (emp.role == UserRole.hr) ...[
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),

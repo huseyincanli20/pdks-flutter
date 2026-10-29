@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
-import 'core/utils/responsive_layout.dart';
+import 'models/employee.dart';
 import 'state/pdks_state.dart';
-import 'views/mobile/mobile_home_screen.dart';
-import 'views/web_admin/admin_shell.dart';
-import 'views/kiosk/kiosk_screen.dart';
 import 'views/auth/auth_screen.dart';
+import 'views/mobile/mobile_home_screen.dart';
+import 'views/hr/hr_shell.dart';
+import 'views/boss/boss_shell.dart';
+import 'views/admin/admin_shell.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,48 +40,24 @@ class PdksApp extends StatelessWidget {
       ],
       home: Consumer<PdksState>(
         builder: (context, state, _) {
-          return state.isLoggedIn ? const MainAdaptiveRoot() : const AuthScreen();
+          // Kullanıcı giriş yapmadıysa Giriş/Kayıt ekranını göster
+          if (!state.isLoggedIn) {
+            return const AuthScreen();
+          }
+
+          // 4 TİP MOD: YALNIZCA GİRİŞ BİLGİLERİNE (ROLE) GÖRE GÖRÜLEBİLİR:
+          switch (state.currentUser.role) {
+            case UserRole.employee:
+              return const MobileHomeScreen(); // 1. PERSONEL MODU
+            case UserRole.hr:
+              return const HrShell();          // 2. İK (İNSAN KAYNAKLARI) MODU
+            case UserRole.boss:
+              return const BossShell();        // 3. PATRON (YÖNETİM & CEO) MODU
+            case UserRole.admin:
+              return const AdminShell();       // 4. ADMİN (SİSTEM YÖNETİCİSİ) MODU
+          }
         },
       ),
     );
-  }
-}
-
-class MainAdaptiveRoot extends StatefulWidget {
-  const MainAdaptiveRoot({super.key});
-
-  @override
-  State<MainAdaptiveRoot> createState() => _MainAdaptiveRootState();
-}
-
-class _MainAdaptiveRootState extends State<MainAdaptiveRoot> {
-  // Demo modları: 'auto', 'mobile', 'web_admin', 'kiosk'
-  String _activeViewMode = 'auto';
-
-  @override
-  Widget build(BuildContext context) {
-    Widget currentWidget;
-
-    if (_activeViewMode == 'mobile') {
-      currentWidget = const MobileHomeScreen();
-    } else if (_activeViewMode == 'web_admin') {
-      currentWidget = AdminShell(
-        onSwitchToMobile: () => setState(() => _activeViewMode = 'mobile'),
-        onSwitchToKiosk: () => setState(() => _activeViewMode = 'kiosk'),
-      );
-    } else if (_activeViewMode == 'kiosk') {
-      currentWidget = const KioskScreen();
-    } else {
-      // Auto: Ekrana göre otomatik karar ver
-      currentWidget = ResponsiveLayout(
-        mobile: const MobileHomeScreen(),
-        desktop: AdminShell(
-          onSwitchToMobile: () => setState(() => _activeViewMode = 'mobile'),
-          onSwitchToKiosk: () => setState(() => _activeViewMode = 'kiosk'),
-        ),
-      );
-    }
-
-    return currentWidget;
   }
 }

@@ -61,7 +61,7 @@ class EmployeesTab extends StatelessWidget {
                       children: [
                         Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const SizedBox(width: 8),
-                        if (emp.role == UserRole.hrAdmin)
+                        if (emp.role == UserRole.hr)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(

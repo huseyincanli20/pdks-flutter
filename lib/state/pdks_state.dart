@@ -26,6 +26,12 @@ class PdksState extends ChangeNotifier {
   List<LeaveRequest> _leaves = [];
   List<ShiftSchedule> _shifts = [];
 
+  // Sistem & Geofence Ayarları (Admin tarafından değiştirilebilir)
+  double _officeLat = 41.0082;
+  double _officeLng = 28.9784;
+  double _allowedRadiusMeters = 150.0;
+  String _allowedWifiSsid = 'Sirket_Personel';
+
   // Getters
   Employee get currentUser => _currentUser;
   bool get isLoggedIn => _isLoggedIn;
@@ -38,7 +44,12 @@ class PdksState extends ChangeNotifier {
   List<LeaveRequest> get leaves => _leaves;
   List<ShiftSchedule> get shifts => _shifts;
 
-  // İK Dashboard Sayaçları
+  double get officeLat => _officeLat;
+  double get officeLng => _officeLng;
+  double get allowedRadiusMeters => _allowedRadiusMeters;
+  String get allowedWifiSsid => _allowedWifiSsid;
+
+  // İK & Patron Dashboard Sayaçları
   int get totalEmployeesCount => _employees.length;
   int get presentEmployeesCount => _employees.where((e) => e.isActive).length - 2;
   int get onLeaveEmployeesCount => _leaves.where((l) => l.status == LeaveStatus.approved).length;
@@ -60,70 +71,87 @@ class PdksState extends ChangeNotifier {
   }
 
   void _initializeSeedData() {
-    _currentUser = Employee(
+    // 4 Farklı Rol İçin Tanımlı Kullanıcılar
+    final personel = Employee(
       id: 1,
       fullName: 'Ahmet Yılmaz',
-      email: 'ahmet.yilmaz@sirket.com',
+      email: 'personel@sirket.com',
       phone: '+90 532 111 22 33',
       department: 'Yazılım & Ar-Ge',
       title: 'Kıdemli Mobil Geliştirici',
       pinCode: '1234',
-      role: UserRole.employee,
+      role: UserRole.employee, // PERSONEL
       annualLeaveAllowance: 14,
       usedLeaveDays: 3,
     );
 
-    _employees = [
-      _currentUser,
-      Employee(
-        id: 2,
-        fullName: 'Zeynep Kaya',
-        email: 'zeynep.kaya@sirket.com',
-        phone: '+90 533 222 33 44',
-        department: 'İnsan Kaynakları',
-        title: 'İK Direktörü',
-        pinCode: '5678',
-        role: UserRole.hrAdmin,
-        annualLeaveAllowance: 20,
-        usedLeaveDays: 5,
-      ),
-      Employee(
-        id: 3,
-        fullName: 'Mehmet Demir',
-        email: 'mehmet.demir@sirket.com',
-        phone: '+90 535 333 44 55',
-        department: 'Satış & Pazarlama',
-        title: 'Bölge Satış Müdürü',
-        pinCode: '9988',
-        role: UserRole.employee,
-        annualLeaveAllowance: 14,
-        usedLeaveDays: 7,
-      ),
-      Employee(
-        id: 4,
-        fullName: 'Elif Şahin',
-        email: 'elif.sahin@sirket.com',
-        phone: '+90 542 444 55 66',
-        department: 'Mali İşler',
-        title: 'Muhasebe Uzmanı',
-        pinCode: '1122',
-        role: UserRole.employee,
-        annualLeaveAllowance: 14,
-        usedLeaveDays: 2,
-      ),
-      Employee(
-        id: 5,
-        fullName: 'Caner Özkan',
-        email: 'caner.ozkan@sirket.com',
-        phone: '+90 555 555 66 77',
-        department: 'Operasyon',
-        title: 'Saha Süpervizörü',
-        pinCode: '3344',
-        role: UserRole.supervisor,
-        annualLeaveAllowance: 14,
-        usedLeaveDays: 4,
-      ),
-    ];
+    final ik = Employee(
+      id: 2,
+      fullName: 'Zeynep Kaya',
+      email: 'ik@sirket.com',
+      phone: '+90 533 222 33 44',
+      department: 'İnsan Kaynakları',
+      title: 'İK Direktörü',
+      pinCode: '2345',
+      role: UserRole.hr, // İK
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 5,
+    );
+
+    final patron = Employee(
+      id: 3,
+      fullName: 'Kemal Özdemir',
+      email: 'patron@sirket.com',
+      phone: '+90 530 999 88 77',
+      department: 'Yönetim Kurulu',
+      title: 'Genel Müdür / CEO',
+      pinCode: '3456',
+      role: UserRole.boss, // PATRON
+      annualLeaveAllowance: 30,
+      usedLeaveDays: 2,
+    );
+
+    final admin = Employee(
+      id: 4,
+      fullName: 'Serkan Arslan',
+      email: 'admin@sirket.com',
+      phone: '+90 540 888 77 66',
+      department: 'Bilgi İşlem & IT',
+      title: 'Sistem Yöneticisi',
+      pinCode: '4567',
+      role: UserRole.admin, // ADMIN
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 1,
+    );
+
+    final diger1 = Employee(
+      id: 5,
+      fullName: 'Mehmet Demir',
+      email: 'mehmet.demir@sirket.com',
+      phone: '+90 535 333 44 55',
+      department: 'Satış & Pazarlama',
+      title: 'Bölge Satış Müdürü',
+      pinCode: '9988',
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 7,
+    );
+
+    final diger2 = Employee(
+      id: 6,
+      fullName: 'Elif Şahin',
+      email: 'elif.sahin@sirket.com',
+      phone: '+90 542 444 55 66',
+      department: 'Mali İşler',
+      title: 'Muhasebe Uzmanı',
+      pinCode: '1122',
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 2,
+    );
+
+    _currentUser = personel; // Varsayılan personel
+    _employees = [personel, ik, patron, admin, diger1, diger2];
 
     final now = DateTime.now();
     _records = [
@@ -151,7 +179,7 @@ class PdksState extends ChangeNotifier {
       ),
       AttendanceRecord(
         id: 103,
-        employeeId: 3,
+        employeeId: 5,
         employeeName: 'Mehmet Demir',
         type: AttendanceType.checkIn,
         timestamp: now.subtract(const Duration(hours: 3, minutes: 50)),
@@ -177,7 +205,7 @@ class PdksState extends ChangeNotifier {
       ),
       LeaveRequest(
         id: 202,
-        employeeId: 4,
+        employeeId: 6,
         employeeName: 'Elif Şahin',
         type: LeaveType.medical,
         startDate: now.subtract(const Duration(days: 2)),
@@ -198,7 +226,7 @@ class PdksState extends ChangeNotifier {
         endTime: '17:30',
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 4,
+        assignedEmployeeCount: 5,
       ),
       ShiftSchedule(
         id: 2,
@@ -224,11 +252,12 @@ class PdksState extends ChangeNotifier {
     _lastCheckInTime = now.subtract(const Duration(hours: 4, minutes: 25));
   }
 
-  // Kullanıcı Girişi
+  // Giriş Yapma: YALNIZCA GİRİŞ BİLGİLERİNE GÖRE ROL BELİRLENİR
   bool login(String email, String pin) {
     final cleanEmail = email.trim().toLowerCase();
     final cleanPin = pin.trim();
 
+    // 1. Önce tam e-posta ve PIN eşleşmesine bak
     final found = _employees.where(
       (e) => e.email.toLowerCase() == cleanEmail && e.pinCode == cleanPin,
     );
@@ -241,11 +270,20 @@ class PdksState extends ChangeNotifier {
       return true;
     }
 
-    // Demo kolaylığı: Eğer eşleşmezse ve pin 1234 ise ilk kullanıcı ile aç
-    if (cleanPin == '1234' || cleanEmail.contains('admin')) {
-      _currentUser = cleanEmail.contains('admin')
-          ? _employees.firstWhere((e) => e.role == UserRole.hrAdmin)
-          : _employees.first;
+    // 2. Demo kısayolları için kullanıcı adı bazlı kontrol
+    Employee? matched;
+    if (cleanEmail == 'personel@sirket.com' || cleanEmail == 'personel') {
+      matched = _employees.firstWhere((e) => e.role == UserRole.employee);
+    } else if (cleanEmail == 'ik@sirket.com' || cleanEmail == 'ik') {
+      matched = _employees.firstWhere((e) => e.role == UserRole.hr);
+    } else if (cleanEmail == 'patron@sirket.com' || cleanEmail == 'patron') {
+      matched = _employees.firstWhere((e) => e.role == UserRole.boss);
+    } else if (cleanEmail == 'admin@sirket.com' || cleanEmail == 'admin') {
+      matched = _employees.firstWhere((e) => e.role == UserRole.admin);
+    }
+
+    if (matched != null) {
+      _currentUser = matched;
       _isLoggedIn = true;
       _startTimer();
       notifyListeners();
@@ -271,9 +309,9 @@ class PdksState extends ChangeNotifier {
       email: email,
       phone: phone,
       department: department.isEmpty ? 'Genel' : department,
-      title: title.isEmpty ? 'Uzman' : title,
+      title: title.isEmpty ? 'Personel' : title,
       pinCode: pin,
-      role: UserRole.employee,
+      role: UserRole.employee, // Yeni kaydolanlar daima personel olarak başlar
       annualLeaveAllowance: 14,
       usedLeaveDays: 0,
       isActive: true,
@@ -297,6 +335,46 @@ class PdksState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Admin: Personel Rolünü Değiştir
+  void changeEmployeeRole(int employeeId, UserRole newRole) {
+    final index = _employees.indexWhere((e) => e.id == employeeId);
+    if (index != -1) {
+      final old = _employees[index];
+      final updated = Employee(
+        id: old.id,
+        fullName: old.fullName,
+        email: old.email,
+        phone: old.phone,
+        department: old.department,
+        title: old.title,
+        pinCode: old.pinCode,
+        role: newRole,
+        annualLeaveAllowance: old.annualLeaveAllowance,
+        usedLeaveDays: old.usedLeaveDays,
+        isActive: old.isActive,
+      );
+      _employees[index] = updated;
+      if (_currentUser.id == employeeId) {
+        _currentUser = updated;
+      }
+      notifyListeners();
+    }
+  }
+
+  // Admin: Geofence Ayarlarını Güncelle
+  void updateSystemSettings({
+    required double lat,
+    required double lng,
+    required double radius,
+    required String wifiSsid,
+  }) {
+    _officeLat = lat;
+    _officeLng = lng;
+    _allowedRadiusMeters = radius;
+    _allowedWifiSsid = wifiSsid;
+    notifyListeners();
+  }
+
   // Profil Güncelle
   void updateProfile({required String fullName, required String phone, required String department, required String title}) {
     final index = _employees.indexWhere((e) => e.id == _currentUser.id);
@@ -317,16 +395,6 @@ class PdksState extends ChangeNotifier {
     _currentUser = updated;
     if (index != -1) {
       _employees[index] = updated;
-    }
-    notifyListeners();
-  }
-
-  // Kullanıcı Rolünü Değiştir (Demo)
-  void switchUserRole(UserRole role) {
-    if (role == UserRole.hrAdmin) {
-      _currentUser = _employees.firstWhere((e) => e.role == UserRole.hrAdmin);
-    } else {
-      _currentUser = _employees.firstWhere((e) => e.role == UserRole.employee);
     }
     notifyListeners();
   }

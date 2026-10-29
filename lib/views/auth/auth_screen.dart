@@ -171,7 +171,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Padding(
                           padding: const EdgeInsets.all(20),
                           child: SizedBox(
-                            height: 380,
+                            height: 440,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
@@ -235,32 +235,76 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         ),
         const SizedBox(height: 16),
         const Center(
-          child: Text('Demo Hızlı Giriş:', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          child: Text('4 Tip Mod - Hızlı Rol Girişleri:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                icon: const Icon(Icons.person, size: 14, color: AppColors.primary),
+                label: const Text('Personel', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  _loginEmailController.text = 'personel@sirket.com';
+                  _loginPinController.text = '1234';
+                  _handleLogin();
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                icon: const Icon(Icons.groups, size: 14, color: Colors.blue),
+                label: const Text('İK Paneli', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  _loginEmailController.text = 'ik@sirket.com';
+                  _loginPinController.text = '2345';
+                  _handleLogin();
+                },
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                icon: const Icon(Icons.workspace_premium, size: 14, color: Colors.orange),
+                label: const Text('Patron (CEO)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 onPressed: () {
-                  _loginEmailController.text = 'ahmet.yilmaz@sirket.com';
-                  _loginPinController.text = '1234';
+                  _loginEmailController.text = 'patron@sirket.com';
+                  _loginPinController.text = '3456';
                   _handleLogin();
                 },
-                child: const Text('Personel', style: TextStyle(fontSize: 11)),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                icon: const Icon(Icons.admin_panel_settings, size: 14, color: Colors.purple),
+                label: const Text('Süper Admin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 onPressed: () {
-                  _loginEmailController.text = 'zeynep.kaya@sirket.com';
-                  _loginPinController.text = '5678';
+                  _loginEmailController.text = 'admin@sirket.com';
+                  _loginPinController.text = '4567';
                   _handleLogin();
                 },
-                child: const Text('İK Yöneticisi', style: TextStyle(fontSize: 11)),
               ),
             ),
           ],

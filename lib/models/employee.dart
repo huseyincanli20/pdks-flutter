@@ -1,4 +1,32 @@
-enum UserRole { employee, hrAdmin, supervisor }
+enum UserRole { employee, hr, boss, admin }
+
+extension UserRoleExtension on UserRole {
+  String get label {
+    switch (this) {
+      case UserRole.employee:
+        return 'Personel';
+      case UserRole.hr:
+        return 'İnsan Kaynakları (İK)';
+      case UserRole.boss:
+        return 'Patron (Yönetim)';
+      case UserRole.admin:
+        return 'Sistem Yöneticisi (Admin)';
+    }
+  }
+
+  String get shortLabel {
+    switch (this) {
+      case UserRole.employee:
+        return 'Personel';
+      case UserRole.hr:
+        return 'İK';
+      case UserRole.boss:
+        return 'Patron';
+      case UserRole.admin:
+        return 'Admin';
+    }
+  }
+}
 
 class Employee {
   final int id;
@@ -32,6 +60,12 @@ class Employee {
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
 
   factory Employee.fromJson(Map<String, dynamic> json) {
+    UserRole parsedRole = UserRole.employee;
+    final r = json['role']?.toString().toLowerCase();
+    if (r == 'hr' || r == 'hradmin') parsedRole = UserRole.hr;
+    if (r == 'boss' || r == 'patron' || r == 'ceo') parsedRole = UserRole.boss;
+    if (r == 'admin') parsedRole = UserRole.admin;
+
     return Employee(
       id: json['id'] ?? 0,
       fullName: json['fullName'] ?? '',
@@ -40,7 +74,7 @@ class Employee {
       department: json['department'] ?? 'Genel',
       title: json['title'] ?? 'Çalışan',
       pinCode: json['pinCode'] ?? '1234',
-      role: json['role'] == 'admin' ? UserRole.hrAdmin : UserRole.employee,
+      role: parsedRole,
       annualLeaveAllowance: json['annualLeaveAllowance'] ?? 14,
       usedLeaveDays: json['usedLeaveDays'] ?? 0,
       isActive: json['isActive'] ?? true,
