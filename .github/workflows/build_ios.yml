@@ -4,12 +4,22 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'macOS Runner Sunucusu'
+        required: true
+        default: 'macos-14'
+        type: choice
+        options:
+          - 'macos-14'
+          - 'macos-15'
+          - 'macos-latest'
 
 jobs:
   build-ios:
-    name: Build iOS IPA on Cloud macOS
-    runs-on: macos-latest
-    timeout-minutes: 45
+    name: Build iOS IPA on Cloud macOS (${{ github.event.inputs.runner || 'macos-14' }})
+    runs-on: ${{ github.event.inputs.runner || 'macos-14' }}
+    timeout-minutes: 60
 
     steps:
       - name: Checkout Repository
