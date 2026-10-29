@@ -8,7 +8,8 @@ on:
 jobs:
   build-ios:
     name: Build iOS IPA on Cloud macOS
-    runs-on: macos-14
+    runs-on: macos-13
+    timeout-minutes: 45
 
     steps:
       - name: Checkout Repository
