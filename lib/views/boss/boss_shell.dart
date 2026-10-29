@@ -7,6 +7,7 @@ import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
+import '../payroll/payroll_management_screen.dart';
 
 class BossShell extends StatefulWidget {
   const BossShell({super.key});
@@ -201,6 +202,63 @@ class _BossShellState extends State<BossShell> {
                       ],
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Bordro & Şirket Maaş Bütçesi Kartı
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF10B981), size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Aylık Bordro & Maaş Havuzu',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ekim 2026 • ${pdks.payrolls.length} Onaylı Bordro Kaydı',
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PayrollManagementScreen()),
+                    );
+                  },
+                  child: const Text('Bordrolar ›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),

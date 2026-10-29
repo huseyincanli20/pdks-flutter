@@ -7,6 +7,7 @@ import '../models/shift_schedule.dart';
 import '../models/app_notification.dart';
 import '../models/cafeteria_menu.dart';
 import '../models/company.dart';
+import '../models/payroll_slip.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/theme/app_theme_type.dart';
@@ -30,6 +31,7 @@ class PdksState extends ChangeNotifier {
   List<AttendanceRecord> _records = [];
   List<LeaveRequest> _leaves = [];
   List<ShiftSchedule> _shifts = [];
+  List<PayrollSlip> _payrolls = [];
 
   // Bildirimler
   List<AppNotification> _notifications = [
@@ -275,6 +277,13 @@ class PdksState extends ChangeNotifier {
       _leaves.where((l) => l.companyId == _activeCompanyId).toList();
   List<ShiftSchedule> get shifts =>
       _shifts.where((s) => s.companyId == _activeCompanyId).toList();
+  List<PayrollSlip> get payrolls =>
+      _payrolls.where((p) => p.companyId == _activeCompanyId).toList();
+  List<PayrollSlip> get allPayrolls => List.unmodifiable(_payrolls);
+  List<PayrollSlip> get currentUserPayrolls =>
+      _payrolls.where((p) => p.employeeId == _currentUser.id).toList();
+  PayrollSlip? get latestUserPayroll =>
+      currentUserPayrolls.isNotEmpty ? currentUserPayrolls.first : null;
 
   void switchCompany(String companyId) {
     if (_companies.any((c) => c.id == companyId)) {
@@ -433,6 +442,121 @@ class PdksState extends ChangeNotifier {
       type: NotificationType.cafeteria,
       icon: Icons.restaurant_rounded,
       color: const Color(0xFFEA580C),
+    ));
+    notifyListeners();
+  }
+
+  // Bordro ve Maaş Yönetimi Metotları
+  void updatePayrollStatus(String id, PayrollStatus newStatus) {
+    final idx = _payrolls.indexWhere((p) => p.id == id);
+    if (idx != -1) {
+      _payrolls[idx].status = newStatus;
+      notifyListeners();
+    }
+  }
+
+  void bulkApprovePayrolls(int month, int year) {
+    for (final p in _payrolls) {
+      if (p.companyId == _activeCompanyId && p.periodMonth == month && p.periodYear == year) {
+        p.status = PayrollStatus.approved;
+      }
+    }
+    notifyListeners();
+  }
+
+  void bulkPayPayrolls(int month, int year) {
+    for (final p in _payrolls) {
+      if (p.companyId == _activeCompanyId && p.periodMonth == month && p.periodYear == year) {
+        p.status = PayrollStatus.paid;
+      }
+    }
+    notifyListeners();
+  }
+
+  PayrollSlip generatePayrollForEmployee({
+    required Employee employee,
+    required int month,
+    required int year,
+    double overtimeHours = 0.0,
+    double bonus = 0.0,
+  }) {
+    final company = _companies.firstWhere((c) => c.id == employee.companyId, orElse: () => activeCompany);
+    final hourlyRate = employee.baseGrossSalary / 225.0; // Standart aylık 225 saat (İş Kanunu)
+    final overtimePay = overtimeHours * hourlyRate * 1.5;
+    const meal = 4500.0;
+    const travel = 1800.0;
+    final sgkBase = employee.baseGrossSalary + overtimePay + bonus;
+    final sgkWorker = sgkBase * 0.14;
+    final unempWorker = sgkBase * 0.01;
+    final taxBase = sgkBase - (sgkWorker + unempWorker);
+    final incomeTax = taxBase * 0.15;
+    final stampTax = sgkBase * 0.00759;
+    const exemption = 3200.0;
+
+    return PayrollSlip(
+      id: 'brd_${year}_${month}_${employee.id}',
+      companyId: employee.companyId,
+      companyName: company.name,
+      employeeId: employee.id,
+      employeeName: employee.fullName,
+      employeeTitle: employee.title,
+      department: employee.department,
+      tcKimlikNo: employee.tcKimlikNo,
+      sicilNo: '10${employee.id.toString().padLeft(2, '0')}',
+      iban: employee.iban,
+      bankName: employee.bankName,
+      periodMonth: month,
+      periodYear: year,
+      issueDate: DateTime(year, month, 28),
+      paymentDate: DateTime(year, month == 12 ? 1 : month + 1, 5),
+      workedDays: 22,
+      workedHours: 176.0,
+      overtimeHours: overtimeHours,
+      baseGrossSalary: employee.baseGrossSalary,
+      overtimePay: overtimePay,
+      mealAllowance: meal,
+      travelAllowance: travel,
+      bonus: bonus,
+      incomeTax: incomeTax,
+      stampTax: stampTax,
+      taxExemption: exemption,
+      status: PayrollStatus.approved,
+      isSigned: true,
+      signatureTimestamp: DateTime(year, month, 28, 17, 30),
+    );
+  }
+
+  void recalculateCompanyPayroll(int month, int year) {
+    final compEmployees = _employees.where((e) => e.companyId == _activeCompanyId).toList();
+    for (final emp in compEmployees) {
+      final otHours = (emp.id % 2 == 0) ? (emp.id * 3.5) : 0.0;
+      final bonus = (emp.role == UserRole.boss || emp.role == UserRole.hr) ? 5000.0 : 0.0;
+      final newSlip = generatePayrollForEmployee(
+        employee: emp,
+        month: month,
+        year: year,
+        overtimeHours: otHours,
+        bonus: bonus,
+      );
+      final existingIdx = _payrolls.indexWhere(
+        (p) => p.companyId == _activeCompanyId && p.employeeId == emp.id && p.periodMonth == month && p.periodYear == year,
+      );
+      if (existingIdx != -1) {
+        _payrolls[existingIdx] = newSlip;
+      } else {
+        _payrolls.insert(0, newSlip);
+      }
+    }
+
+    addNotification(AppNotification(
+      id: 'payroll_${DateTime.now().millisecondsSinceEpoch}',
+      title: '$month/$year Bordroları Hesaplandı 📑',
+      message: '${activeCompany.name} için $month/$year dönemi bordroları PDKS verileriyle güncellendi.',
+      timestamp: DateTime.now(),
+      isRead: false,
+      type: NotificationType.system,
+      icon: Icons.receipt_long_rounded,
+      color: const Color(0xFF0D9488),
     ));
     notifyListeners();
   }
@@ -867,6 +991,361 @@ class PdksState extends ChangeNotifier {
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
         assignedEmployeeCount: 4,
+      ),
+    ];
+
+    _payrolls = [
+      // Ahmet Yılmaz (Ekim 2026 - Son Dönem)
+      PayrollSlip(
+        id: 'brd_2026_10_01',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 1,
+        employeeName: 'Ahmet Yılmaz',
+        employeeTitle: 'Kıdemli Mobil Geliştirici',
+        department: 'Yazılım & Ar-Ge',
+        tcKimlikNo: '28491028472',
+        sicilNo: '1001',
+        iban: 'TR42 0006 2000 0001 2345 6789 01',
+        bankName: 'Garanti BBVA',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 8.5,
+        baseGrossSalary: 56000.0,
+        overtimePay: 3173.33,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 2500.0,
+        incomeTax: 7600.0,
+        stampTax: 468.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Ahmet Yılmaz (Eylül 2026)
+      PayrollSlip(
+        id: 'brd_2026_09_01',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 1,
+        employeeName: 'Ahmet Yılmaz',
+        employeeTitle: 'Kıdemli Mobil Geliştirici',
+        department: 'Yazılım & Ar-Ge',
+        tcKimlikNo: '28491028472',
+        sicilNo: '1001',
+        iban: 'TR42 0006 2000 0001 2345 6789 01',
+        bankName: 'Garanti BBVA',
+        periodMonth: 9,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 9, 28),
+        paymentDate: DateTime(2026, 10, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 12.0,
+        baseGrossSalary: 56000.0,
+        overtimePay: 4480.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 7400.0,
+        stampTax: 459.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 9, 28, 17, 30),
+      ),
+      // Ahmet Yılmaz (Ağustos 2026)
+      PayrollSlip(
+        id: 'brd_2026_08_01',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 1,
+        employeeName: 'Ahmet Yılmaz',
+        employeeTitle: 'Kıdemli Mobil Geliştirici',
+        department: 'Yazılım & Ar-Ge',
+        tcKimlikNo: '28491028472',
+        sicilNo: '1001',
+        iban: 'TR42 0006 2000 0001 2345 6789 01',
+        bankName: 'Garanti BBVA',
+        periodMonth: 8,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 8, 28),
+        paymentDate: DateTime(2026, 9, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 5.0,
+        baseGrossSalary: 56000.0,
+        overtimePay: 1866.67,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 5000.0,
+        incomeTax: 8100.0,
+        stampTax: 477.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 8, 28, 17, 30),
+      ),
+      // Zeynep Kaya (İK - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_02',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 2,
+        employeeName: 'Zeynep Kaya',
+        employeeTitle: 'İK Direktörü',
+        department: 'İnsan Kaynakları',
+        tcKimlikNo: '31592039481',
+        sicilNo: '1002',
+        iban: 'TR55 0006 4000 0002 3456 7890 12',
+        bankName: 'İş Bankası',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 4.0,
+        baseGrossSalary: 68000.0,
+        overtimePay: 1813.33,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 5000.0,
+        incomeTax: 9800.0,
+        stampTax: 568.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Kemal Özdemir (Patron - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_03',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 3,
+        employeeName: 'Kemal Özdemir',
+        employeeTitle: 'Genel Müdür / CEO',
+        department: 'Yönetim Kurulu',
+        tcKimlikNo: '19482019485',
+        sicilNo: '1003',
+        iban: 'TR12 0006 2000 0003 4567 8901 23',
+        bankName: 'Garanti BBVA',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 0.0,
+        baseGrossSalary: 120000.0,
+        overtimePay: 0.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 16500.0,
+        stampTax: 910.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Serkan Arslan (Admin - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_04',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 4,
+        employeeName: 'Serkan Arslan',
+        employeeTitle: 'Sistem Yöneticisi',
+        department: 'Bilgi İşlem & IT',
+        tcKimlikNo: '47281039482',
+        sicilNo: '1004',
+        iban: 'TR77 0001 5000 0004 5678 9012 34',
+        bankName: 'Vakıfbank',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 6.0,
+        baseGrossSalary: 62000.0,
+        overtimePay: 2480.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 8100.0,
+        stampTax: 489.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Mehmet Demir (Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_05',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 5,
+        employeeName: 'Mehmet Demir',
+        employeeTitle: 'Bölge Satış Müdürü',
+        department: 'Satış & Pazarlama',
+        tcKimlikNo: '58291039471',
+        sicilNo: '1005',
+        iban: 'TR88 0006 2000 0005 6789 0123 45',
+        bankName: 'Yapı Kredi',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 14.0,
+        baseGrossSalary: 48000.0,
+        overtimePay: 4480.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 3000.0,
+        incomeTax: 6900.0,
+        stampTax: 421.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Elif Şahin (Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_06',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 6,
+        employeeName: 'Elif Şahin',
+        employeeTitle: 'Muhasebe Uzmanı',
+        department: 'Mali İşler',
+        tcKimlikNo: '69382049182',
+        sicilNo: '1006',
+        iban: 'TR99 0006 4000 0006 7890 1234 56',
+        bankName: 'İş Bankası',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 2.0,
+        baseGrossSalary: 45000.0,
+        overtimePay: 600.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 5900.0,
+        stampTax: 346.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Hasan Usta (Yemekhane - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_07',
+        companyId: 'cmp_acme',
+        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
+        employeeId: 7,
+        employeeName: 'Hasan Usta',
+        employeeTitle: 'Mutfak Şefi',
+        department: 'Yemekhane & Sosyal Tesisler',
+        tcKimlikNo: '71829304918',
+        sicilNo: '1007',
+        iban: 'TR23 0001 0000 0007 8901 2345 67',
+        bankName: 'Ziraat Bankası',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 10.0,
+        baseGrossSalary: 38000.0,
+        overtimePay: 2533.33,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 4900.0,
+        stampTax: 307.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Can Demir (NOVA - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_11',
+        companyId: 'cmp_nova',
+        companyName: 'NOVA Savunma Teknolojileri A.Ş.',
+        employeeId: 11,
+        employeeName: 'Can Demir',
+        employeeTitle: 'Kıdemli Sistem Mühendisi',
+        department: 'Aviyonik & Radar',
+        tcKimlikNo: '12384920192',
+        sicilNo: '2001',
+        iban: 'TR34 0006 2000 0008 9012 3456 78',
+        bankName: 'Garanti BBVA',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 6.0,
+        baseGrossSalary: 65000.0,
+        overtimePay: 2600.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 4000.0,
+        incomeTax: 8900.0,
+        stampTax: 543.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
+      ),
+      // Murat Yıldız (ÖZDEMİR - Ekim 2026)
+      PayrollSlip(
+        id: 'brd_2026_10_21',
+        companyId: 'cmp_ozdemir',
+        companyName: 'ÖZDEMİR Sanayi ve Yatırım Holding',
+        employeeId: 21,
+        employeeName: 'Murat Yıldız',
+        employeeTitle: 'Lojistik Operasyon Uzmanı',
+        department: 'Depolama & Sevkiyat',
+        tcKimlikNo: '98472910283',
+        sicilNo: '3001',
+        iban: 'TR91 0006 2000 0012 3456 7890 12',
+        bankName: 'Yapı Kredi',
+        periodMonth: 10,
+        periodYear: 2026,
+        issueDate: DateTime(2026, 10, 28),
+        paymentDate: DateTime(2026, 11, 5),
+        workedDays: 22,
+        workedHours: 176.0,
+        overtimeHours: 16.0,
+        baseGrossSalary: 42000.0,
+        overtimePay: 4480.0,
+        mealAllowance: 4500.0,
+        travelAllowance: 1800.0,
+        bonus: 0.0,
+        incomeTax: 5600.0,
+        stampTax: 352.0,
+        taxExemption: 3200.0,
+        status: PayrollStatus.paid,
+        isSigned: true,
+        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
       ),
     ];
 

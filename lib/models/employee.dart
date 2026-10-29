@@ -72,6 +72,10 @@ class Employee {
   final String? avatarUrl;
   final String? customRoleId;
   final String? customRoleName;
+  final double baseGrossSalary;
+  final String tcKimlikNo;
+  final String iban;
+  final String bankName;
 
   Employee({
     required this.id,
@@ -89,6 +93,10 @@ class Employee {
     this.avatarUrl,
     this.customRoleId,
     this.customRoleName,
+    this.baseGrossSalary = 52000.0,
+    this.tcKimlikNo = '28491028472',
+    this.iban = 'TR42 0006 2000 0001 2345 6789 01',
+    this.bankName = 'Garanti BBVA',
   });
 
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
@@ -112,6 +120,10 @@ class Employee {
     String? customRoleId,
     String? customRoleName,
     bool clearCustomRole = false,
+    double? baseGrossSalary,
+    String? tcKimlikNo,
+    String? iban,
+    String? bankName,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -129,6 +141,10 @@ class Employee {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       customRoleId: clearCustomRole ? null : (customRoleId ?? this.customRoleId),
       customRoleName: clearCustomRole ? null : (customRoleName ?? this.customRoleName),
+      baseGrossSalary: baseGrossSalary ?? this.baseGrossSalary,
+      tcKimlikNo: tcKimlikNo ?? this.tcKimlikNo,
+      iban: iban ?? this.iban,
+      bankName: bankName ?? this.bankName,
     );
   }
 
@@ -156,6 +172,10 @@ class Employee {
       avatarUrl: json['avatarUrl'],
       customRoleId: json['customRoleId'],
       customRoleName: json['customRoleName'],
+      baseGrossSalary: (json['baseGrossSalary'] as num?)?.toDouble() ?? 52000.0,
+      tcKimlikNo: json['tcKimlikNo'] ?? '28491028472',
+      iban: json['iban'] ?? 'TR42 0006 2000 0001 2345 6789 01',
+      bankName: json['bankName'] ?? 'Garanti BBVA',
     );
   }
 
@@ -176,6 +196,10 @@ class Employee {
       'avatarUrl': avatarUrl,
       'customRoleId': customRoleId,
       'customRoleName': customRoleName,
+      'baseGrossSalary': baseGrossSalary,
+      'tcKimlikNo': tcKimlikNo,
+      'iban': iban,
+      'bankName': bankName,
     };
   }
 }

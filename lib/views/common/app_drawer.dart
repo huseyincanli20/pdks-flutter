@@ -11,6 +11,8 @@ import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
+import '../payroll/my_payrolls_screen.dart';
+import '../payroll/payroll_management_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -248,6 +250,20 @@ class AppDrawer extends StatelessWidget {
                     title: 'Profil',
                     subtitle: 'Kişisel bilgiler & izin bakiyesi',
                     destination: const ProfileScreen(),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.receipt_long_rounded,
+                    color: const Color(0xFF10B981),
+                    title: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                        ? 'Bordro & Maaş Yönetimi'
+                        : 'Maaş & Bordrolarım',
+                    subtitle: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                        ? 'Aylık maaş hesaplama, icmal & ödemeler'
+                        : 'Aylık e-bordro pusulası & net kazanç',
+                    destination: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                        ? const PayrollManagementScreen()
+                        : const MyPayrollsScreen(),
                   ),
                   _buildDrawerTile(
                     context,

@@ -17,6 +17,7 @@ import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../menu/business_card_screen.dart';
 import '../menu/contacts_screen.dart';
 import '../menu/settings_screen.dart';
+import '../payroll/my_payrolls_screen.dart';
 import '../../core/utils/marquee_text.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -529,6 +530,55 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
             ],
           ),
 
+          if (pdks.latestUserPayroll != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.25)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF10B981), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${pdks.latestUserPayroll!.periodName} Bordrosu Hazır',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                        ),
+                        Text(
+                          'Net Ele Geçen: ${pdks.latestUserPayroll!.formatCurrency(pdks.latestUserPayroll!.netSalary)}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MyPayrollsScreen()),
+                      );
+                    },
+                    child: const Text('Bordro Aç ›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 24),
 
           // 3. Son Hareketler Listesi
@@ -940,6 +990,17 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           const SizedBox(height: 20),
 
           // Kısayol Menüleri
+          _buildProfileTile(
+            icon: Icons.receipt_long_rounded,
+            color: const Color(0xFF10B981),
+            title: 'Maaş & Bordrolarım',
+            subtitle: pdks.latestUserPayroll != null
+                ? '${pdks.latestUserPayroll!.periodName} • Net: ${pdks.latestUserPayroll!.formatCurrency(pdks.latestUserPayroll!.netSalary)}'
+                : 'Aylık resmi e-bordro pusulaları ve net hak edişler',
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MyPayrollsScreen()));
+            },
+          ),
           _buildProfileTile(
             icon: Icons.qr_code_rounded,
             color: const Color(0xFF2563EB),

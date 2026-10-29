@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/platform_file_helper.dart';
 import '../../state/pdks_state.dart';
+import '../payroll/payroll_management_screen.dart';
 
 class ReportsPuantajTab extends StatefulWidget {
   const ReportsPuantajTab({super.key});
@@ -200,6 +201,21 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
                     onPressed: _isExporting ? null : _exportAndOpenExcel,
                   ),
                 ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.receipt_long_rounded, color: Color(0xFF10B981), size: 18),
+                    label: const Text('Bordro & Maaş Yönetim Merkezi ›', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PayrollManagementScreen()));
+                    },
+                  ),
+                ),
               ],
             )
           else
@@ -219,21 +235,37 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
                     ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  icon: _isExporting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.table_view_rounded, size: 18),
-                  label: Text(
-                    _isExporting ? 'Hazırlanıyor...' : 'Excel İndir ve Aç (.xlsx)',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: _isExporting ? null : _exportAndOpenExcel,
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.receipt_long_rounded, color: Color(0xFF10B981), size: 18),
+                      label: const Text('Bordro & Maaş Yönetimi', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PayrollManagementScreen()));
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: _isExporting
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.table_view_rounded, size: 18),
+                      label: Text(
+                        _isExporting ? 'Hazırlanıyor...' : 'Excel İndir ve Aç (.xlsx)',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: _isExporting ? null : _exportAndOpenExcel,
+                    ),
+                  ],
                 ),
               ],
             ),
