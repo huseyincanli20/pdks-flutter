@@ -189,8 +189,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
+              final pdks = context.read<PdksState>();
               Navigator.pop(ctx);
-              context.read<PdksState>().logout();
+              Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+              pdks.logout();
             },
             child: const Text('Çıkış Yap'),
           ),

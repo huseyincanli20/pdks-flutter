@@ -46,9 +46,10 @@ class AppDrawer extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
+              final pdks = context.read<PdksState>();
               Navigator.pop(ctx);
-              Navigator.pop(context);
-              context.read<PdksState>().logout();
+              Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+              pdks.logout();
             },
             child: const Text('Çıkış Yap', style: TextStyle(fontWeight: FontWeight.bold)),
           ),

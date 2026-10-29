@@ -98,6 +98,47 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
     );
   }
 
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: AppColors.danger),
+            SizedBox(width: 10),
+            Text('Oturumu Kapat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Yemekhane yönetim panelinden çıkış yapmak istediğinize emin misiniz?',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              final pdks = context.read<PdksState>();
+              Navigator.pop(ctx);
+              Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+              pdks.logout();
+            },
+            child: const Text('Çıkış Yap', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
@@ -107,6 +148,13 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
       backgroundColor: AppColors.bg(context),
       drawer: const AppDrawer(),
       appBar: AppBar(
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Geri Dön',
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -146,20 +194,10 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
             },
           ),
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFFEA580C), Color(0xFFC2410C)]),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.restaurant_menu_rounded, color: Colors.white, size: 14),
-                SizedBox(width: 4),
-                Text('Mutfak Şefi', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-              ],
-            ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            tooltip: 'Oturumu Kapat',
+            onPressed: _showLogoutDialog,
           ),
         ],
       ),
@@ -545,6 +583,23 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       onPressed: _saveMenu,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        side: BorderSide(color: AppColors.danger.withOpacity(0.35)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      icon: const Icon(Icons.logout_rounded, size: 18),
+                      label: const Text('Yemekhane Panelinden Çıkış Yap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      onPressed: _showLogoutDialog,
                     ),
                   ),
                 ],
