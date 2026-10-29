@@ -28,13 +28,14 @@ class _AdminShellState extends State<AdminShell> {
     ];
 
     final titles = [
-      'Kullanıcı & Rol Yönetimi',
+      'Rol Yönetimi',
       'Geofence & Lokasyon',
       'Anti-Cheat Güvenlik',
       'Kiosk & Turnike',
     ];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
@@ -51,10 +52,11 @@ class _AdminShellState extends State<AdminShell> {
             decoration: BoxDecoration(
               color: Colors.purple.withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.purple.withOpacity(0.2)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.admin_panel_settings, color: Colors.purple, size: 14),
+                Icon(Icons.admin_panel_settings_rounded, color: Colors.purple, size: 14),
                 SizedBox(width: 4),
                 Text('Sistem Admin', style: TextStyle(color: Colors.purple, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
@@ -95,15 +97,20 @@ class _AdminShellState extends State<AdminShell> {
   // 1. Kullanıcı Rolleri Değiştirme Sekmesi
   Widget _buildRolesManagementTab(BuildContext context, PdksState pdks) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       children: [
         const Text(
           'Kullanıcı Rolü & Yetki Atama',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text(
-          'Giriş yapıldığında kullanıcının göreceği ekranı (Personel, İK, Patron veya Admin) buradan belirleyin.',
+          'Kullanıcı giriş yaptığında açılacak ekranı (Personel, İK, Patron veya Admin) buradan belirleyin.',
           style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 16),
@@ -113,16 +120,30 @@ class _AdminShellState extends State<AdminShell> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.primaryLight.withOpacity(0.2),
-                    child: Text(
-                      emp.fullName.substring(0, 2).toUpperCase(),
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Center(
+                      child: Text(
+                        emp.fullName.substring(0, 2).toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark, fontSize: 15),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -130,44 +151,65 @@ class _AdminShellState extends State<AdminShell> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text('${emp.department} • PIN: ${emp.pinCode}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        Text(
+                          emp.fullName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${emp.department} • PIN: ${emp.pinCode}',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
-                  DropdownButton<UserRole>(
-                    value: emp.role,
-                    underline: const SizedBox(),
-                    items: UserRole.values.map((role) {
-                      return DropdownMenuItem(
-                        value: role,
-                        child: Text(
-                          role.shortLabel,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: role == UserRole.admin
-                                ? Colors.purple
-                                : role == UserRole.boss
-                                    ? Colors.orange.shade800
-                                    : role == UserRole.hr
-                                        ? AppColors.primary
-                                        : AppColors.textPrimary,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newRole) {
-                      if (newRole != null) {
-                        pdks.changeEmployeeRole(emp.id, newRole);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: AppColors.success,
-                            content: Text('${emp.fullName} rolü ${newRole.label} olarak güncellendi.'),
-                          ),
-                        );
-                      }
-                    },
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<UserRole>(
+                        value: emp.role,
+                        isDense: true,
+                        items: UserRole.values.map((role) {
+                          return DropdownMenuItem(
+                            value: role,
+                            child: Text(
+                              role.shortLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: role == UserRole.admin
+                                    ? Colors.purple
+                                    : role == UserRole.boss
+                                        ? Colors.orange.shade800
+                                        : role == UserRole.hr
+                                            ? AppColors.primary
+                                            : AppColors.textPrimary,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newRole) {
+                          if (newRole != null) {
+                            pdks.changeEmployeeRole(emp.id, newRole);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: AppColors.success,
+                                content: Text('${emp.fullName} rolü ${newRole.label} olarak güncellendi.'),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -184,52 +226,84 @@ class _AdminShellState extends State<AdminShell> {
     final wifiCtrl = TextEditingController(text: pdks.allowedWifiSsid);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ofis Geofence Koordinatları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
+          const Text('Ofis Geofence & Lokasyon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
           const Text('Personelin giriş yapabilmesi için izin verilen ofis yarıçapı ve GPS sınırları.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 TextField(
                   controller: latCtrl,
-                  decoration: const InputDecoration(labelText: 'Ofis Enlemi (Latitude)', prefixIcon: Icon(Icons.explore_outlined)),
+                  decoration: InputDecoration(
+                    labelText: 'Ofis Enlemi (Latitude)',
+                    prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: lngCtrl,
-                  decoration: const InputDecoration(labelText: 'Ofis Boylamı (Longitude)', prefixIcon: Icon(Icons.explore_outlined)),
+                  decoration: InputDecoration(
+                    labelText: 'Ofis Boylamı (Longitude)',
+                    prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: radCtrl,
-                  decoration: const InputDecoration(labelText: 'İzin Verilen Yarıçap (Metre)', prefixIcon: Icon(Icons.radar)),
+                  decoration: InputDecoration(
+                    labelText: 'İzin Verilen Yarıçap (Metre)',
+                    prefixIcon: const Icon(Icons.radar, color: AppColors.primary),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: wifiCtrl,
-                  decoration: const InputDecoration(labelText: 'Ofis Wi-Fi SSID Adı', prefixIcon: Icon(Icons.wifi)),
+                  decoration: InputDecoration(
+                    labelText: 'Ofis Wi-Fi SSID Adı',
+                    prefixIcon: const Icon(Icons.wifi, color: AppColors.primary),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    icon: const Icon(Icons.save),
-                    label: const Text('Ayarları Kaydet'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: const Icon(Icons.save_rounded),
+                    label: const Text('Ayarları Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       final lat = double.tryParse(latCtrl.text) ?? pdks.officeLat;
                       final lng = double.tryParse(lngCtrl.text) ?? pdks.officeLng;
@@ -237,7 +311,11 @@ class _AdminShellState extends State<AdminShell> {
                       pdks.updateSystemSettings(lat: lat, lng: lng, radius: radius, wifiSsid: wifiCtrl.text.trim());
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(backgroundColor: AppColors.success, content: Text('Geofence ve Ağ ayarları başarıyla kaydedildi!')),
+                        const SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: AppColors.success,
+                          content: Text('Geofence ve Ağ ayarları başarıyla güncellendi!'),
+                        ),
                       );
                     },
                   ),
@@ -253,22 +331,27 @@ class _AdminShellState extends State<AdminShell> {
   // 3. Güvenlik ve Anti-Cheat Denetim Logları
   Widget _buildSecurityAuditTab(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       children: [
         const Text('Güvenlik & Anti-Cheat Denetimi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         const Text('Sahte GPS (Mock Location) ve yetkisiz işlem teşebbüsleri.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         const SizedBox(height: 16),
 
         _buildAuditTile(
           title: 'Sahte GPS Engellendi',
-          subtitle: 'Ahmet Yılmaz • Mock Location tespit edildi, işlem iptal edildi.',
+          subtitle: 'Ahmet Yılmaz • Mock Location tespit edildi, işlem engellendi.',
           time: 'Bugün 08:34',
           isWarning: true,
         ),
         _buildAuditTile(
           title: 'QR Kod Zaman Aşımı',
-          subtitle: 'Turnike 1 • Eski QR kod okutuldu (Süre > 10s).',
+          subtitle: 'Turnike 1 • Süresi dolmuş QR okutuldu (Süre > 10s).',
           time: 'Dün 17:45',
           isWarning: true,
         ),
@@ -294,25 +377,39 @@ class _AdminShellState extends State<AdminShell> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: (isWarning ? AppColors.danger : AppColors.success).withOpacity(0.12),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(isWarning ? Icons.warning_amber_rounded : Icons.check_circle_outline, color: isWarning ? AppColors.danger : AppColors.success, size: 20),
+            child: Icon(
+              isWarning ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
+              color: isWarning ? AppColors.danger : AppColors.success,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isWarning ? AppColors.danger : AppColors.textPrimary)),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isWarning ? AppColors.danger : AppColors.textPrimary),
+                ),
                 const SizedBox(height: 2),
                 Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
               ],
@@ -326,51 +423,74 @@ class _AdminShellState extends State<AdminShell> {
 
   // 4. Kiosk & Turnike Cihaz Ayarları
   Widget _buildKioskSettingsTab(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        MediaQuery.of(context).padding.bottom + 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Turnike & Kiosk Cihaz Yapılandırması', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
+          const Text('Turnike & Kiosk Yapılandırması', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
           const Text('Turnike tabletindeki dinamik QR kodun güvenlik parametreleri.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.timer, color: AppColors.primary),
+                  leading: Icon(Icons.timer_rounded, color: AppColors.primary),
                   title: Text('Dinamik QR Kod Yenilenme Süresi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   subtitle: Text('Her 10 saniyede bir yeni HMAC token üretilir', style: TextStyle(fontSize: 11)),
-                  trailing: Chip(label: Text('10 sn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                  trailing: Chip(
+                    label: Text('10 sn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
                 ),
-                const Divider(),
+                const Divider(color: Color(0xFFF1F5F9)),
                 const ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.key, color: AppColors.primary),
+                  leading: Icon(Icons.key_rounded, color: AppColors.primary),
                   title: Text('HMAC Gizli Anahtar (Secret Salt)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   subtitle: Text('PDKS_SUPER_SECRET_SALT_2026', style: TextStyle(fontSize: 11)),
-                  trailing: Icon(Icons.lock, size: 18, color: AppColors.textMuted),
+                  trailing: Icon(Icons.lock_rounded, size: 18, color: AppColors.textMuted),
                 ),
-                const Divider(),
-                const SizedBox(height: 10),
+                const Divider(color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Cihaz Token Anahtarını Döndür (Rotate Key)'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    ),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Cihaz Token Anahtarını Döndür (Rotate Key)', style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(backgroundColor: AppColors.success, content: Text('Kiosk güvenlik token anahtarı başarıyla yenilendi!')),
+                        const SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: AppColors.success,
+                          content: Text('Kiosk güvenlik token anahtarı başarıyla yenilendi!'),
+                        ),
                       );
                     },
                   ),

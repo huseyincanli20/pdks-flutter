@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../menu/profile_screen.dart';
 import '../menu/contacts_screen.dart';
@@ -16,7 +17,7 @@ class AppDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
             Icon(Icons.logout, color: AppColors.danger),
@@ -24,23 +25,28 @@ class AppDrawer extends StatelessWidget {
             Text('Oturumu Kapat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: const Text('Hesabınızdan çıkış yapmak istediğinize emin misiniz?'),
+        content: const Text(
+          'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('İptal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
               foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              Navigator.pop(ctx); // Close dialog
-              Navigator.pop(context); // Close drawer
+              Navigator.pop(ctx);
+              Navigator.pop(context);
               context.read<PdksState>().logout();
             },
-            child: const Text('Çıkış Yap'),
+            child: const Text('Çıkış Yap', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -51,90 +57,160 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<PdksState>().currentUser;
 
+    Color roleColor;
+    String roleName;
+    switch (user.role) {
+      case UserRole.boss:
+        roleColor = const Color(0xFFD97706);
+        roleName = 'Patron / CEO';
+        break;
+      case UserRole.admin:
+        roleColor = const Color(0xFF9333EA);
+        roleName = 'Sistem Admin';
+        break;
+      case UserRole.hr:
+        roleColor = const Color(0xFF0284C7);
+        roleName = 'İnsan Kaynakları';
+        break;
+      case UserRole.employee:
+      default:
+        roleColor = const Color(0xFF2563EB);
+        roleName = 'Personel';
+        break;
+    }
+
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
+      ),
       child: SafeArea(
         child: Column(
           children: [
-            // Üst Profil Bilgisi Başlığı
-            InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-              },
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.white,
-                      child: Text(
-                        user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
+            // Üst Profil Bilgisi Kartı (Apple / Samsung OneUI Header)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.fullName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: roleColor, width: 2),
+                            gradient: LinearGradient(
+                              colors: [roleColor.withOpacity(0.3), roleColor],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            user.email,
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          child: Center(
                             child: Text(
-                              user.title,
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.fullName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                user.email,
+                                style: const TextStyle(color: Colors.white60, fontSize: 11),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: roleColor.withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: roleColor.withOpacity(0.5), width: 0.8),
+                                ),
+                                child: Text(
+                                  roleName,
+                                  style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 14),
+                      ],
                     ),
-                    const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-                  ],
+                  ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 10),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'HIZLI MENÜ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
 
             // Menü Öğeleri Listesi
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 children: [
                   _buildDrawerTile(
                     context,
-                    icon: Icons.person_outline,
-                    color: Colors.blue,
+                    icon: Icons.person_outline_rounded,
+                    color: const Color(0xFF2563EB),
                     title: 'Profil',
                     subtitle: 'Kişisel bilgiler & izin bakiyesi',
                     destination: const ProfileScreen(),
@@ -142,7 +218,7 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerTile(
                     context,
                     icon: Icons.people_alt_outlined,
-                    color: Colors.indigo,
+                    color: const Color(0xFF4F46E5),
                     title: 'Kişiler',
                     subtitle: 'Şirket rehberi & mesai arkadaşları',
                     destination: const ContactsScreen(),
@@ -150,7 +226,7 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerTile(
                     context,
                     icon: Icons.badge_outlined,
-                    color: Colors.teal,
+                    color: const Color(0xFF0D9488),
                     title: 'Kartvizit',
                     subtitle: 'Dijital QR kodlu şirket kartı',
                     destination: const BusinessCardScreen(),
@@ -158,53 +234,66 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerTile(
                     context,
                     icon: Icons.star_border_rounded,
-                    color: Colors.amber.shade800,
+                    color: const Color(0xFFD97706),
                     title: 'Sık Kullanılanlar',
-                    subtitle: 'Hızlı kısayollar & pratik işlemler',
+                    subtitle: 'Hızlı kısayollar, yemek & servis',
                     destination: const FavoritesScreen(),
                   ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.settings_outlined,
-                    color: Colors.blueGrey,
+                    color: const Color(0xFF475569),
                     title: 'Ayarlar',
                     subtitle: 'Bildirimler, biyometri & izinler',
                     destination: const SettingsScreen(),
                   ),
                   _buildDrawerTile(
                     context,
-                    icon: Icons.info_outline,
-                    color: Colors.cyan.shade700,
+                    icon: Icons.info_outline_rounded,
+                    color: const Color(0xFF0284C7),
                     title: 'Hakkımda',
-                    subtitle: 'Sürüm 1.0.0 & sistem lisansı',
+                    subtitle: 'Sürüm 1.0.0 & sistem güvenliği',
                     destination: const AboutScreen(),
                   ),
                 ],
               ),
             ),
 
-            const Divider(height: 1),
+            const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0)),
 
             // En Altta: Oturumu Kapat
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: AppColors.danger.withOpacity(0.3)),
-                ),
-                tileColor: AppColors.danger.withOpacity(0.08),
-                leading: const Icon(Icons.logout, color: AppColors.danger),
-                title: const Text(
-                  'Oturumu Kapat',
-                  style: TextStyle(
-                    color: AppColors.danger,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _showLogoutDialog(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.logout_rounded, color: AppColors.danger, size: 20),
+                        SizedBox(width: 12),
+                        Text(
+                          'Oturumu Kapat',
+                          style: TextStyle(
+                            color: AppColors.danger,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Spacer(),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.danger),
+                      ],
+                    ),
                   ),
                 ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.danger),
-                onTap: () => _showLogoutDialog(context),
               ),
             ),
           ],
@@ -223,29 +312,55 @@ class AppDrawer extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
+              ],
+            ),
           ),
-          child: Icon(icon, color: color, size: 22),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-        ),
-        trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted),
-        onTap: () {
-          Navigator.pop(context); // Close Drawer
-          Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
-        },
       ),
     );
   }

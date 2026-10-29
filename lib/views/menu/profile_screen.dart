@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -45,7 +46,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     setState(() => _isEditing = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(backgroundColor: AppColors.success, content: Text('Profil bilgileriniz güncellendi.')),
+      SnackBar(
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text('Profil bilgileriniz başarıyla güncellendi.'),
+          ],
+        ),
+      ),
     );
   }
 
@@ -53,13 +65,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<PdksState>().currentUser;
 
+    Color roleColor;
+    String roleName;
+    switch (user.role) {
+      case UserRole.boss:
+        roleColor = const Color(0xFFD97706);
+        roleName = 'Patron / CEO';
+        break;
+      case UserRole.admin:
+        roleColor = const Color(0xFF9333EA);
+        roleName = 'Süper Admin';
+        break;
+      case UserRole.hr:
+        roleColor = const Color(0xFF0284C7);
+        roleName = 'İnsan Kaynakları';
+        break;
+      case UserRole.employee:
+      default:
+        roleColor = const Color(0xFF2563EB);
+        roleName = 'Personel';
+        break;
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Profilim'),
+        title: const Text('Profilim', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
-          IconButton(
-            icon: Icon(_isEditing ? Icons.check : Icons.edit),
-            tooltip: _isEditing ? 'Kaydet' : 'Düzenle',
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: _isEditing ? AppColors.success : AppColors.primary,
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            icon: Icon(_isEditing ? Icons.check_circle_outline : Icons.edit_outlined, size: 18),
+            label: Text(_isEditing ? 'Kaydet' : 'Düzenle'),
             onPressed: () {
               if (_isEditing) {
                 _saveProfile();
@@ -68,23 +107,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
         child: Column(
           children: [
-            // Avatar ve İsim Kartı
-            Center(
+            // Apple/Samsung Modern Profil Kartı
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 46,
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
-                      style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: roleColor, width: 3),
+                          gradient: LinearGradient(
+                            colors: [roleColor.withOpacity(0.2), roleColor],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: roleColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.verified, color: Colors.white, size: 14),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -96,31 +180,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     '${user.department} • ${user.title}',
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                   ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: roleColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: roleColor.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      roleName,
+                      style: TextStyle(color: roleColor, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Kalan İzin & Çalışma Durumu Özeti
+            // Kalan İzin & Çalışma Durumu (2'li Kompakt Kartlar)
             Row(
               children: [
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Kalan Yıllık İzin', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.beach_access, color: AppColors.success, size: 18),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Kalan İzin', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                         Text(
                           '${user.remainingLeaveDays} Gün',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.success),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.success),
                         ),
                       ],
                     ),
@@ -131,18 +248,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primaryLight.withOpacity(0.3)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Kullanılan İzin', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.history, color: AppColors.primary, size: 18),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text('Kullanılan', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                         Text(
                           '${user.usedLeaveDays} Gün',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primary),
                         ),
                       ],
                     ),
@@ -151,32 +288,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Form Alanları
+            // Inset Grouped Kişisel Bilgiler Kartı (iOS & OneUI Style)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Kişisel Bilgiler', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text('Kişisel Bilgiler', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 16),
-                  _buildField('Ad Soyad', _nameController, Icons.person_outline, enabled: _isEditing),
+                  _buildModernField('Ad Soyad', _nameController, Icons.person_outline_rounded, enabled: _isEditing),
                   const SizedBox(height: 14),
-                  _buildReadOnlyField('E-Posta', user.email, Icons.email_outlined),
+                  _buildReadOnlyField('E-Posta Adresi', user.email, Icons.mail_outline_rounded),
                   const SizedBox(height: 14),
-                  _buildField('Telefon', _phoneController, Icons.phone_outlined, enabled: _isEditing),
+                  _buildModernField('Telefon Numarası', _phoneController, Icons.phone_outlined, enabled: _isEditing),
                   const SizedBox(height: 14),
-                  _buildField('Departman', _deptController, Icons.business_outlined, enabled: _isEditing),
+                  _buildModernField('Departman', _deptController, Icons.business_outlined, enabled: _isEditing),
                   const SizedBox(height: 14),
-                  _buildField('Unvan', _titleController, Icons.badge_outlined, enabled: _isEditing),
+                  _buildModernField('Unvan', _titleController, Icons.badge_outlined, enabled: _isEditing),
                   const SizedBox(height: 14),
-                  _buildReadOnlyField('Giriş PIN Kodu', '**** (Güvenli)', Icons.lock_outline),
+                  _buildReadOnlyField('Giriş PIN Kodu', '•••• (Güvenli Kriptolu)', Icons.lock_outline_rounded),
                 ],
               ),
             ),
@@ -186,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, IconData icon, {required bool enabled}) {
+  Widget _buildModernField(String label, TextEditingController controller, IconData icon, {required bool enabled}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -195,10 +339,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextField(
           controller: controller,
           enabled: enabled,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: AppColors.textSecondary),
-            filled: !enabled,
+            prefixIcon: Icon(icon, size: 20, color: enabled ? AppColors.primary : AppColors.textSecondary),
+            filled: true,
             fillColor: enabled ? Colors.white : const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
           ),
         ),
       ],
@@ -212,17 +370,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
         const SizedBox(height: 6),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Row(
             children: [
               Icon(icon, size: 20, color: AppColors.textSecondary),
               const SizedBox(width: 12),
-              Text(value, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+              Expanded(
+                child: Text(
+                  value,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                ),
+              ),
+              const Icon(Icons.lock_rounded, size: 14, color: AppColors.textMuted),
             ],
           ),
         ),

@@ -31,7 +31,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }
 
   // GPS / Geofence ile Check-in / Check-out
-  Future<void> _handleGpsCheck(BuildContext context, AttendanceType type) async {
+  Future<void> _handleGpsCheck(AttendanceType type) async {
     setState(() => _isLoading = true);
     final pdksState = context.read<PdksState>();
 
@@ -69,20 +69,19 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       geofence: geofence,
     );
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.success,
-          content: Text('${type == AttendanceType.checkIn ? "Giriş" : "Çıkış"} başarıyla kaydedildi! (Mesafe: ${geofence.distanceMeters.toStringAsFixed(0)}m)'),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.success,
+        content: Text('${type == AttendanceType.checkIn ? "Giriş" : "Çıkış"} başarıyla kaydedildi! (Mesafe: ${geofence.distanceMeters.toStringAsFixed(0)}m)'),
+      ),
+    );
   }
 
   // Dinamik QR Kod Okutarak Giriş
-  void _openQrScanner(BuildContext context, AttendanceType type) {
+  void _openQrScanner(AttendanceType type) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => QrScannerScreen(type: type),
@@ -91,7 +90,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }
 
   // Wi-Fi Kontrolü ile Hızlı Giriş
-  Future<void> _handleWifiCheck(BuildContext context, AttendanceType type) async {
+  Future<void> _handleWifiCheck(AttendanceType type) async {
     setState(() => _isLoading = true);
     final pdksState = context.read<PdksState>();
 
@@ -120,16 +119,15 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       note: 'Ofis Wi-Fi (${wifiResult.networkName}) IP doğrulaması yapıldı.',
     );
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.success,
-          content: Text('Ofis Wi-Fi üzerinden ${type == AttendanceType.checkIn ? "giriş" : "çıkış"} yapıldı!'),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.success,
+        content: Text('Ofis Wi-Fi üzerinden ${type == AttendanceType.checkIn ? "giriş" : "çıkış"} yapıldı!'),
+      ),
+    );
   }
 
   void _showErrorDialog({required String title, required String message}) {
@@ -180,22 +178,28 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.fromLTRB(
+                16.0,
+                16.0,
+                16.0,
+                MediaQuery.of(context).padding.bottom + 28.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Canlı Durum ve Mesai Kartı
+                  // 1. Canlı Durum ve Mesai Kartı (Apple & Samsung Glassmorphism style)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       gradient: isCheckedIn ? AppColors.successGradient : AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: (isCheckedIn ? AppColors.success : AppColors.primary).withOpacity(0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                          color: (isCheckedIn ? AppColors.success : AppColors.primary).withOpacity(0.32),
+                          blurRadius: 22,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
@@ -225,8 +229,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                     isCheckedIn ? 'İŞ YERİNDESİNİZ' : 'MESAİ BAŞLAMADI',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -234,27 +238,27 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                               ),
                             ),
                             Text(
-                              DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now()),
-                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                              DateFormat('dd MMMM, EEEE', 'tr_TR').format(DateTime.now()),
+                              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
                         const Text(
                           'BUGÜNKÜ ÇALIŞMA SÜRESİ',
-                          style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1),
+                          style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           _formatDuration(pdks.workedToday),
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 38,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 40,
+                            fontWeight: FontWeight.w900,
                             letterSpacing: 2,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 22),
                         // Ana Check-in / Check-out Aksiyon Butonu
                         Row(
                           children: [
@@ -265,8 +269,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                   foregroundColor: isCheckedIn ? AppColors.danger : AppColors.primary,
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
+                                  elevation: 2,
                                 ),
                                 icon: Icon(
                                   isCheckedIn ? Icons.logout : Icons.login,
@@ -274,10 +279,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                 ),
                                 label: Text(
                                   isCheckedIn ? 'MESAİDEN ÇIK (GPS)' : 'MESAİYE BAŞLA (GPS)',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                                 ),
                                 onPressed: () => _handleGpsCheck(
-                                  context,
                                   isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn,
                                 ),
                               ),
@@ -288,25 +292,25 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                 backgroundColor: Colors.white.withOpacity(0.25),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.all(14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               tooltip: 'Turnike QR Kod Okut',
-                              icon: const Icon(Icons.qr_code_scanner, size: 24),
+                              icon: const Icon(Icons.qr_code_scanner, size: 22),
                               onPressed: () => _openQrScanner(
-                                context,
                                 isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             IconButton.filled(
                               style: IconButton.styleFrom(
                                 backgroundColor: Colors.white.withOpacity(0.25),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.all(14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               tooltip: 'Ofis Wi-Fi ile Onayla',
-                              icon: const Icon(Icons.wifi, size: 24),
+                              icon: const Icon(Icons.wifi, size: 22),
                               onPressed: () => _handleWifiCheck(
-                                context,
                                 isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn,
                               ),
                             ),
@@ -403,13 +407,20 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -439,8 +450,15 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [

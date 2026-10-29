@@ -14,7 +14,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   late TabController _tabController;
 
   // Login Controllers
-  final _loginEmailController = TextEditingController(text: 'ahmet.yilmaz@sirket.com');
+  final _loginEmailController = TextEditingController(text: 'personel@sirket.com');
   final _loginPinController = TextEditingController(text: '1234');
   bool _loginObscure = true;
 
@@ -94,51 +94,59 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0A0F1D),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Logo
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
-                          blurRadius: 20,
+                          color: const Color(0xFF3B82F6).withOpacity(0.35),
+                          blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.fingerprint, color: Colors.white, size: 48),
+                    child: const Icon(Icons.fingerprint, color: Colors.white, size: 44),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   const Text(
-                    'PDKS Mobil & Web',
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    'PDKS Enterprise',
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   const Text(
-                    'Personel Devam ve Mesai Kontrol Sistemi',
+                    'Personel Devam & Mesai Takip Sistemi',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
-                  // Form Kartı
+                  // Form Kartı (Apple / Samsung Glass & Card style)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -148,18 +156,25 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                           margin: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                           child: TabBar(
                             controller: _tabController,
                             indicatorSize: TabBarIndicatorSize.tab,
                             indicator: BoxDecoration(
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
                             labelColor: Colors.white,
                             unselectedLabelColor: AppColors.textSecondary,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                             tabs: const [
                               Tab(text: 'Giriş Yap'),
                               Tab(text: 'Kayıt Ol'),
@@ -169,9 +184,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
                         // Tab İçerikleri
                         Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(18),
                           child: SizedBox(
-                            height: 440,
+                            height: 450,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
@@ -198,18 +213,23 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('E-Posta Adresi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         TextField(
           controller: _loginEmailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'ornek@sirket.com',
-            prefixIcon: Icon(Icons.email_outlined, size: 20),
+            prefixIcon: const Icon(Icons.email_outlined, size: 20),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
           ),
         ),
-        const SizedBox(height: 16),
-        const Text('4 Haneli PIN Kodu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
+        const Text('PIN Kodu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        const SizedBox(height: 5),
         TextField(
           controller: _loginPinController,
           obscureText: _loginObscure,
@@ -219,56 +239,56 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             hintText: 'PIN Kodu (Örn: 1234)',
             counterText: '',
             prefixIcon: const Icon(Icons.lock_outline, size: 20),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
             suffixIcon: IconButton(
               icon: Icon(_loginObscure ? Icons.visibility_off : Icons.visibility, size: 18),
               onPressed: () => setState(() => _loginObscure = !_loginObscure),
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
             onPressed: _handleLogin,
-            child: const Text('Giriş Yap'),
+            child: const Text('Giriş Yap', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           ),
         ),
-        const SizedBox(height: 16),
+
+        const SizedBox(height: 18),
         const Center(
-          child: Text('4 Tip Mod - Hızlı Rol Girişleri:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+          child: Text('Hızlı Rol Girişleri (4 Farklı Mod):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
         ),
         const SizedBox(height: 10),
+
+        // 4 Rol Butonu
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                icon: const Icon(Icons.person, size: 14, color: AppColors.primary),
-                label: const Text('Personel', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  _loginEmailController.text = 'personel@sirket.com';
-                  _loginPinController.text = '1234';
-                  _handleLogin();
-                },
+              child: _buildRoleButton(
+                label: 'Personel',
+                icon: Icons.person_outline,
+                color: AppColors.primary,
+                email: 'personel@sirket.com',
+                pin: '1234',
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                icon: const Icon(Icons.groups, size: 14, color: Colors.blue),
-                label: const Text('İK Paneli', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  _loginEmailController.text = 'ik@sirket.com';
-                  _loginPinController.text = '2345';
-                  _handleLogin();
-                },
+              child: _buildRoleButton(
+                label: 'İK Paneli',
+                icon: Icons.people_outline,
+                color: Colors.indigo,
+                email: 'ik@sirket.com',
+                pin: '2345',
               ),
             ),
           ],
@@ -277,39 +297,66 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                icon: const Icon(Icons.workspace_premium, size: 14, color: Colors.orange),
-                label: const Text('Patron (CEO)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  _loginEmailController.text = 'patron@sirket.com';
-                  _loginPinController.text = '3456';
-                  _handleLogin();
-                },
+              child: _buildRoleButton(
+                label: 'Patron (CEO)',
+                icon: Icons.workspace_premium_outlined,
+                color: Colors.amber.shade800,
+                email: 'patron@sirket.com',
+                pin: '3456',
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                icon: const Icon(Icons.admin_panel_settings, size: 14, color: Colors.purple),
-                label: const Text('Süper Admin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                onPressed: () {
-                  _loginEmailController.text = 'admin@sirket.com';
-                  _loginPinController.text = '4567';
-                  _handleLogin();
-                },
+              child: _buildRoleButton(
+                label: 'Süper Admin',
+                icon: Icons.admin_panel_settings_outlined,
+                color: Colors.purple,
+                email: 'admin@sirket.com',
+                pin: '4567',
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildRoleButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required String email,
+    required String pin,
+  }) {
+    return InkWell(
+      onTap: () {
+        _loginEmailController.text = email;
+        _loginPinController.text = pin;
+        _handleLogin();
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -319,38 +366,47 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInput('Ad Soyad', _regNameController, Icons.person_outline, hint: 'Ahmet Yılmaz'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildInput('Kurumsal E-Posta', _regEmailController, Icons.email_outlined, hint: 'ahmet@sirket.com', keyboardType: TextInputType.emailAddress),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '+90 532 000 00 00', keyboardType: TextInputType.phone),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildInput('Departman', _regDeptController, Icons.business_outlined, hint: 'Yazılım & Ar-Ge'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           _buildInput('Unvan', _regTitleController, Icons.badge_outlined, hint: 'Mobil Geliştirici'),
-          const SizedBox(height: 10),
-          const Text('4 Haneli PIN Kodu Belirleyin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+          const Text('PIN Kodu Belirleyin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          const SizedBox(height: 4),
           TextField(
             controller: _regPinController,
             obscureText: _regObscure,
             keyboardType: TextInputType.number,
             maxLength: 6,
             decoration: InputDecoration(
-              hintText: 'PIN Kodu (örn: 1234)',
+              hintText: '4 Haneli PIN (örn: 1234)',
               counterText: '',
-              prefixIcon: const Icon(Icons.lock_outline, size: 20),
+              prefixIcon: const Icon(Icons.lock_outline, size: 18),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
               suffixIcon: IconButton(
-                icon: Icon(_regObscure ? Icons.visibility_off : Icons.visibility, size: 18),
+                icon: Icon(_regObscure ? Icons.visibility_off : Icons.visibility, size: 16),
                 onPressed: () => setState(() => _regObscure = !_regObscure),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
               onPressed: _handleRegister,
-              child: const Text('Kayıt Ol ve Giriş Yap'),
+              child: const Text('Kayıt Ol ve Giriş Yap', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -362,7 +418,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -370,7 +426,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, size: 18),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
           ),
         ),
       ],

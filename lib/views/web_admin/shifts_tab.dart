@@ -9,56 +9,59 @@ class ShiftsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shifts = context.watch<PdksState>().shifts;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 28,
+        isMobile ? 16 : 28,
+        isMobile ? 16 : 28,
+        MediaQuery.of(context).padding.bottom + (isMobile ? 16 : 28),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Vardiya & Çalışma Saatleri Planlaması',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                'Vardiya & Çalışma Saatleri',
+                style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold),
               ),
               ElevatedButton.icon(
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Yeni Vardiya Tanımla'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: isMobile ? 8 : 12),
+                ),
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(isMobile ? 'Ekle' : 'Yeni Vardiya', style: const TextStyle(fontSize: 12)),
                 onPressed: () {},
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 400,
-                mainAxisExtent: 220,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-              ),
+            child: ListView.separated(
               itemCount: shifts.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (_, index) {
                 final shift = shifts[index];
                 return Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(shift.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(shift.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
@@ -70,30 +73,33 @@ class ShiftsTab extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 28, color: AppColors.primary),
-                          const SizedBox(width: 12),
+                          const Icon(Icons.access_time, size: 24, color: AppColors.primary),
+                          const SizedBox(width: 10),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '${shift.startTime} - ${shift.endTime}',
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                               ),
                               Text(
                                 'Mola: ${shift.breakMinutes} dk',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                               ),
                             ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 6,
+                        runSpacing: 4,
                         children: shift.activeDays
                             .map((day) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: AppColors.background,
                                     borderRadius: BorderRadius.circular(6),

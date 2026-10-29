@@ -40,6 +40,7 @@ class _HrShellState extends State<HrShell> {
     final user = context.watch<PdksState>().currentUser;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
