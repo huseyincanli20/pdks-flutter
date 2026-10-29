@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../state/pdks_state.dart';
+import '../../models/company.dart';
+import '../../models/employee.dart';
 import '../common/email_preview_dialog.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -28,10 +30,28 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _regPinController = TextEditingController();
   bool _regObscure = true;
 
+  // Satın Alma (Purchase & Licensing) Controllers & State
+  String _selectedPlan = 'pro'; // 'starter', 'pro', 'enterprise'
+  bool _isYearlyBilling = true;
+  String _selectedPaymentMethod = 'credit_card'; // 'credit_card', 'bank_transfer'
+  bool _isProcessingPayment = false;
+
+  final _buyCompanyNameController = TextEditingController();
+  final _buyCompanyCodeController = TextEditingController();
+  final _buySectorController = TextEditingController(text: 'Yazılım & Bilişim Ar-Ge');
+  final _buyAdminNameController = TextEditingController();
+  final _buyAdminEmailController = TextEditingController();
+  final _buyAdminPhoneController = TextEditingController();
+  final _buyAdminPinController = TextEditingController(text: '1234');
+  final _buyCardNameController = TextEditingController();
+  final _buyCardNumberController = TextEditingController();
+  final _buyCardExpiryController = TextEditingController();
+  final _buyCardCvvController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -44,6 +64,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _regEmailController.dispose();
     _regPhoneController.dispose();
     _regPinController.dispose();
+    _buyCompanyNameController.dispose();
+    _buyCompanyCodeController.dispose();
+    _buySectorController.dispose();
+    _buyAdminNameController.dispose();
+    _buyAdminEmailController.dispose();
+    _buyAdminPhoneController.dispose();
+    _buyAdminPinController.dispose();
+    _buyCardNameController.dispose();
+    _buyCardNumberController.dispose();
+    _buyCardExpiryController.dispose();
+    _buyCardCvvController.dispose();
     super.dispose();
   }
 
@@ -351,6 +382,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                             tabs: const [
                               Tab(text: 'Giriş Yap'),
                               Tab(text: 'Kayıt Ol'),
+                              Tab(text: 'Satın Al 💎'),
                             ],
                           ),
                         ),
@@ -359,12 +391,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: SizedBox(
-                            height: 520,
+                            height: 600,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
                                 _buildLoginTab(pdks),
                                 _buildRegisterTab(),
+                                _buildPurchaseTab(pdks),
                               ],
                             ),
                           ),
@@ -724,6 +757,879 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               onPressed: _handleRegister,
               child: const Text('Kayıt Talebi Gönder (İK Onayına İlet)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPurchaseTab(PdksState pdks) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    double monthlyRate;
+    double yearlyRate;
+    String planTitle;
+    String userCapacity;
+
+    switch (_selectedPlan) {
+      case 'starter':
+        monthlyRate = 490.0;
+        yearlyRate = 390.0;
+        planTitle = 'Başlangıç Paketi';
+        userCapacity = '1 - 25 Personel';
+        break;
+      case 'enterprise':
+        monthlyRate = 1990.0;
+        yearlyRate = 1590.0;
+        planTitle = 'Kurumsal Sınırsız Paket';
+        userCapacity = 'Sınırsız Personel & Çoklu Şube';
+        break;
+      case 'pro':
+      default:
+        monthlyRate = 990.0;
+        yearlyRate = 790.0;
+        planTitle = 'Pro Enterprise Paketi ⭐';
+        userCapacity = '26 - 100 Personel';
+        break;
+    }
+
+    final double totalCharge = _isYearlyBilling ? (yearlyRate * 12) : monthlyRate;
+    final String billingText = _isYearlyBilling ? 'Yıllık Abonelik (12 Ay)' : 'Aylık Abonelik';
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner Başlık
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF2563EB).withOpacity(0.12),
+                  const Color(0xFF7C3AED).withOpacity(0.08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF2563EB), size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'PDKS Enterprise SaaS Kurumsal Lisans',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Şirketinizi hemen kaydedin, tüm modülleri (QR yoklama, izinler, bordro, yemekhane) anında kullanmaya başlayın.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Aylık / Yıllık Dönem Seçici
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _isYearlyBilling = false),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: !_isYearlyBilling ? AppColors.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Aylık Ödeme',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: !_isYearlyBilling ? Colors.white : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _isYearlyBilling = true),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _isYearlyBilling ? AppColors.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Yıllık Ödeme',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: _isYearlyBilling ? Colors.white : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                '%20 İndirim',
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Paket Kartları
+          _buildPlanCard(
+            id: 'starter',
+            title: 'Başlangıç',
+            subtitle: '1 - 25 Personel',
+            priceStr: _isYearlyBilling ? '₺390 / ay' : '₺490 / ay',
+            noteStr: _isYearlyBilling ? 'Yıllık peşin' : 'Aylık',
+            features: [
+              'Mobil QR & Wi-Fi PDKS Giriş-Çıkış',
+              'Personel & Departman Yönetimi',
+              'İzin & Avans Talep Takibi',
+              '1 Şube & Standart Raporlar',
+            ],
+            icon: Icons.storefront_rounded,
+            isSelected: _selectedPlan == 'starter',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 8),
+          _buildPlanCard(
+            id: 'pro',
+            title: 'Pro Enterprise ⭐',
+            subtitle: '26 - 100 Personel (En Popüler)',
+            priceStr: _isYearlyBilling ? '₺790 / ay' : '₺990 / ay',
+            noteStr: _isYearlyBilling ? 'Yıllık (%20 İndirimli)' : 'Aylık',
+            isPopular: true,
+            features: [
+              'Tüm Başlangıç Özellikleri Dahil',
+              'Maaş & Bordro Hesaplama ve Puantaj',
+              'Yemekhane Menü & QR Yoklama Modülü',
+              'Şirket İçi Hızlı Mesajlaşma (Chat)',
+              'Firebase Canlı Bulut Senkronizasyonu',
+            ],
+            icon: Icons.auto_awesome_rounded,
+            isSelected: _selectedPlan == 'pro',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 8),
+          _buildPlanCard(
+            id: 'enterprise',
+            title: 'Kurumsal Sınırsız',
+            subtitle: 'Sınırsız Personel & Çoklu Şube',
+            priceStr: _isYearlyBilling ? '₺1.590 / ay' : '₺1.990 / ay',
+            noteStr: _isYearlyBilling ? 'Yıllık peşin' : 'Aylık',
+            features: [
+              'Sınırsız Şirket Şubesi ve Personel',
+              'Özel Firebase Bulut DB Bağlantısı',
+              'Turnike, Parmak İzi & Yüz Tanıma Entegrasyonu',
+              '7/24 Özel Kurumsal Müşteri Temsilcisi',
+            ],
+            icon: Icons.apartment_rounded,
+            isSelected: _selectedPlan == 'enterprise',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 18),
+
+          // 1. Bölüm: Şirket ve Yönetici Bilgileri
+          Row(
+            children: [
+              const Icon(Icons.business_center_rounded, size: 18, color: Color(0xFF2563EB)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '1. Şirket & Yönetici Bilgileri',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          _buildInput('Şirket / Kurum Ünvanı *', _buyCompanyNameController, Icons.business_rounded, hint: 'Örn: Teknoloji Bilişim Hizmetleri A.Ş.', isDark: isDark),
+          const SizedBox(height: 8),
+          _buildInput(
+            'Şirket Kodu (Kısa Kod) *',
+            _buyCompanyCodeController,
+            Icons.tag_rounded,
+            hint: 'Örn: TEKNO (Personelleriniz bu kod ile giriş yapacaktır)',
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 8,
+            isDark: isDark,
+          ),
+          const SizedBox(height: 8),
+          _buildInput('Faaliyet Sektörü', _buySectorController, Icons.category_rounded, hint: 'Örn: Yazılım, Üretim, Lojistik, Hizmet', isDark: isDark),
+          const SizedBox(height: 8),
+          _buildInput('Yönetici (Admin) Adı Soyadı *', _buyAdminNameController, Icons.badge_outlined, hint: 'Örn: Mehmet Özkan', isDark: isDark),
+          const SizedBox(height: 8),
+          _buildInput('Yönetici E-Posta *', _buyAdminEmailController, Icons.email_outlined, hint: 'admin@sirketiniz.com', keyboardType: TextInputType.emailAddress, isDark: isDark),
+          const SizedBox(height: 8),
+          _buildInput('Yönetici Telefon Numarası *', _buyAdminPhoneController, Icons.phone_outlined, hint: '05XXXXXXXXX', keyboardType: TextInputType.phone, maxLength: 11, isDark: isDark),
+          const SizedBox(height: 8),
+          _buildInput('Yönetici Giriş PIN Kodu (4 Hane) *', _buyAdminPinController, Icons.lock_outline_rounded, hint: '1234', keyboardType: TextInputType.number, maxLength: 4, isDark: isDark),
+          const SizedBox(height: 18),
+
+          // 2. Bölüm: Ödeme Yöntemi
+          Row(
+            children: [
+              const Icon(Icons.payment_rounded, size: 18, color: Color(0xFF10B981)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '2. Güvenli Ödeme Yöntemi',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Ödeme Yöntemi Seçici Tabları
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _selectedPaymentMethod = 'credit_card'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _selectedPaymentMethod == 'credit_card'
+                          ? const Color(0xFF2563EB).withOpacity(0.12)
+                          : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedPaymentMethod == 'credit_card'
+                            ? const Color(0xFF2563EB)
+                            : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        width: _selectedPaymentMethod == 'credit_card' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.credit_card_rounded,
+                            size: 16,
+                            color: _selectedPaymentMethod == 'credit_card' ? const Color(0xFF2563EB) : Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Kredi / Banka Kartı',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: _selectedPaymentMethod == 'credit_card'
+                                  ? const Color(0xFF2563EB)
+                                  : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _selectedPaymentMethod = 'bank_transfer'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _selectedPaymentMethod == 'bank_transfer'
+                          ? const Color(0xFF2563EB).withOpacity(0.12)
+                          : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedPaymentMethod == 'bank_transfer'
+                            ? const Color(0xFF2563EB)
+                            : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        width: _selectedPaymentMethod == 'bank_transfer' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.account_balance_rounded,
+                            size: 16,
+                            color: _selectedPaymentMethod == 'bank_transfer' ? const Color(0xFF2563EB) : Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Havale / EFT',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: _selectedPaymentMethod == 'bank_transfer'
+                                  ? const Color(0xFF2563EB)
+                                  : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (_selectedPaymentMethod == 'credit_card') ...[
+            _buildInput('Kart Üzerindeki İsim *', _buyCardNameController, Icons.person_outline_rounded, hint: 'AHMET YILMAZ', textCapitalization: TextCapitalization.characters, isDark: isDark),
+            const SizedBox(height: 8),
+            _buildInput('Kart Numarası (16 Hane) *', _buyCardNumberController, Icons.credit_card_rounded, hint: '5428 1234 5678 9012', keyboardType: TextInputType.number, maxLength: 19, isDark: isDark),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInput('Son Kullanma (AA/YY) *', _buyCardExpiryController, Icons.calendar_today_rounded, hint: '12/28', keyboardType: TextInputType.datetime, maxLength: 5, isDark: isDark),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildInput('CVV Güvenlik Kodu *', _buyCardCvvController, Icons.lock_outline_rounded, hint: '382', keyboardType: TextInputType.number, maxLength: 4, isDark: isDark),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.25)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '256-Bit SSL Sertifikalı ve 3D Secure güvencesiyle anında tahsil edilir.',
+                      style: TextStyle(fontSize: 10.5, color: Color(0xFF065F46), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Banka Bilgilerimiz (Kurumsal Hesap):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  const Text('Banka: T.C. Ziraat Bankası A.Ş.', style: TextStyle(fontSize: 11)),
+                  const Text('Alıcı: PDKS Enterprise Yazılım & Bulut Hizmetleri A.Ş.', style: TextStyle(fontSize: 11)),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const SelectableText(
+                      'IBAN: TR12 0001 0090 1234 5678 5001 99',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Ödeme açıklama kısmına belirlediğiniz Şirket Kodunu yazınız. Dekont sistem tarafından otomatik onaylanır.',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 18),
+
+          // Özet & Satın Alma Butonu
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Seçilen: $planTitle ($userCapacity)',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary),
+                      ),
+                      Text(
+                        billingText,
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '₺${totalCharge.toStringAsFixed(0)}',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 4,
+              ),
+              onPressed: _isProcessingPayment ? null : () => _handlePurchase(pdks),
+              child: _isProcessingPayment
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                        SizedBox(width: 10),
+                        Text('Lisans Oluşturuluyor...', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      ],
+                    )
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.verified_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Lisansı Aktif Et & Satın Al (₺${totalCharge.toStringAsFixed(0)})',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlanCard({
+    required String id,
+    required String title,
+    required String subtitle,
+    required String priceStr,
+    required String noteStr,
+    required List<String> features,
+    required IconData icon,
+    required bool isSelected,
+    required bool isDark,
+    bool isPopular = false,
+  }) {
+    return InkWell(
+      onTap: () => setState(() => _selectedPlan = id),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF1E3A8A).withOpacity(0.3) : const Color(0xFFEFF6FF))
+              : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : (isPopular ? const Color(0xFF3B82F6).withOpacity(0.5) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF2563EB).withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: isSelected ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary), size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                          ),
+                          if (isPopular) ...[
+                            const SizedBox(width: 5),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('ÖNERİLEN', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(priceStr, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF2563EB))),
+                    Text(noteStr, style: const TextStyle(fontSize: 9, color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Column(
+              children: features.map((f) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF10B981)),
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          f,
+                          style: TextStyle(fontSize: 10.5, color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handlePurchase(PdksState pdks) async {
+    final companyName = _buyCompanyNameController.text.trim();
+    final companyCode = _buyCompanyCodeController.text.trim().toUpperCase();
+    final sector = _buySectorController.text.trim();
+    final adminName = _buyAdminNameController.text.trim();
+    final adminEmail = _buyAdminEmailController.text.trim();
+    final adminPhone = _buyAdminPhoneController.text.trim();
+    final adminPin = _buyAdminPinController.text.trim();
+
+    if (companyName.isEmpty || companyCode.isEmpty || adminName.isEmpty || adminEmail.isEmpty || adminPin.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Lütfen Şirket Adı, Şirket Kodu, Yönetici Adı, E-posta ve PIN alanlarını doldurunuz.'),
+        ),
+      );
+      return;
+    }
+
+    if (companyCode.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Şirket kodu en az 3 harften oluşmalıdır (Örn: TEKNO).'),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedPaymentMethod == 'credit_card') {
+      if (_buyCardNumberController.text.trim().length < 15 || _buyCardNameController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppColors.danger,
+            content: Text('Lütfen geçerli kart sahibi ve 16 haneli kart numarası giriniz.'),
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() => _isProcessingPayment = true);
+
+    // Gerçekçi 3D Secure / Banka onay simülasyonu
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    double monthlyRate;
+    double yearlyRate;
+    String planName;
+
+    switch (_selectedPlan) {
+      case 'starter':
+        monthlyRate = 490.0;
+        yearlyRate = 390.0;
+        planName = 'Başlangıç Paketi (1-25 Personel)';
+        break;
+      case 'enterprise':
+        monthlyRate = 1990.0;
+        yearlyRate = 1590.0;
+        planName = 'Kurumsal Sınırsız Paket';
+        break;
+      case 'pro':
+      default:
+        monthlyRate = 990.0;
+        yearlyRate = 790.0;
+        planName = 'Pro Enterprise Paketi (26-100 Personel)';
+        break;
+    }
+
+    final double price = _isYearlyBilling ? (yearlyRate * 12) : monthlyRate;
+    final String billingCycle = _isYearlyBilling ? 'Yıllık Peşin' : 'Aylık Fatura';
+
+    final result = pdks.purchaseCorporateSubscription(
+      companyName: companyName,
+      companyCode: companyCode,
+      sector: sector,
+      adminFullName: adminName,
+      adminEmail: adminEmail,
+      adminPhone: adminPhone,
+      adminPin: adminPin,
+      planName: planName,
+      price: price,
+      billingCycle: billingCycle,
+      paymentMethod: _selectedPaymentMethod == 'credit_card' ? 'Kredi Kartı (3D Secure)' : 'Banka Havale / EFT',
+      cardLastFour: _selectedPaymentMethod == 'credit_card'
+          ? (_buyCardNumberController.text.trim().length >= 4
+              ? _buyCardNumberController.text.trim().substring(_buyCardNumberController.text.trim().length - 4)
+              : '8890')
+          : null,
+    );
+
+    if (!mounted) return;
+    setState(() => _isProcessingPayment = false);
+
+    if (result.success && result.company != null && result.licenseKey != null && result.adminUser != null) {
+      _showPurchaseSuccessDialog(
+        pdks: pdks,
+        company: result.company!,
+        licenseKey: result.licenseKey!,
+        adminUser: result.adminUser!,
+        planName: planName,
+        billingCycle: billingCycle,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: AppColors.danger, content: Text(result.message)),
+      );
+    }
+  }
+
+  void _showPurchaseSuccessDialog({
+    required PdksState pdks,
+    required Company company,
+    required String licenseKey,
+    required Employee adminUser,
+    required String planName,
+    required String billingCycle,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 28),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text('Lisansınız Aktif Edildi!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tebrikler, ${company.name} için $planName ($billingCycle) başarıyla kuruldu ve lisanslandı.',
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+
+              // Lisans Anahtarı Kartı
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.25)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Resmi PDKS Lisans Anahtarınız:', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      licenseKey,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace', color: Color(0xFF1E3A8A)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Şirket Kodu: ${company.code}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Yönetici Giriş Bilgileri
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Yönetici (Admin) Giriş Bilgileri:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('E-Posta: ${adminUser.email}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    Text('PIN Kodu: ${adminUser.pinCode}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _loginEmailController.text = adminUser.email;
+              _loginPinController.text = adminUser.pinCode;
+              _tabController.animateTo(0);
+            },
+            child: const Text('Giriş Ekranına Git'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Otomatik Yönetici Olarak Giriş Yap
+              pdks.login(adminUser.email, adminUser.pinCode);
+            },
+            child: const Text('Yönetici Olarak Başla ›', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

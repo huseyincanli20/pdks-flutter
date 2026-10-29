@@ -396,6 +396,137 @@ class PdksState extends ChangeNotifier {
     );
   }
 
+  /// PDKS Enterprise SaaS Kurumsal Lisans & Paket Satın Alma Metodu
+  ({
+    bool success,
+    String message,
+    Company? company,
+    String? licenseKey,
+    Employee? adminUser,
+  }) purchaseCorporateSubscription({
+    required String companyName,
+    required String companyCode,
+    required String sector,
+    required String adminFullName,
+    required String adminEmail,
+    required String adminPhone,
+    required String adminPin,
+    required String planName,
+    required double price,
+    required String billingCycle,
+    required String paymentMethod,
+    String? cardLastFour,
+  }) {
+    final cleanCode = companyCode.trim().toUpperCase();
+    final cleanName = companyName.trim();
+
+    if (cleanName.isEmpty || cleanCode.isEmpty) {
+      return (
+        success: false,
+        message: 'Şirket adı ve şirket kodu zorunludur.',
+        company: null,
+        licenseKey: null,
+        adminUser: null,
+      );
+    }
+
+    if (_companies.any((c) => c.code.toUpperCase() == cleanCode)) {
+      return (
+        success: false,
+        message: '"$cleanCode" şirket kodu zaten kayıtlıdır. Lütfen farklı bir kod belirleyiniz.',
+        company: null,
+        licenseKey: null,
+        adminUser: null,
+      );
+    }
+
+    final newCompanyId = 'cmp_${DateTime.now().millisecondsSinceEpoch}';
+    final randomSuffix = (DateTime.now().millisecondsSinceEpoch % 10000).toString().padLeft(4, '0');
+    final licenseKey = 'PDKS-2026-$cleanCode-$randomSuffix';
+
+    final newCompany = Company(
+      id: newCompanyId,
+      code: cleanCode,
+      name: cleanName,
+      sector: sector.trim().isEmpty ? 'Kurumsal İşletme' : sector.trim(),
+      address: 'Merkez Ofis',
+      officeLat: 41.0082,
+      officeLng: 28.9784,
+      allowedWifiSsid: '${cleanCode}_Office_Wifi',
+      phone: adminPhone.trim(),
+      email: adminEmail.trim(),
+    );
+
+    _companies.add(newCompany);
+
+    final newId = (_employees.isNotEmpty ? _employees.map((e) => e.id).reduce((a, b) => a > b ? a : b) : 0) + 1;
+    final newAdmin = Employee(
+      id: newId,
+      companyId: newCompanyId,
+      fullName: adminFullName.trim().isEmpty ? 'Sistem Yöneticisi' : adminFullName.trim(),
+      email: adminEmail.trim().toLowerCase(),
+      phone: adminPhone.trim(),
+      department: 'Bilgi İşlem & Yönetim',
+      title: 'Genel Yönetici (Admin)',
+      pinCode: adminPin.trim().isEmpty ? '1234' : adminPin.trim(),
+      role: UserRole.admin,
+      isApproved: true,
+      hireDate: DateTime.now(),
+    );
+
+    final newBoss = Employee(
+      id: newId + 1,
+      companyId: newCompanyId,
+      fullName: '${adminFullName.trim()} (Patron)',
+      email: 'patron@${cleanCode.toLowerCase()}.com',
+      phone: adminPhone.trim(),
+      department: 'Yönetim Kurulu',
+      title: 'Şirket Sahibi / CEO',
+      pinCode: '3456',
+      role: UserRole.boss,
+      isApproved: true,
+      hireDate: DateTime.now(),
+    );
+
+    _employees.addAll([newAdmin, newBoss]);
+    _db.insertEmployee(newAdmin);
+    _db.insertEmployee(newBoss);
+
+    if (_firebase.isEnabled) {
+      _firebase.saveEmployeeToCloud(newAdmin);
+      _firebase.saveEmployeeToCloud(newBoss);
+    }
+
+    // Satın Alma Onay Bildirimi Ekle
+    final purchaseNotification = AppNotification(
+      id: 'license_notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🎉 Tebrikler, $cleanName Lisansı Aktif Edildi!',
+      message: '$planName ($billingCycle) aboneliğiniz başarıyla başlatıldı. Lisans Anahtarınız: $licenseKey. Şirket Kodunuz: $cleanCode. Tüm PDKS Enterprise SaaS modülleri kullanımınıza hazırdır.',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.verified_rounded,
+      color: const Color(0xFF10B981),
+      isPushSent: true,
+      isEmailSent: true,
+      emailSubject: 'PDKS Enterprise SaaS Abonelik ve Lisans Belgesi',
+    );
+    _notifications.insert(0, purchaseNotification);
+    _db.insertNotification(purchaseNotification);
+
+    // Otomatik olarak yeni şirkete geçiş yap
+    _activeCompanyId = newCompanyId;
+
+    notifyListeners();
+
+    return (
+      success: true,
+      message: 'Abonelik başarıyla satın alındı ve lisansınız aktif edildi!',
+      company: newCompany,
+      licenseKey: licenseKey,
+      adminUser: newAdmin,
+    );
+  }
+
   void updateCompanySettings({
     required double lat,
     required double lng,
