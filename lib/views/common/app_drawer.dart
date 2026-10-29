@@ -178,7 +178,7 @@ class AppDrawer extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               user.email,
-                              style: const TextStyle(color: Colors.white60, fontSize: 11),
+                              style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 11),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

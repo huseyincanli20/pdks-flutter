@@ -75,7 +75,7 @@ class PhonePushNotificationBanner {
                                 ),
                                 Text(
                                   'Şimdi • Kayıtlı E-Posta ve Telefona Gönderildi',
-                                  style: TextStyle(color: Colors.white60, fontSize: 10),
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 10),
                                 ),
                               ],
                             ),
@@ -178,9 +178,10 @@ class PhonePushNotificationBanner {
                       Text(
                         notification.message,
                         style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                          color: Color(0xFFF1F5F9),
+                          fontSize: 12.5,
                           height: 1.4,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 14),

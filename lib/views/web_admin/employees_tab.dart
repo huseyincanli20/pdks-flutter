@@ -399,6 +399,7 @@ class EmployeesTab extends StatelessWidget {
                             ),
                           ),
                         );
+
                         if (result.success && result.dispatchedNotification != null) {
                           Future.delayed(const Duration(milliseconds: 300), () {
                             if (context.mounted) {
@@ -921,6 +922,17 @@ class EmployeesTab extends StatelessWidget {
                             ),
                           ),
                         );
+
+                        if (result.success && result.dispatchedNotification != null) {
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (context.mounted) {
+                              PhonePushNotificationBanner.show(
+                                context,
+                                notification: result.dispatchedNotification!,
+                              );
+                            }
+                          });
+                        }
                       },
                       child: const Text('Kaydet ve Güncelle', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),

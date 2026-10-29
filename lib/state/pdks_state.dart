@@ -1702,7 +1702,7 @@ class PdksState extends ChangeNotifier {
   }
 
   /// İK ve Admin Yetkilisi Tarafından Personel Bilgilerini Güncelleme Metodu
-  ({bool success, String message}) updateEmployeeByHr({
+  ({bool success, String message, AppNotification? dispatchedNotification}) updateEmployeeByHr({
     required int employeeId,
     required String fullName,
     required String phone,
@@ -1722,12 +1722,16 @@ class PdksState extends ChangeNotifier {
     if (_currentUser.role != UserRole.hr &&
         _currentUser.role != UserRole.boss &&
         _currentUser.role != UserRole.admin) {
-      return (success: false, message: 'Personel bilgilerini yalnızca İK veya Yönetim yetkilisi güncelleyebilir.');
+      return (
+        success: false,
+        message: 'Personel bilgilerini yalnızca İK veya Yönetim yetkilisi güncelleyebilir.',
+        dispatchedNotification: null,
+      );
     }
 
     final index = _employees.indexWhere((e) => e.id == employeeId);
     if (index == -1) {
-      return (success: false, message: 'Personel bulunamadı.');
+      return (success: false, message: 'Personel bulunamadı.', dispatchedNotification: null);
     }
 
     final existing = _employees[index];
@@ -1755,8 +1759,64 @@ class PdksState extends ChangeNotifier {
       _currentUser = updated;
     }
 
+    final compName = _companies.firstWhere((c) => c.id == updated.companyId, orElse: () => activeCompany).name;
+
+    // Değiştirilen alanların özeti
+    final List<String> changeList = [];
+    if (existing.fullName != updated.fullName) changeList.add('• Ad Soyad: ${updated.fullName}');
+    if (existing.department != updated.department) changeList.add('• Departman: ${updated.department}');
+    if (existing.title != updated.title) changeList.add('• Unvan: ${updated.title}');
+    if (existing.phone != updated.phone) changeList.add('• Telefon: ${updated.phone}');
+    if (existing.baseGrossSalary != updated.baseGrossSalary) changeList.add('• Maaş: ${updated.baseGrossSalary.toStringAsFixed(0)} ₺');
+    if (existing.role != updated.role) changeList.add('• Yetki Rolü: ${updated.role.label}');
+    if (existing.hireDate != updated.hireDate && updated.hireDate != null) {
+      changeList.add('• İşe Giriş: ${updated.hireDate!.day.toString().padLeft(2, '0')}.${updated.hireDate!.month.toString().padLeft(2, '0')}.${updated.hireDate!.year}');
+    }
+    if (existing.heightCm != updated.heightCm || existing.weightKg != updated.weightKg) {
+      changeList.add('• Boy/Kilo: ${updated.heightCm ?? '-'} cm / ${updated.weightKg ?? '-'} kg');
+    }
+    if (existing.shirtSize != updated.shirtSize || existing.pantSize != updated.pantSize || existing.shoeSize != updated.shoeSize || existing.outerwearSize != updated.outerwearSize) {
+      changeList.add('• Kıyafet/Beden: ${updated.shirtSize ?? '-'} / ${updated.pantSize ?? '-'} / ${updated.shoeSize ?? '-'} No');
+    }
+
+    final summaryText = changeList.isNotEmpty
+        ? 'Güncellenen Bilgileriniz:\n${changeList.join('\n')}'
+        : 'Profil ve kurumsal bilgileriniz İK tarafından güncellendi.';
+
+    // İK bilgi güncelleme bildirimi (Telefona Push Notification + SMS + E-posta)
+    final hrNotification = AppNotification(
+      id: 'hr_update_${DateTime.now().millisecondsSinceEpoch}',
+      title: '📝 Personel Bilgileriniz Güncellendi',
+      message: 'Sayın ${updated.fullName}, İnsan Kaynakları yetkilisi sistemdeki kayıtlı bilgilerinizi güncelledi.\n\n$summaryText',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.assignment_ind_rounded,
+      color: const Color(0xFF2563EB),
+      targetPhone: updated.phone,
+      targetEmail: updated.email,
+      isPushSent: true,
+      isSmsSent: true,
+      isEmailSent: true,
+      emailSubject: '📝 $compName - Personel Bilgileriniz Güncellendi',
+      emailBody: 'Sayın ${updated.fullName},\n\n'
+          '$compName İnsan Kaynakları (İK) departmanı tarafından sistemdeki personel bilgileriniz güncellenmiştir.\n\n'
+          '$summaryText\n\n'
+          'Değişiklikleri PDKS mobil uygulamasında "Profil" sekmesine giderek detaylıca görüntüleyebilirsiniz.\n\n'
+          'Herhangi bir uyumsuzluk durumunda İK departmanınız ile iletişime geçebilirsiniz.\n\n'
+          'İyi çalışmalar dileriz,\n'
+          '$compName İnsan Kaynakları Departmanı',
+      isRead: false,
+    );
+
+    _notifications.insert(0, hrNotification);
+    _lastDispatchedPhoneNotification = hrNotification;
+
     notifyListeners();
-    return (success: true, message: '${updated.fullName} personelinin bilgileri başarıyla güncellendi.');
+    return (
+      success: true,
+      message: '${updated.fullName} personelinin bilgileri güncellendi. Personele bildirim iletildi.',
+      dispatchedNotification: hrNotification,
+    );
   }
 
   // Giriş / Çıkış Tetikleme

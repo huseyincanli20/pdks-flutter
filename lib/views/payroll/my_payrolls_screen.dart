@@ -262,7 +262,7 @@ class MyPayrollsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10)),
+        Text(label, style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 10)),
         const SizedBox(height: 2),
         Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
       ],

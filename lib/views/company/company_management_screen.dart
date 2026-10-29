@@ -652,9 +652,9 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
   Widget _buildBannerStat({required IconData icon, required String title, required String value}) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white70, size: 16),
+        Icon(icon, color: const Color(0xFFCBD5E1), size: 16),
         const SizedBox(height: 4),
-        Text(title, style: const TextStyle(color: Colors.white60, fontSize: 10)),
+        Text(title, style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 10)),
         const SizedBox(height: 2),
         Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
       ],

@@ -15,8 +15,9 @@ class AppColors {
   static const Color darkSurface = Color(0xFF1E293B);    // Slate Surface
   static const Color darkBorder = Color(0xFF334155);     // Dark Border
   static const Color darkDivider = Color(0xFF1E293B);
-  static const Color darkTextPrimary = Color(0xFFF8FAFC);
-  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  static const Color darkTextPrimary = Color(0xFFFFFFFF); // Kristal Beyaz (Yüksek Zıtlık / Kontrast)
+  static const Color darkTextSecondary = Color(0xFFE2E8F0); // Açık Gümüş Slate (Net Okunabilir Zıt Renk)
+  static const Color darkTextMuted = Color(0xFF94A3B8);
 
   // Status Colors
   static const Color success = Color(0xFF10B981); // Emerald Green
@@ -25,9 +26,9 @@ class AppColors {
   static const Color info = Color(0xFF0EA5E9);    // Sky Blue
 
   // Grayscale & Borders (Light)
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color textPrimary = Color(0xFF0F172A); // Derin Siyah Slate (Aydınlık Modda Net Zıtlık)
+  static const Color textSecondary = Color(0xFF334155); // Koyu Grafit Slate (Yüksek Okunabilirlik)
+  static const Color textMuted = Color(0xFF64748B);
   static const Color border = Color(0xFFE2E8F0);
   static const Color divider = Color(0xFFF1F5F9);
 

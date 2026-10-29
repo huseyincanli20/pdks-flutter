@@ -170,7 +170,7 @@ class _BossShellState extends State<BossShell> {
                   children: [
                     const Text(
                       'ŞİRKET ÇALIŞMA & MALİYET ÖZETİ',
-                      style: TextStyle(color: Colors.white60, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -192,7 +192,7 @@ class _BossShellState extends State<BossShell> {
                 const SizedBox(height: 4),
                 Text(
                   'Toplam ${pdks.employees.length} personelden ${pdks.presentEmployeesCount}\'i şu an aktif mesaide.',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13),
                 ),
                 const SizedBox(height: 16),
                 const Divider(color: Colors.white12),
@@ -203,7 +203,7 @@ class _BossShellState extends State<BossShell> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Toplam Fazla Mesai', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        const Text('Toplam Fazla Mesai', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
                         const SizedBox(height: 2),
                         Text(
                           pdks.payrolls.isNotEmpty
@@ -216,7 +216,7 @@ class _BossShellState extends State<BossShell> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('Tahmini Mesai Maliyeti', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        const Text('Tahmini Mesai Maliyeti', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
                         const SizedBox(height: 2),
                         Text(
                           pdks.payrolls.isNotEmpty

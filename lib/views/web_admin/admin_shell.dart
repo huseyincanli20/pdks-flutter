@@ -74,7 +74,7 @@ class _AdminShellState extends State<AdminShell> {
                           ),
                           Text(
                             'Yönetici Paneli',
-                            style: TextStyle(color: Colors.white54, fontSize: 12),
+                            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
                           ),
                         ],
                       ),
@@ -263,12 +263,12 @@ class _AdminShellState extends State<AdminShell> {
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         tileColor: isSelected ? AppColors.primary : Colors.transparent,
-        leading: Icon(icon, color: isSelected ? Colors.white : Colors.white60, size: 20),
+        leading: Icon(icon, color: isSelected ? Colors.white : const Color(0xFFCBD5E1), size: 20),
         title: Text(
           title,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white70,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 14,
           ),
         ),

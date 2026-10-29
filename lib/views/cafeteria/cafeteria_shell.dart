@@ -326,7 +326,7 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                     children: [
                       const Text(
                         'BUGÜNKÜ YEMEK SERVİSİ',
-                        style: TextStyle(color: Colors.white60, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

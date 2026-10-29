@@ -235,6 +235,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1D),
@@ -282,8 +283,9 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   // Form Kartı (Glass & Card style)
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.3),
@@ -298,7 +300,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Container(
                           margin: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: TabBar(
@@ -316,7 +318,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                               ],
                             ),
                             labelColor: Colors.white,
-                            unselectedLabelColor: AppColors.textSecondary,
+                            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
                             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                             tabs: const [
                               Tab(text: 'Giriş Yap'),
@@ -352,6 +354,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildLoginTab(PdksState pdks) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,12 +391,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       children: [
                         Text(
                           '📱 SMS & 📧 E-Posta İletildi (${pdks.lastDispatchedPhoneNotification!.targetEmail ?? pdks.lastDispatchedPhoneNotification!.targetPhone})',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF34D399) : const Color(0xFF065F46)),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           'İK başvurunuzu onayladı! Onay e-postası ve şifreniz ile hemen giriş yapabilirsiniz.',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF047857)),
+                          style: TextStyle(fontSize: 10.5, color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF047857)),
                         ),
                       ],
                     ),
@@ -403,7 +407,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: const Color(0xFF065F46),
+                        foregroundColor: isDark ? const Color(0xFF34D399) : const Color(0xFF065F46),
                       ),
                       onPressed: () {
                         EmailPreviewDialog.show(
@@ -418,40 +422,44 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               ),
             ),
           ],
-        const Text('E-Posta Adresi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text('E-Posta Adresi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary)),
         const SizedBox(height: 5),
         TextField(
           controller: _loginEmailController,
           keyboardType: TextInputType.emailAddress,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'E-posta adresiniz',
-            prefixIcon: const Icon(Icons.email_outlined, size: 20),
+            hintStyle: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF64748B) : AppColors.textMuted),
+            prefixIcon: Icon(Icons.email_outlined, size: 20, color: isDark ? const Color(0xFF60A5FA) : AppColors.primary),
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
           ),
         ),
         const SizedBox(height: 12),
-        const Text('PIN Kodu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text('PIN Kodu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary)),
         const SizedBox(height: 5),
         TextField(
           controller: _loginPinController,
           obscureText: _loginObscure,
           keyboardType: TextInputType.number,
           maxLength: 6,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'PIN Kodunuz',
+            hintStyle: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF64748B) : AppColors.textMuted),
             counterText: '',
-            prefixIcon: const Icon(Icons.lock_outline, size: 20),
+            prefixIcon: Icon(Icons.lock_outline, size: 20, color: isDark ? const Color(0xFF60A5FA) : AppColors.primary),
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
             suffixIcon: IconButton(
-              icon: Icon(_loginObscure ? Icons.visibility_off : Icons.visibility, size: 18),
+              icon: Icon(_loginObscure ? Icons.visibility_off : Icons.visibility, size: 18, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
               onPressed: () => setState(() => _loginObscure = !_loginObscure),
             ),
           ),
@@ -582,6 +590,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildRegisterTab() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,11 +604,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             hint: 'Şirket Kodu',
             textCapitalization: TextCapitalization.characters,
             helperText: 'Yetkilinizden aldığınız firma kodunu giriniz.',
+            isDark: isDark,
           ),
           const SizedBox(height: 8),
-          _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ad Soyad'),
+          _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ad Soyad', isDark: isDark),
           const SizedBox(height: 8),
-          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress),
+          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress, isDark: isDark),
           const SizedBox(height: 8),
           _buildInput(
             'Telefon Numarası (En fazla 11 hane)',
@@ -611,6 +622,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(11),
             ],
+            isDark: isDark,
           ),
           const SizedBox(height: 10),
 
@@ -618,18 +630,23 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: isDark ? const Color(0xFF1E3A8A).withOpacity(0.25) : const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: isDark ? const Color(0xFF3B82F6).withOpacity(0.5) : const Color(0xFFBFDBFE)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.assignment_ind_rounded, color: Color(0xFF2563EB), size: 20),
-                SizedBox(width: 10),
+                Icon(Icons.assignment_ind_rounded, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB), size: 20),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Departman ve unvan atamanız, kaydınız oluştuktan sonra İnsan Kaynakları (İK) tarafından onay sürecinde yapılacaktır.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF), height: 1.35),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF1E40AF),
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -637,24 +654,33 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 10),
 
-          const Text('PIN Kodu Belirleyin *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          Text(
+            'PIN Kodu Belirleyin *',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 4),
           TextField(
             controller: _regPinController,
             obscureText: _regObscure,
             keyboardType: TextInputType.number,
             maxLength: 6,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: '4 Haneli PIN Kodu',
+              hintStyle: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF64748B) : AppColors.textMuted),
               counterText: '',
-              prefixIcon: const Icon(Icons.lock_outline, size: 18),
+              prefixIcon: Icon(Icons.lock_outline, size: 18, color: isDark ? const Color(0xFF60A5FA) : AppColors.primary),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
+              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
               suffixIcon: IconButton(
-                icon: Icon(_regObscure ? Icons.visibility_off : Icons.visibility, size: 16),
+                icon: Icon(_regObscure ? Icons.visibility_off : Icons.visibility, size: 16, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
                 onPressed: () => setState(() => _regObscure = !_regObscure),
               ),
             ),
@@ -686,11 +712,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     String? helperText,
     int? maxLength,
     List<TextInputFormatter>? inputFormatters,
+    bool isDark = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary,
+          ),
+        ),
         const SizedBox(height: 4),
         TextField(
           controller: controller,
@@ -698,17 +732,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           textCapitalization: textCapitalization,
           maxLength: maxLength,
           inputFormatters: inputFormatters,
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF64748B) : AppColors.textMuted),
             counterText: '',
             helperText: helperText,
-            helperStyle: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-            prefixIcon: Icon(icon, size: 18),
+            helperStyle: TextStyle(fontSize: 10, color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted),
+            prefixIcon: Icon(icon, size: 18, color: isDark ? const Color(0xFF60A5FA) : AppColors.primary),
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : AppColors.border)),
           ),
         ),
       ],

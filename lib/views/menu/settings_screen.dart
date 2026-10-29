@@ -94,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           '7 farklı renk ve mod seçeneğiyle tarzınızı yansıtın',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white60 : AppColors.textSecondary,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -235,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? Colors.white60 : AppColors.textSecondary,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
                   ],
