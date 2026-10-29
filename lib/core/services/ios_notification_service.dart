@@ -11,28 +11,55 @@ class IosNotificationService {
   static OverlayEntry? _currentEntry;
   static Timer? _dismissTimer;
 
-  /// iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
+  /// Kullanıcı Talebi: "uygulamanın içindeki bildirimi gizle"
+  /// Varsayılan olarak FALSE (Uygulama içinde gezinirken ekranda açılır bildirim balonu gösterilmez, gizlenir)
+  static bool enableInAppBanner = false;
+
+  /// Filtre Kuralı: "sadece mesaj bildirimi ve bir şey onaylandığında bildirim gelsin."
+  static bool isAllowedNotification(String title, String body) {
+    final lowerTitle = title.toLowerCase();
+    final lowerBody = body.toLowerCase();
+    final isMessage = lowerTitle.contains('💬') ||
+        lowerTitle.contains('mesaj') ||
+        lowerBody.contains('mesaj');
+    final isApproval = lowerTitle.contains('onay') ||
+        lowerBody.contains('onaylandı') ||
+        lowerTitle.contains('tebrikler');
+    return isMessage || isApproval;
+  }
+
+  /// iPhone Bildirimi Tetikle (Apple Notification Center + Tri-Tone Ses)
+  /// Sadece mesaj veya onay bildirimlerinde çalışır. Uygulama içi banner gizlidir.
   static void showIosNotification({
     required String title,
     required String body,
     IconData? icon,
     Color? iconColor,
     VoidCallback? onTap,
+    bool force = false,
   }) {
+    // Kural Kontrolü: Yalnızca Mesaj Bildirimi VEYA Bir Şey Onaylandığında Bildirim Gönder!
+    if (!force && !isAllowedNotification(title, body)) {
+      return;
+    }
+
     // 1. Apple Klasik Bildirim Sesi (Tri-Tone / Glass)
     helper.platformPlayIosChime();
 
     // 2. Apple Yerel Bildirim Merkezi & Kilit Ekranı (UNUserNotificationCenter / Web Push)
     helper.platformTriggerWebNotification(title: title, body: body);
 
-    // 3. Ekranda iOS Floating Push Banner Göster
-    _showInAppIosBanner(
-      title: title,
-      body: body,
-      icon: icon ?? Icons.notifications_active_rounded,
-      iconColor: iconColor ?? const Color(0xFF2563EB),
-      onTap: onTap,
-    );
+    // 3. Ekranda iOS Floating Push Banner Göster (Uygulama içi bildirim)
+    // "uygulamanın içindeki bildirimi gizle" kuralı gereğince enableInAppBanner false ise ekrana banner çıkmaz.
+    if (enableInAppBanner) {
+      _showInAppIosBanner(
+        title: title,
+        body: body,
+        icon: icon ?? Icons.notifications_active_rounded,
+        iconColor: iconColor ?? const Color(0xFF2563EB),
+        onTap: onTap,
+      );
+    }
   }
 
   /// Apple Yerel Bildirim İznini İste (Kullanıcı Tıklaması ile)
@@ -48,10 +75,11 @@ class IosNotificationService {
   /// Apple Bildirim Merkezine Test Bildirimi Gönder
   static void sendAppleTestNotification() {
     showIosNotification(
-      title: '🍎 Apple Bildirim Merkezi',
-      body: 'PDKS bildirimleri Apple Bildirim Merkezinde ve Kilit Ekranında başarıyla gösterilmektedir.',
-      icon: Icons.apple_rounded,
+      title: '✅ İzin Talebiniz Onaylandı',
+      body: 'PDKS test bildirimi: Yıllık izin talebiniz İnsan Kaynakları tarafından onaylanmıştır.',
+      icon: Icons.check_circle_rounded,
       iconColor: const Color(0xFF10B981),
+      force: true,
     );
   }
 

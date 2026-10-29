@@ -44,16 +44,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final allNotifications = pdks.notifications;
-    List<AppNotification> filtered = allNotifications;
+    // Kullanıcı Kuralı: "sadece mesaj bildirimi ve bir şey onaylandığında bildirim gelsin."
+    final messageAndApprovalNotifications = allNotifications.where((n) => n.isAllowedForDisplay).toList();
+
+    List<AppNotification> filtered = messageAndApprovalNotifications;
 
     if (_selectedFilter == 'unread') {
-      filtered = allNotifications.where((n) => !n.isRead).toList();
-    } else if (_selectedFilter == 'cafeteria') {
-      filtered = allNotifications.where((n) => n.type == NotificationType.cafeteria).toList();
-    } else if (_selectedFilter == 'announcement') {
-      filtered = allNotifications.where((n) => n.type == NotificationType.announcement).toList();
-    } else if (_selectedFilter == 'attendance_leave') {
-      filtered = allNotifications.where((n) => n.type == NotificationType.attendance || n.type == NotificationType.leave).toList();
+      filtered = messageAndApprovalNotifications.where((n) => !n.isRead).toList();
+    } else if (_selectedFilter == 'approvals') {
+      filtered = messageAndApprovalNotifications.where((n) => n.isApproval).toList();
+    } else if (_selectedFilter == 'messages') {
+      filtered = messageAndApprovalNotifications.where((n) => n.isMessage).toList();
+    } else if (_selectedFilter == 'all_history') {
+      filtered = allNotifications;
     }
 
     return Scaffold(
@@ -156,7 +159,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: _isAppleLockScreenMode
           ? _buildAppleLockScreenView(context, filtered, pdks)
-          : _buildStandardListView(context, filtered, allNotifications, pdks, isDark),
+          : _buildStandardListView(context, filtered, allNotifications, messageAndApprovalNotifications, pdks, isDark),
     );
   }
 
@@ -641,6 +644,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     BuildContext context,
     List<AppNotification> filtered,
     List<AppNotification> allNotifications,
+    List<AppNotification> messageAndApprovalNotifications,
     PdksState pdks,
     bool isDark,
   ) {
@@ -675,15 +679,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('all', 'Tümü (${allNotifications.length})'),
+                    _buildFilterChip('all', 'Mesaj & Onaylar (${messageAndApprovalNotifications.length})'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('unread', 'Okunmamış (${pdks.unreadNotificationsCount})'),
+                    _buildFilterChip('approvals', 'Onaylananlar ✅'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('cafeteria', 'Yemekhane 🍽️'),
+                    _buildFilterChip('messages', 'Mesajlar 💬'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('attendance_leave', 'Mesai & İzin'),
+                    _buildFilterChip('unread', 'Okunmamış (${messageAndApprovalNotifications.where((n) => !n.isRead).length})'),
                     const SizedBox(width: 8),
-                    _buildFilterChip('announcement', 'Şirket Duyuruları 📢'),
+                    _buildFilterChip('all_history', 'Tüm Geçmiş'),
                   ],
                 ),
               ),

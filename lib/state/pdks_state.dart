@@ -580,14 +580,6 @@ class PdksState extends ChangeNotifier {
       _firebase.pushMessageToCloud(creatorMsg);
     }
 
-    // iPhone Bildirimi Gönder
-    IosNotificationService.showIosNotification(
-      title: '👥 Yeni Grup Kanalı Kuruldu',
-      body: '"$trimmed" grubu ${_currentUser.fullName} tarafından oluşturuldu.',
-      icon: newChannel.icon,
-      iconColor: newChannel.iconColor,
-    );
-
     notifyListeners();
     return (success: true, message: '"$trimmed" grubu başarıyla oluşturuldu.', channel: newChannel);
   }
@@ -665,16 +657,6 @@ class PdksState extends ChangeNotifier {
     }
     notifyListeners();
 
-    // iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
-    IosNotificationService.showIosNotification(
-      title: '💬 ${_currentUser.fullName}',
-      body: type == MessageType.document
-          ? '📄 Belge gönderildi: ${attachmentName ?? "Belge.pdf"}'
-          : (type == MessageType.location ? '📍 Konum paylaşıldı' : newMsg.text),
-      icon: Icons.chat_bubble_rounded,
-      iconColor: const Color(0xFF2563EB),
-    );
-
     // İK Destek kanalına yazıldığında otomatik destek yanıt simülasyonu
     if (channelId == 'hr_support' && _currentUser.role != UserRole.hr) {
       Future.delayed(const Duration(milliseconds: 1200), () {
@@ -693,9 +675,23 @@ class PdksState extends ChangeNotifier {
         if (_firebase.isEnabled) {
           _firebase.pushMessageToCloud(replyMsg);
         }
+
+        // Gelen mesaj bildirimi
+        final msgNotif = AppNotification(
+          id: 'notif_msg_${replyMsg.id}',
+          title: '💬 Zeynep Kaya (İK Destek)',
+          message: replyMsg.text,
+          timestamp: DateTime.now(),
+          type: NotificationType.system,
+          icon: Icons.support_agent_rounded,
+          color: const Color(0xFF0284C7),
+        );
+        _notifications.insert(0, msgNotif);
+        _db.insertNotification(msgNotif);
+
         notifyListeners();
 
-        // İK Destek yanıtı için iPhone Bildirimi
+        // İK Destek yanıtı için iPhone Bildirimi (Apple Notification Center)
         IosNotificationService.showIosNotification(
           title: '💬 Zeynep Kaya (İK Destek)',
           body: replyMsg.text,
@@ -1243,6 +1239,18 @@ class PdksState extends ChangeNotifier {
           _db.insertChatMessage(m);
           hasNew = true;
           if (m.senderId != _currentUser.id) {
+            final msgNotif = AppNotification(
+              id: 'notif_cloud_${m.id}',
+              title: '💬 ${m.senderName}',
+              message: m.text,
+              timestamp: m.timestamp,
+              type: NotificationType.system,
+              icon: Icons.chat_bubble_outline_rounded,
+              color: const Color(0xFF2563EB),
+            );
+            _notifications.insert(0, msgNotif);
+            _db.insertNotification(msgNotif);
+
             IosNotificationService.showIosNotification(
               title: '💬 ${m.senderName}',
               body: m.text,
@@ -1326,13 +1334,6 @@ class PdksState extends ChangeNotifier {
         _activeCompanyId = _currentUser.companyId;
         _isLoggedIn = true;
         _startTimer();
-
-        IosNotificationService.showIosNotification(
-          title: '🔥 Firebase • Giriş Başarılı',
-          body: 'Sayın ${cloudEmp.fullName}, Firebase bulut veritabanından başarıyla giriş yaptınız.',
-          icon: Icons.verified_user_rounded,
-          iconColor: const Color(0xFF10B981),
-        );
 
         notifyListeners();
         return (
@@ -1718,14 +1719,6 @@ class PdksState extends ChangeNotifier {
       _isLoggedIn = true;
       _startTimer();
 
-      // iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
-      IosNotificationService.showIosNotification(
-        title: 'PDKS • Hoş Geldiniz 📱',
-        body: 'Sayın ${user.fullName}, veritabanından başarıyla giriş yaptınız.',
-        icon: Icons.verified_user_rounded,
-        iconColor: const Color(0xFF10B981),
-      );
-
       notifyListeners();
       return (
         success: true,
@@ -1756,13 +1749,6 @@ class PdksState extends ChangeNotifier {
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
-
-      IosNotificationService.showIosNotification(
-        title: 'PDKS • Hoş Geldiniz 📱',
-        body: 'Sayın ${demoMatched.fullName}, giriş yapıldı.',
-        icon: Icons.verified_user_rounded,
-        iconColor: const Color(0xFF10B981),
-      );
 
       notifyListeners();
       return (
@@ -1857,14 +1843,6 @@ class PdksState extends ChangeNotifier {
     if (_firebase.isEnabled) {
       _firebase.pushNotificationToCloud(hrNotif);
     }
-
-    // 3. IPHONE PUSH BİLDİRİMİ GÖNDER
-    IosNotificationService.showIosNotification(
-      title: '📲 PDKS • Yeni Kayıt Alındı',
-      body: '${newEmployee.fullName} veritabanına kaydedildi. İK onayı sonrası PIN ile giriş yapabilirsiniz.',
-      icon: Icons.app_registration_rounded,
-      iconColor: const Color(0xFF10B981),
-    );
 
     // Oturum açılmaz, İK onayı beklenir
     _isLoggedIn = false;
@@ -2317,14 +2295,6 @@ class PdksState extends ChangeNotifier {
     _db.insertNotification(hrNotification);
     _lastDispatchedPhoneNotification = hrNotification;
 
-    // iPhone Bildirimi Tetikle
-    IosNotificationService.showIosNotification(
-      title: '📝 Bilgileriniz Güncellendi',
-      body: 'Sayın ${updated.fullName}, özlük ve unvan bilgileriniz İK tarafından güncellendi.',
-      icon: Icons.assignment_ind_rounded,
-      iconColor: const Color(0xFF2563EB),
-    );
-
     notifyListeners();
     return (
       success: true,
@@ -2378,14 +2348,6 @@ class PdksState extends ChangeNotifier {
       _isCheckedIn = false;
     }
 
-    // iPhone Bildirimi Tetikle
-    IosNotificationService.showIosNotification(
-      title: type == AttendanceType.checkIn ? '⏰ Mesai Girişi Başarılı' : '🚪 Mesai Çıkışı Kaydedildi',
-      body: '${_currentUser.fullName} • ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} • ${newRecord.methodLabel}',
-      icon: type == AttendanceType.checkIn ? Icons.login_rounded : Icons.logout_rounded,
-      iconColor: type == AttendanceType.checkIn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-    );
-
     notifyListeners();
     return response;
   }
@@ -2417,14 +2379,6 @@ class PdksState extends ChangeNotifier {
     if (_firebase.isEnabled) {
       _firebase.pushLeaveToCloud(newLeave);
     }
-
-    // iPhone Bildirimi Tetikle
-    IosNotificationService.showIosNotification(
-      title: '🏖️ İzin Talebi İletildi',
-      body: '${newLeave.typeLabel} (${newLeave.totalDays} gün) onay için İK departmanına gönderildi.',
-      icon: Icons.beach_access_rounded,
-      iconColor: const Color(0xFF0284C7),
-    );
 
     notifyListeners();
     return true;
@@ -2480,13 +2434,15 @@ class PdksState extends ChangeNotifier {
       _notifications.insert(0, notif);
       _db.insertNotification(notif);
 
-      // iPhone Bildirimi Tetikle
-      IosNotificationService.showIosNotification(
-        title: notif.title,
-        body: notif.message,
-        icon: notif.icon,
-        iconColor: notif.color,
-      );
+      // iPhone Bildirimi Tetikle (Kural: Yalnızca bir şey ONAYLANDIĞINDA)
+      if (newStatus == LeaveStatus.approved) {
+        IosNotificationService.showIosNotification(
+          title: notif.title,
+          body: notif.message,
+          icon: notif.icon,
+          iconColor: notif.color,
+        );
+      }
 
       notifyListeners();
     }

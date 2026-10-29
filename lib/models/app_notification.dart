@@ -79,6 +79,18 @@ class AppNotification {
     );
   }
 
+  bool get isApproval =>
+      title.toLowerCase().contains('onay') ||
+      message.toLowerCase().contains('onaylandı') ||
+      title.toLowerCase().contains('tebrikler');
+
+  bool get isMessage =>
+      title.contains('💬') ||
+      title.toLowerCase().contains('mesaj') ||
+      message.toLowerCase().contains('mesaj');
+
+  bool get isAllowedForDisplay => isApproval || isMessage;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
