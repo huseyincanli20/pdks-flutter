@@ -8,7 +8,7 @@ on:
 jobs:
   build-ios:
     name: Build iOS IPA on Cloud macOS
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 45
 
     steps:
