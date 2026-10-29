@@ -9,6 +9,16 @@ import '../common/quick_menu_manager_dialog.dart';
 import '../common/field_work_dialog.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
+import 'profile_screen.dart';
+import 'business_card_screen.dart';
+import 'contacts_screen.dart';
+import 'settings_screen.dart';
+import 'about_screen.dart';
+import '../chat/chat_list_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../payroll/my_payrolls_screen.dart';
+import '../payroll/payroll_management_screen.dart';
+import '../common/firebase_config_dialog.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -146,20 +156,69 @@ class FavoritesScreen extends StatelessWidget {
                   title: item.title,
                   subtitle: item.subtitle,
                   onTap: () {
+                    if (!pdks.hasPagePermission(item.actionType)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Yetki Sınırı: Bu modüle erişim için rol yetkiniz bulunmamaktadır.'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
                     switch (item.actionType) {
+                      case 'profile':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                        break;
+                      case 'payroll':
+                        final user = pdks.currentUser;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                                ? const PayrollManagementScreen()
+                                : const MyPayrollsScreen(),
+                          ),
+                        );
+                        break;
+                      case 'chat':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+                        break;
+                      case 'contacts':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+                        break;
+                      case 'notifications':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                        break;
+                      case 'cafeteria':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                        break;
+                      case 'business_card':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
+                        break;
+                      case 'favorites':
+                        // Already on favorites
+                        break;
                       case 'leave':
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
                         break;
                       case 'field_work':
                         FieldWorkDialog.show(context);
                         break;
-                      case 'cafeteria':
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
-                        break;
                       case 'overtime':
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
                         );
+                        break;
+                      case 'settings':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                        break;
+                      case 'about':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                        break;
+                      case 'cloud_db':
+                        showFirebaseConfigDialog(context);
                         break;
                       case 'info_dialog':
                       default:

@@ -26,8 +26,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final currentUser = pdks.currentUser;
     final otherEmployees = pdks.employees.where((e) => e.id != currentUser.id).toList();
 
-    // Kanallar
-    final channels = pdks.allGroupChannels;
+    // Kanallar (Kural: Gruba eklenmeyen çalışanlar kanalı göremez)
+    final channels = pdks.channelsForCurrentUser;
     final canCreateGroup = pdks.canCreateGroupChat;
 
     // Aktif Bireysel Sohbetler

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
@@ -670,6 +671,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Widget _buildMessageBubble(BuildContext context, ChatMessage msg, bool isMe, bool isDark) {
+    if (msg.isDeleted) {
+      return _buildDeletedMessageBubble(context, msg, isMe, isDark);
+    }
+
+    final pdks = context.read<PdksState>();
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -692,16 +699,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isMe
-                    ? AppColors.primaryOf(context)
-                    : (isDark ? const Color(0xFF1E293B) : Colors.white),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(18),
-                  topRight: const Radius.circular(18),
+            child: GestureDetector(
+              onLongPress: () => _showMessageActions(context, msg, pdks),
+              child: Container(
+                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? AppColors.primaryOf(context)
+                      : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
                   bottomLeft: Radius.circular(isMe ? 18 : 4),
                   bottomRight: Radius.circular(isMe ? 4 : 18),
                 ),
@@ -886,6 +895,169 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               ),
             ),
           ),
+        ),
+      ],
+    ),
+  );
+}
+
+  /// Veritabanından silinmeyen, denetim kaydı korunan yumuşak silinmiş mesaj balonu
+  Widget _buildDeletedMessageBubble(BuildContext context, ChatMessage msg, bool isMe, bool isDark) {
+    final pdks = context.read<PdksState>();
+    final isAuditor = pdks.currentUser.role == UserRole.boss || pdks.currentUser.role == UserRole.admin;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B).withOpacity(0.4) : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.block_rounded,
+                  size: 14,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Bu mesaj silindi',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  DateFormat('HH:mm').format(msg.deletedAt ?? msg.timestamp),
+                  style: TextStyle(fontSize: 9.5, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                ),
+                if (isAuditor && msg.deletedBy != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Denetim: ${msg.deletedBy}',
+                      style: const TextStyle(fontSize: 8.5, color: Colors.purple, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMessageActions(BuildContext context, ChatMessage msg, PdksState pdks) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canDelete = msg.senderId == pdks.currentUser.id ||
+        pdks.currentUser.role == UserRole.admin ||
+        pdks.currentUser.role == UserRole.boss;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 4),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(4)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_rounded, size: 20),
+              title: const Text('Metni Kopyala', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(ctx);
+                Clipboard.setData(ClipboardData(text: msg.text));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Mesaj panoya kopyalandı.'), duration: Duration(seconds: 1)),
+                );
+              },
+            ),
+            if (canDelete) ...[
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                title: const Text('Mesajı Sil', style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: const Text(
+                  'Mesaj herkeste "Bu mesaj silindi" olarak görünür. Sistem veritabanından silinmez, denetim için arşivlenir.',
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDeleteMessage(context, msg, pdks);
+                },
+              ),
+            ],
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteMessage(BuildContext context, ChatMessage msg, PdksState pdks) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.red, size: 22),
+            SizedBox(width: 8),
+            Text('Mesajı Sil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Bu mesajı silmek istediğinize emin misiniz?\n\n'
+          'Kurumsal güvenlik ve yasal denetim politikası uyarınca mesaj sohbet ekranında "Bu mesaj silindi" olarak güncellenir ve veritabanından kalıcı olarak yok edilmez.',
+          style: TextStyle(fontSize: 12.5, height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Vazgeç'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final res = pdks.softDeleteChatMessage(msg.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(res.message),
+                  backgroundColor: res.success ? AppColors.success : Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Evet, Sil', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
@@ -908,41 +1080,91 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   void _showChannelInfo(BuildContext context) {
+    final pdks = context.read<PdksState>();
+    final channel = pdks.allGroupChannels.where((c) => c.id == widget.channelId).firstOrNull;
+    final isRestricted = channel?.participantIds != null && channel!.participantIds!.isNotEmpty;
+    final memberList = isRestricted
+        ? pdks.employees.where((e) => channel.participantIds!.contains(e.id)).toList()
+        : pdks.employees;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.cardBg(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(
-              widget.subtitle ?? 'PDKS Şirket İçi Güvenli Mesajlaşma Hattı',
-              style: TextStyle(color: AppColors.textSub(context), fontSize: 13),
-            ),
-            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.subtle(context),
-                borderRadius: BorderRadius.circular(12),
+                color: (channel?.iconColor ?? const Color(0xFF2563EB)).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Row(
+              child: Icon(channel?.icon ?? Icons.chat_bubble_rounded, color: channel?.iconColor ?? const Color(0xFF2563EB), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.security_rounded, color: Color(0xFF10B981), size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tüm mesajlar şirket sunucularında şifreli olarak saklanır ve yalnızca yetkili çalışanlarca görüntülenir.',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
-                    ),
+                  Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.text(context))),
+                  Text(
+                    isRestricted ? '${memberList.length} Eklenen Üye' : 'Tüm Şirket Çalışanları',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ),
           ],
+        ),
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.subtitle ?? 'PDKS Şirket İçi Güvenli Mesajlaşma Hattı',
+                style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isRestricted ? 'Gruptaki Kişiler (${memberList.length}):' : 'Kanal Katılımcıları (Genel):',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: AppColors.subtle(context),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.cardBorder(context)),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: memberList.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (ctx, idx) {
+                    final emp = memberList[idx];
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 13,
+                        backgroundColor: _getRoleColor(emp.role).withOpacity(0.2),
+                        child: Text(
+                          emp.fullName.isNotEmpty ? emp.fullName.substring(0, 1) : '?',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _getRoleColor(emp.role)),
+                        ),
+                      ),
+                      title: Text(emp.fullName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      subtitle: Text('${emp.department} • ${emp.roleDisplayName}', style: const TextStyle(fontSize: 9.5)),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

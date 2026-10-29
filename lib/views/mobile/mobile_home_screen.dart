@@ -15,10 +15,15 @@ import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
+import '../menu/profile_screen.dart';
 import '../menu/business_card_screen.dart';
 import '../menu/contacts_screen.dart';
+import '../menu/favorites_screen.dart';
 import '../menu/settings_screen.dart';
+import '../menu/about_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
+import '../payroll/payroll_management_screen.dart';
+import '../common/firebase_config_dialog.dart';
 import '../../core/utils/marquee_text.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../common/quick_menu_manager_dialog.dart';
@@ -640,7 +645,49 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                           title: item.title,
                           subtitle: item.actionType == 'leave' ? 'Kalan: ${user.remainingLeaveDays} Gün' : item.subtitle,
                           onTap: () {
+                            if (!pdks.hasPagePermission(item.actionType)) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Yetki Sınırı: Bu modüle erişim için rol yetkiniz bulunmamaktadır.'),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              return;
+                            }
+
                             switch (item.actionType) {
+                              case 'profile':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                                break;
+                              case 'payroll':
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                                        ? const PayrollManagementScreen()
+                                        : const MyPayrollsScreen(),
+                                  ),
+                                );
+                                break;
+                              case 'chat':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+                                break;
+                              case 'contacts':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+                                break;
+                              case 'notifications':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                                break;
+                              case 'cafeteria':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                                break;
+                              case 'business_card':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
+                                break;
+                              case 'favorites':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+                                break;
                               case 'leave':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
                                 break;
@@ -650,13 +697,19 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                               case 'field_work':
                                 FieldWorkDialog.show(context);
                                 break;
-                              case 'cafeteria':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
-                                break;
                               case 'overtime':
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
                                 );
+                                break;
+                              case 'settings':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                                break;
+                              case 'about':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                                break;
+                              case 'cloud_db':
+                                showFirebaseConfigDialog(context);
                                 break;
                               case 'info_dialog':
                               default:

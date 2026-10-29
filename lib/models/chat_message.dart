@@ -22,6 +22,9 @@ class ChatMessage {
   final MessageType type;
   final String? attachmentName;
   final String? attachmentSize;
+  final bool isDeleted;
+  final DateTime? deletedAt;
+  final String? deletedBy;
 
   const ChatMessage({
     required this.id,
@@ -36,6 +39,9 @@ class ChatMessage {
     this.type = MessageType.text,
     this.attachmentName,
     this.attachmentSize,
+    this.isDeleted = false,
+    this.deletedAt,
+    this.deletedBy,
   });
 
   ChatMessage copyWith({
@@ -51,6 +57,9 @@ class ChatMessage {
     MessageType? type,
     String? attachmentName,
     String? attachmentSize,
+    bool? isDeleted,
+    DateTime? deletedAt,
+    String? deletedBy,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -65,6 +74,9 @@ class ChatMessage {
       type: type ?? this.type,
       attachmentName: attachmentName ?? this.attachmentName,
       attachmentSize: attachmentSize ?? this.attachmentSize,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
     );
   }
 
@@ -82,6 +94,9 @@ class ChatMessage {
       'type': type.name,
       'attachmentName': attachmentName,
       'attachmentSize': attachmentSize,
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt?.toIso8601String(),
+      'deletedBy': deletedBy,
     };
   }
 
@@ -115,6 +130,9 @@ class ChatMessage {
       type: parsedType,
       attachmentName: json['attachmentName'],
       attachmentSize: json['attachmentSize'],
+      isDeleted: json['isDeleted'] ?? false,
+      deletedAt: json['deletedAt'] != null ? DateTime.tryParse(json['deletedAt']) : null,
+      deletedBy: json['deletedBy'],
     );
   }
 }

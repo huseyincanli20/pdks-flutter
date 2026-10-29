@@ -133,6 +133,22 @@ class PdksState extends ChangeNotifier {
       icon: Icons.badge_outlined,
       isSystemRole: true,
       createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'settings',
+        'about',
+      ],
     ),
     const AppRoleItem(
       id: 'role_hr',
@@ -143,6 +159,22 @@ class PdksState extends ChangeNotifier {
       icon: Icons.people_alt_outlined,
       isSystemRole: true,
       createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'settings',
+        'about',
+      ],
     ),
     const AppRoleItem(
       id: 'role_boss',
@@ -153,6 +185,23 @@ class PdksState extends ChangeNotifier {
       icon: Icons.workspace_premium_outlined,
       isSystemRole: true,
       createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'settings',
+        'about',
+        'cloud_db',
+      ],
     ),
     const AppRoleItem(
       id: 'role_admin',
@@ -163,6 +212,23 @@ class PdksState extends ChangeNotifier {
       icon: Icons.admin_panel_settings_outlined,
       isSystemRole: true,
       createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'settings',
+        'about',
+        'cloud_db',
+      ],
     ),
     const AppRoleItem(
       id: 'role_cafeteria',
@@ -173,6 +239,12 @@ class PdksState extends ChangeNotifier {
       icon: Icons.restaurant_menu_rounded,
       isSystemRole: true,
       createdBy: 'Sistem',
+      allowedPageIds: [
+        'cafeteria',
+        'profile',
+        'settings',
+        'about',
+      ],
     ),
   ];
 
@@ -673,6 +745,19 @@ class PdksState extends ChangeNotifier {
   final List<ChatChannel> _customGroupChannels = [];
   List<ChatChannel> get allGroupChannels => [..._systemChatChannels, ..._customGroupChannels];
 
+  /// Personele özel görünen grup ve sistem kanalları
+  /// Kural: Gruba eklenmeyen çalışanlar kanalı göremez, içine mesaj yazamaz ve bildirim alamaz.
+  List<ChatChannel> get channelsForCurrentUser {
+    return allGroupChannels.where((ch) {
+      if (ch.participantIds == null || ch.participantIds!.isEmpty) {
+        return true;
+      }
+      return ch.participantIds!.contains(_currentUser.id) ||
+          _currentUser.role == UserRole.boss ||
+          _currentUser.role == UserRole.admin;
+    }).toList();
+  }
+
   bool get canCreateGroupChat => _currentUser.role == UserRole.boss || _currentUser.role == UserRole.admin;
 
   /// Yeni Grup Kanalı Oluşturma Metodu (Yalnızca Patron ve Admin Yetkili)
@@ -742,6 +827,15 @@ class PdksState extends ChangeNotifier {
   }
 
   List<ChatMessage> getMessagesForChannel(String channelId) {
+    // Güvenlik & Gizlilik: Eklenmeyen çalışanlar grup mesajlarını göremez
+    final ch = allGroupChannels.where((c) => c.id == channelId).firstOrNull;
+    if (ch != null && ch.participantIds != null && ch.participantIds!.isNotEmpty) {
+      if (!ch.participantIds!.contains(_currentUser.id) &&
+          _currentUser.role != UserRole.admin &&
+          _currentUser.role != UserRole.boss) {
+        return [];
+      }
+    }
     return _chatMessages.where((m) => m.channelId == channelId).toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
@@ -752,15 +846,55 @@ class PdksState extends ChangeNotifier {
   }
 
   int getUnreadCountForChannel(String channelId) {
+    final channel = allGroupChannels.where((c) => c.id == channelId).firstOrNull;
+    if (channel != null && channel.participantIds != null && channel.participantIds!.isNotEmpty) {
+      if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+        if (!channel.participantIds!.contains(_currentUser.id)) {
+          return 0; // Eklenmeyen çalışan için okunmamış mesaj sayısı 0'dır
+        }
+      }
+    }
     return _chatMessages
-        .where((m) => m.channelId == channelId && !m.isRead && m.senderId != _currentUser.id)
+        .where((m) => m.channelId == channelId && !m.isRead && !m.isDeleted && m.senderId != _currentUser.id)
         .length;
   }
 
   int get unreadChatCount {
-    return _chatMessages
-        .where((m) => !m.isRead && m.senderId != _currentUser.id)
-        .length;
+    final allowedChannels = channelsForCurrentUser.map((c) => c.id).toSet();
+    return _chatMessages.where((m) {
+      if (m.isRead || m.isDeleted || m.senderId == _currentUser.id) return false;
+      if (m.receiverId != null) {
+        return m.receiverId == _currentUser.id;
+      }
+      return allowedChannels.contains(m.channelId);
+    }).length;
+  }
+
+  /// Mesajı kalıcı silmez, veritabanında denetim kaydı olarak soft-delete işaretler.
+  ({bool success, String message}) softDeleteChatMessage(String messageId) {
+    final idx = _chatMessages.indexWhere((m) => m.id == messageId);
+    if (idx == -1) {
+      return (success: false, message: 'Mesaj bulunamadı.');
+    }
+    final msg = _chatMessages[idx];
+    final canDelete = msg.senderId == _currentUser.id ||
+        _currentUser.role == UserRole.admin ||
+        _currentUser.role == UserRole.boss;
+    if (!canDelete) {
+      return (success: false, message: 'Yetki Sınırı: Bu mesajı yalnızca gönderen kişi veya şirket yöneticisi silebilir.');
+    }
+
+    _chatMessages[idx] = msg.copyWith(
+      isDeleted: true,
+      deletedAt: DateTime.now(),
+      deletedBy: _currentUser.fullName,
+    );
+    _db.softDeleteChatMessage(messageId, deletedBy: _currentUser.fullName);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(_chatMessages[idx]);
+    }
+    notifyListeners();
+    return (success: true, message: 'Mesaj başarıyla silindi (Veritabanında arşivlendi).');
   }
 
   void markChannelAsRead(String channelId) {
@@ -785,6 +919,17 @@ class PdksState extends ChangeNotifier {
     String? attachmentSize,
   }) {
     if (text.trim().isEmpty && attachmentName == null) return;
+
+    // Grup Kanalı Güvenlik ve İzolasyon Kontrolü:
+    final targetChannel = allGroupChannels.where((c) => c.id == channelId).firstOrNull;
+    if (targetChannel != null && targetChannel.participantIds != null && targetChannel.participantIds!.isNotEmpty) {
+      if (!targetChannel.participantIds!.contains(_currentUser.id) &&
+          _currentUser.role != UserRole.boss &&
+          _currentUser.role != UserRole.admin) {
+        // Bu gruba eklenmemiş kişi mesaj gönderemez
+        return;
+      }
+    }
 
     final newMsg = ChatMessage(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
@@ -2155,6 +2300,7 @@ class PdksState extends ChangeNotifier {
     required UserRole baseRole,
     required Color color,
     required IconData icon,
+    List<String>? allowedPageIds,
   }) {
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
@@ -2192,11 +2338,56 @@ class PdksState extends ChangeNotifier {
       icon: icon,
       isSystemRole: false,
       createdBy: _currentUser.role == UserRole.boss ? 'Patron (${_currentUser.fullName})' : 'Admin (${_currentUser.fullName})',
+      allowedPageIds: allowedPageIds ?? const [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'settings',
+        'about',
+      ],
     );
 
     _roles.add(newRole);
     notifyListeners();
     return (success: true, message: '"$trimmedName" rolü başarıyla oluşturuldu.');
+  }
+
+  /// Rolün erişebileceği sayfaları ve yetki düzeylerini güncelle
+  ({bool success, String message}) updateRolePermissions(String roleId, List<String> allowedPageIds) {
+    final index = _roles.indexWhere((r) => r.id == roleId);
+    if (index == -1) return (success: false, message: 'Rol bulunamadı.');
+
+    _roles[index] = _roles[index].copyWith(allowedPageIds: allowedPageIds);
+    notifyListeners();
+    return (success: true, message: 'Rolün sayfa erişim yetkileri güncellendi.');
+  }
+
+  /// Belirli bir sayfa için kullanıcının erişim izni var mı?
+  bool hasPagePermission(String pageId, [Employee? employee]) {
+    final emp = employee ?? _currentUser;
+    if (emp.role == UserRole.admin) return true;
+
+    if (emp.customRoleId != null) {
+      final customRole = _roles.where((r) => r.id == emp.customRoleId).firstOrNull;
+      if (customRole != null) {
+        return customRole.canAccessPage(pageId);
+      }
+    }
+
+    final systemRole = _roles.where((r) => r.baseRole == emp.role).firstOrNull;
+    if (systemRole != null) {
+      return systemRole.canAccessPage(pageId);
+    }
+    return true;
   }
 
   /// Özel Rolü Sil
@@ -2364,6 +2555,18 @@ class PdksState extends ChangeNotifier {
     _db.saveQuickMenuItems(_quickMenuItems);
     notifyListeners();
     return (success: true, message: 'Hızlı menü silindi.');
+  }
+
+  /// Hızlı menüleri tüm kurumsal sayfa menüleriyle varsayılana sıfırlar
+  ({bool success, String message}) resetQuickMenuItemsToDefault() {
+    if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Yalnızca CEO ve Admin hızlı menüyü sıfırlayabilir.');
+    }
+    _quickMenuItems.clear();
+    _quickMenuItems.addAll(DatabaseService.defaultQuickMenuItems());
+    _db.saveQuickMenuItems(_quickMenuItems);
+    notifyListeners();
+    return (success: true, message: 'Hızlı menü listesi tüm kurumsal menülerle varsayılana sıfırlandı.');
   }
 
   // ==========================================
@@ -2846,8 +3049,17 @@ class PdksState extends ChangeNotifier {
     }
   }
 
+  bool _isDisposed = false;
+
+  @override
+  void notifyListeners() {
+    if (_isDisposed) return;
+    super.notifyListeners();
+  }
+
   @override
   void dispose() {
+    _isDisposed = true;
     _workTimer?.cancel();
     _cloudSyncTimer?.cancel();
     super.dispose();

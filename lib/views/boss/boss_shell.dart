@@ -654,6 +654,45 @@ class _BossShellState extends State<BossShell> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${role.allowedPageIds.length} / ${kAllAppPages.length} Sayfa İzni',
+                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () => _showEditRolePermissionsDialog(context, pdks, role),
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.shield_outlined, size: 11, color: Color(0xFF2563EB)),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'Yetki Düzeyleri',
+                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
                       Text(
                         'Taban Yetki: ${role.baseRole.label} • Ekleyen: ${role.createdBy}',
                         style: TextStyle(color: AppColors.textSub(context).withOpacity(0.7), fontSize: 10),
@@ -850,6 +889,22 @@ class _BossShellState extends State<BossShell> {
     UserRole selectedBase = UserRole.employee;
     Color selectedColor = const Color(0xFF0284C7);
     IconData selectedIcon = Icons.badge_outlined;
+    final selectedPageIds = <String>{
+      'profile',
+      'payroll',
+      'chat',
+      'contacts',
+      'notifications',
+      'cafeteria',
+      'business_card',
+      'favorites',
+      'leave',
+      'records',
+      'field_work',
+      'overtime',
+      'settings',
+      'about',
+    };
 
     final colorOptions = [
       const Color(0xFF0284C7), // Sky Blue
@@ -1098,6 +1153,63 @@ class _BossShellState extends State<BossShell> {
                     }).toList(),
                   ),
 
+                  const SizedBox(height: 18),
+
+                  // Sayfa Yetki Düzeyleri (Erişebileceği Ekranlar)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Sayfa Yetki Düzeyleri (${selectedPageIds.length} Sayfa İzinli)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setSheetState(() {
+                            if (selectedPageIds.length == kAllAppPages.length) {
+                              selectedPageIds.clear();
+                            } else {
+                              selectedPageIds.addAll(kAllAppPages.map((p) => p.id));
+                            }
+                          });
+                        },
+                        child: Text(
+                          selectedPageIds.length == kAllAppPages.length ? 'Tümünü Kaldır' : 'Tümünü Seç',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Bu role sahip kullanıcıların erişebileceği modülleri işaretleyin',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: kAllAppPages.map((page) {
+                      final isSel = selectedPageIds.contains(page.id);
+                      return FilterChip(
+                        avatar: Icon(page.icon, size: 14, color: isSel ? Colors.white : Colors.grey),
+                        label: Text(page.title, style: TextStyle(fontSize: 11, color: isSel ? Colors.white : null)),
+                        selected: isSel,
+                        selectedColor: const Color(0xFFD97706),
+                        checkmarkColor: Colors.white,
+                        onSelected: (val) {
+                          setSheetState(() {
+                            if (val) {
+                              selectedPageIds.add(page.id);
+                            } else {
+                              selectedPageIds.remove(page.id);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+
                   const SizedBox(height: 24),
 
                   // Butonlar
@@ -1132,6 +1244,7 @@ class _BossShellState extends State<BossShell> {
                               baseRole: selectedBase,
                               color: selectedColor,
                               icon: selectedIcon,
+                              allowedPageIds: selectedPageIds.toList(),
                             );
 
                             Navigator.pop(ctx);
@@ -1150,6 +1263,134 @@ class _BossShellState extends State<BossShell> {
                 ],
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEditRolePermissionsDialog(BuildContext context, PdksState pdks, AppRoleItem role) {
+    final currentAllowed = Set<String>.from(role.allowedPageIds);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: role.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(role.icon, color: role.color, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${role.name} Yetki Düzeyleri',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      Text(
+                        '${currentAllowed.length} / ${kAllAppPages.length} Sayfa İzinli',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 380,
+              height: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bu role sahip kullanıcıların PDKS uygulamasında görebileceği ve erişebileceği sayfaları belirleyin:',
+                      style: TextStyle(fontSize: 11.5, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), height: 1.4),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              currentAllowed.addAll(kAllAppPages.map((p) => p.id));
+                            });
+                          },
+                          child: const Text('Tümünü Seç', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              currentAllowed.clear();
+                            });
+                          },
+                          child: const Text('Tümünü Kaldır', style: TextStyle(fontSize: 11.5, color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 1),
+                    ...kAllAppPages.map((page) {
+                      final hasAccess = currentAllowed.contains(page.id);
+                      return CheckboxListTile(
+                        value: hasAccess,
+                        secondary: Icon(page.icon, size: 20, color: hasAccess ? role.color : Colors.grey),
+                        title: Text(page.title, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                        subtitle: Text(page.category, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        dense: true,
+                        activeColor: role.color,
+                        onChanged: (val) {
+                          setDialogState(() {
+                            if (val == true) {
+                              currentAllowed.add(page.id);
+                            } else {
+                              currentAllowed.remove(page.id);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: role.color,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  final res = pdks.updateRolePermissions(role.id, currentAllowed.toList());
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(res.message),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: const Text('Yetkileri Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
           );
         },
       ),

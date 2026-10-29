@@ -594,6 +594,19 @@ class DatabaseService {
     await _persistMessages();
   }
 
+  /// Mesajı kalıcı silmez, veritabanında denetim kaydı olarak soft-delete işaretler.
+  Future<void> softDeleteChatMessage(String messageId, {required String deletedBy}) async {
+    final idx = _messages.indexWhere((m) => m.id == messageId);
+    if (idx != -1) {
+      _messages[idx] = _messages[idx].copyWith(
+        isDeleted: true,
+        deletedAt: DateTime.now(),
+        deletedBy: deletedBy,
+      );
+      await _persistMessages();
+    }
+  }
+
   List<ChatChannel> getCustomChannels() => List.unmodifiable(_customChannels);
 
   Future<void> insertCustomChannel(ChatChannel channel) async {
@@ -694,6 +707,78 @@ class DatabaseService {
 
   static List<QuickMenuItem> defaultQuickMenuItems() => const [
     QuickMenuItem(
+      id: 'qm_profile',
+      title: 'Profil',
+      subtitle: 'Kişisel bilgiler & izin bakiyesi',
+      iconCode: 0xe491,
+      colorValue: 0xFF2563EB,
+      isVisible: true,
+      actionType: 'profile',
+    ),
+    QuickMenuItem(
+      id: 'qm_payroll',
+      title: 'Bordro & Maaş',
+      subtitle: 'Aylık maaş hesaplama, icmal & ödemeler',
+      iconCode: 0xf00ee,
+      colorValue: 0xFF10B981,
+      isVisible: true,
+      actionType: 'payroll',
+    ),
+    QuickMenuItem(
+      id: 'qm_chat',
+      title: 'Mesajlaşma',
+      subtitle: 'Şirket içi kanallar & 1-e-1 sohbet',
+      iconCode: 0xe153,
+      colorValue: 0xFF0284C7,
+      isVisible: true,
+      actionType: 'chat',
+    ),
+    QuickMenuItem(
+      id: 'qm_contacts',
+      title: 'Kişiler',
+      subtitle: 'Şirket rehberi & mesai arkadaşları',
+      iconCode: 0xe49b,
+      colorValue: 0xFF4F46E5,
+      isVisible: true,
+      actionType: 'contacts',
+    ),
+    QuickMenuItem(
+      id: 'qm_notifications',
+      title: 'Bildirimler',
+      subtitle: 'Duyurular & onay bildirimleri',
+      iconCode: 0xe44f,
+      colorValue: 0xFF8B5CF6,
+      isVisible: true,
+      actionType: 'notifications',
+    ),
+    QuickMenuItem(
+      id: 'qm_cafeteria',
+      title: 'Yemekhane Menüsü',
+      subtitle: 'Günün menüsü & 2 haftalık çizelge',
+      iconCode: 0xe506,
+      colorValue: 0xFFEA580C,
+      isVisible: true,
+      actionType: 'cafeteria',
+    ),
+    QuickMenuItem(
+      id: 'qm_business_card',
+      title: 'Kartvizit',
+      subtitle: 'Dijital QR kodlu şirket kartı',
+      iconCode: 0xf04ee,
+      colorValue: 0xFF0D9488,
+      isVisible: true,
+      actionType: 'business_card',
+    ),
+    QuickMenuItem(
+      id: 'qm_favorites',
+      title: 'Sık Kullanılanlar',
+      subtitle: 'Hızlı kısayollar, yemek & servis',
+      iconCode: 0xe5f9,
+      colorValue: 0xFFD97706,
+      isVisible: true,
+      actionType: 'favorites',
+    ),
+    QuickMenuItem(
       id: 'qm_leave',
       title: 'İzin Talebi',
       subtitle: 'Yıllık izin veya mazeret talebi oluşturun',
@@ -704,7 +789,7 @@ class DatabaseService {
     ),
     QuickMenuItem(
       id: 'qm_records',
-      title: 'Giriş/Çıkışlar',
+      title: 'Giriş / Çıkışlar',
       subtitle: 'Geçmiş devam ve yoklama kayıtları',
       iconCode: 0xe314,
       colorValue: 0xFF2563EB,
@@ -730,19 +815,42 @@ class DatabaseService {
       actionType: 'overtime',
     ),
     QuickMenuItem(
-      id: 'qm_cafeteria',
-      title: 'Günün Yemek Menüsü',
-      subtitle: 'Kalori ve öğün içeriklerini inceleyin',
-      iconCode: 0xe506,
-      colorValue: 0xFFE11D48,
+      id: 'qm_settings',
+      title: 'Ayarlar',
+      subtitle: 'Tema, bildirim ve sistem tercihleri',
+      iconCode: 0xe57f,
+      colorValue: 0xFF475569,
       isVisible: true,
-      actionType: 'cafeteria',
+      actionType: 'settings',
+    ),
+    QuickMenuItem(
+      id: 'qm_about',
+      title: 'Hakkımda',
+      subtitle: 'Sürüm 1.0.0 & sistem güvenliği',
+      iconCode: 0xe33d,
+      colorValue: 0xFF0284C7,
+      isVisible: true,
+      actionType: 'about',
+    ),
+    QuickMenuItem(
+      id: 'qm_cloud_db',
+      title: 'Firebase Bulut DB',
+      subtitle: 'Merkezi bulut senkronizasyonu',
+      iconCode: 0xe87a,
+      colorValue: 0xFFFF5722,
+      isVisible: true,
+      actionType: 'cloud_db',
     ),
   ];
 
   List<QuickMenuItem> getAllQuickMenuItems() {
     if (_quickMenuItems.isEmpty) {
       return defaultQuickMenuItems();
+    }
+    final existingIds = _quickMenuItems.map((e) => e.id).toSet();
+    final missing = defaultQuickMenuItems().where((d) => !existingIds.contains(d.id));
+    if (missing.isNotEmpty) {
+      _quickMenuItems.addAll(missing);
     }
     return List.unmodifiable(_quickMenuItems);
   }

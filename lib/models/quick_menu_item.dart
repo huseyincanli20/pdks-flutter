@@ -7,7 +7,7 @@ class QuickMenuItem {
   final int iconCode;
   final int colorValue;
   final bool isVisible;
-  final String actionType; // 'leave', 'records', 'overtime', 'field_work', 'cafeteria', 'info_dialog'
+  final String actionType; // 'profile', 'payroll', 'chat', 'contacts', 'notifications', 'cafeteria', 'business_card', 'favorites', 'settings', 'about', 'leave', 'records', 'field_work', 'overtime', 'cloud_db', 'info_dialog'
   final String? customContent;
 
   const QuickMenuItem({
@@ -39,11 +39,36 @@ class QuickMenuItem {
       case 0xe3ab:
         return Icons.location_on_rounded;
       case 0xe153:
-        return Icons.campaign_rounded;
+      case 0xe19a:
+        return Icons.chat_bubble_rounded;
+      case 0xe44f:
+      case 0xe450:
+        return Icons.notifications_rounded;
+      case 0xe491:
+      case 0xe492:
+        return Icons.person_rounded;
+      case 0xf00ee:
       case 0xe84f:
-        return Icons.account_balance_wallet_rounded;
+        return Icons.receipt_long_rounded;
+      case 0xe49b:
       case 0xe2eb:
-        return Icons.groups_rounded;
+        return Icons.people_alt_rounded;
+      case 0xf04ee:
+      case 0xe0d6:
+        return Icons.badge_rounded;
+      case 0xe5f9:
+      case 0xe838:
+        return Icons.star_rounded;
+      case 0xe57f:
+      case 0xe8b8:
+        return Icons.settings_rounded;
+      case 0xe33d:
+      case 0xe88e:
+        return Icons.info_rounded;
+      case 0xe87a:
+        return Icons.local_fire_department_rounded;
+      case 0xe17f:
+        return Icons.cloud_rounded;
       case 0xe3e6:
         return Icons.login_rounded;
       case 0xe88a:
