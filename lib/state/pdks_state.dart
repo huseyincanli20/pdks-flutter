@@ -23,7 +23,7 @@ class PdksState extends ChangeNotifier {
   // Personelin anlık durumu: true = İçeride (Checked in), false = Dışarıda
   bool _isCheckedIn = false;
   DateTime? _lastCheckInTime;
-  Duration _workedToday = const Duration(hours: 4, minutes: 25);
+  Duration _workedToday = Duration.zero;
   Timer? _workTimer;
 
   // Veri Listeleri
@@ -34,58 +34,7 @@ class PdksState extends ChangeNotifier {
   List<PayrollSlip> _payrolls = [];
 
   // Bildirimler
-  List<AppNotification> _notifications = [
-    AppNotification(
-      id: 'notif_1',
-      title: 'Günün Yemekhane Menüsü Hazır 🍽️',
-      message: 'Öğle Menüsü: Süzme Mercimek Çorbası, Hasanpaşa Köfte, Tereyağlı Pirinç Pilavı, Mevsim Salata & Kazandibi (~820 kcal).',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
-      isRead: false,
-      type: NotificationType.cafeteria,
-      icon: Icons.restaurant_rounded,
-      color: const Color(0xFFEA580C),
-    ),
-    AppNotification(
-      id: 'notif_2',
-      title: 'Mesai Girişi Başarılı ⏰',
-      message: 'Ofis Wi-Fi (Sirket_Personel) üzerinden saat 08:26\'da mesai başlangıcınız kaydedildi.',
-      timestamp: DateTime.now().subtract(const Duration(hours: 4, minutes: 20)),
-      isRead: false,
-      type: NotificationType.attendance,
-      icon: Icons.login_rounded,
-      color: const Color(0xFF10B981),
-    ),
-    AppNotification(
-      id: 'notif_3',
-      title: 'İzin Talebi Onaylandı 🌴',
-      message: 'İnsan Kaynakları Direktörlüğü 3 günlük mazeret izni talebinizi onayladı.',
-      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-      isRead: true,
-      type: NotificationType.leave,
-      icon: Icons.beach_access_rounded,
-      color: const Color(0xFF0284C7),
-    ),
-    AppNotification(
-      id: 'notif_4',
-      title: '29 Ekim Cumhuriyet Bayramı Duyurusu 🇹🇷',
-      message: 'Değerli çalışma arkadaşlarımız, 29 Ekim Cumhuriyet Bayramı sebebiyle yarın şirketimiz tam gün resmi tatildir.',
-      timestamp: DateTime.now().subtract(const Duration(days: 2)),
-      isRead: true,
-      type: NotificationType.announcement,
-      icon: Icons.campaign_rounded,
-      color: const Color(0xFFEF4444),
-    ),
-    AppNotification(
-      id: 'notif_5',
-      title: 'Ekim 2026 Puantaj Raporu Hazır 📊',
-      message: 'Bu aya ait 176 saatlik normal çalışma ve onaylanan fazla mesai kayıtlarınız puantaj çizelgesine işlendi.',
-      timestamp: DateTime.now().subtract(const Duration(days: 3)),
-      isRead: true,
-      type: NotificationType.system,
-      icon: Icons.assessment_outlined,
-      color: const Color(0xFF8B5CF6),
-    ),
-  ];
+  List<AppNotification> _notifications = [];
 
   // Günün Yemekhane Menüsü
   CafeteriaMenu _todayMenu = CafeteriaMenu(
@@ -582,11 +531,24 @@ class PdksState extends ChangeNotifier {
   List<AppRoleItem> get rolesSelectableByBoss =>
       _roles.where((r) => r.baseRole != UserRole.admin && r.id != 'role_admin').toList();
 
-  // İK & Patron Dashboard Sayaçları
-  int get totalEmployeesCount => _employees.length;
-  int get presentEmployeesCount => _employees.where((e) => e.isActive).length - 2;
-  int get onLeaveEmployeesCount => _leaves.where((l) => l.status == LeaveStatus.approved).length;
-  int get lateEmployeesCount => 2;
+  // İK & Patron Dashboard Sayaçları (Aktif Şirkete Göre Dinamik Gerçek Veriler)
+  int get totalEmployeesCount => employees.length;
+  int get presentEmployeesCount {
+    final checkedInEmpIds = <int>{};
+    for (final r in records) {
+      if (r.type == AttendanceType.checkIn) {
+        checkedInEmpIds.add(r.employeeId);
+      } else if (r.type == AttendanceType.checkOut) {
+        checkedInEmpIds.remove(r.employeeId);
+      }
+    }
+    if (_isCheckedIn && _currentUser.companyId == _activeCompanyId) {
+      checkedInEmpIds.add(_currentUser.id);
+    }
+    return checkedInEmpIds.length;
+  }
+  int get onLeaveEmployeesCount => leaves.where((l) => l.status == LeaveStatus.approved).length;
+  int get lateEmployeesCount => records.where((r) => r.isLate).length;
 
   PdksState() {
     _initializeSeedData();
@@ -615,7 +577,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '1234',
       role: UserRole.employee, // PERSONEL
       annualLeaveAllowance: 14,
-      usedLeaveDays: 3,
+      usedLeaveDays: 0,
     );
 
     final ik = Employee(
@@ -628,7 +590,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '2345',
       role: UserRole.hr, // İK
       annualLeaveAllowance: 20,
-      usedLeaveDays: 5,
+      usedLeaveDays: 0,
     );
 
     final patron = Employee(
@@ -641,7 +603,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '3456',
       role: UserRole.boss, // PATRON
       annualLeaveAllowance: 30,
-      usedLeaveDays: 2,
+      usedLeaveDays: 0,
     );
 
     final admin = Employee(
@@ -654,7 +616,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '4567',
       role: UserRole.admin, // ADMIN
       annualLeaveAllowance: 20,
-      usedLeaveDays: 1,
+      usedLeaveDays: 0,
     );
 
     final diger1 = Employee(
@@ -667,7 +629,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '9988',
       role: UserRole.employee,
       annualLeaveAllowance: 14,
-      usedLeaveDays: 7,
+      usedLeaveDays: 0,
     );
 
     final diger2 = Employee(
@@ -680,7 +642,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '1122',
       role: UserRole.employee,
       annualLeaveAllowance: 14,
-      usedLeaveDays: 2,
+      usedLeaveDays: 0,
     );
 
     final yemekhane = Employee(
@@ -694,7 +656,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '5678',
       role: UserRole.cafeteria,
       annualLeaveAllowance: 14,
-      usedLeaveDays: 1,
+      usedLeaveDays: 0,
       avatarUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
     );
 
@@ -710,7 +672,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '1234',
       role: UserRole.employee,
       annualLeaveAllowance: 18,
-      usedLeaveDays: 4,
+      usedLeaveDays: 0,
     );
 
     final novaIk = Employee(
@@ -724,7 +686,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '2345',
       role: UserRole.hr,
       annualLeaveAllowance: 22,
-      usedLeaveDays: 3,
+      usedLeaveDays: 0,
     );
 
     final novaPatron = Employee(
@@ -738,7 +700,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '3456',
       role: UserRole.boss,
       annualLeaveAllowance: 30,
-      usedLeaveDays: 1,
+      usedLeaveDays: 0,
     );
 
     final novaAdmin = Employee(
@@ -767,7 +729,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '1234',
       role: UserRole.employee,
       annualLeaveAllowance: 15,
-      usedLeaveDays: 2,
+      usedLeaveDays: 0,
     );
 
     final ozdemirIk = Employee(
@@ -781,7 +743,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '2345',
       role: UserRole.hr,
       annualLeaveAllowance: 20,
-      usedLeaveDays: 6,
+      usedLeaveDays: 0,
     );
 
     final ozdemirPatron = Employee(
@@ -809,7 +771,7 @@ class PdksState extends ChangeNotifier {
       pinCode: '4567',
       role: UserRole.admin,
       annualLeaveAllowance: 20,
-      usedLeaveDays: 2,
+      usedLeaveDays: 0,
     );
 
     _currentUser = personel; // Varsayılan personel
@@ -819,127 +781,9 @@ class PdksState extends ChangeNotifier {
       ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
     ];
 
-    final now = DateTime.now();
-    _records = [
-      // ACME Kayıtları
-      AttendanceRecord(
-        id: 101,
-        companyId: 'cmp_acme',
-        employeeId: 1,
-        employeeName: 'Ahmet Yılmaz',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 4, minutes: 25)),
-        calculatedDistanceMeters: 42.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.qrCode,
-        note: 'Dinamik QR Kod Turnikeden okutuldu.',
-      ),
-      AttendanceRecord(
-        id: 102,
-        companyId: 'cmp_acme',
-        employeeId: 2,
-        employeeName: 'Zeynep Kaya',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 4, minutes: 40)),
-        calculatedDistanceMeters: 18.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.geofenceGps,
-        note: 'Ofis Geofence (18m mesafe).',
-      ),
-      AttendanceRecord(
-        id: 103,
-        companyId: 'cmp_acme',
-        employeeId: 5,
-        employeeName: 'Mehmet Demir',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 3, minutes: 50)),
-        calculatedDistanceMeters: 35.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.wifiIp,
-        note: 'Sirket_Personel Wi-Fi ağı doğrulandı.',
-      ),
-      // NOVA Savunma Kayıtları
-      AttendanceRecord(
-        id: 104,
-        companyId: 'cmp_nova',
-        employeeId: 11,
-        employeeName: 'Can Demir',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 3, minutes: 10)),
-        calculatedDistanceMeters: 25.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.geofenceGps,
-        note: 'Nova Savunma Geofence (ODTÜ Teknokent)',
-      ),
-      AttendanceRecord(
-        id: 105,
-        companyId: 'cmp_nova',
-        employeeId: 12,
-        employeeName: 'Ayşe Çelik',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 4, minutes: 5)),
-        calculatedDistanceMeters: 12.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.wifiIp,
-        note: 'Nova_Secure_Wifi güvenli ağ doğrulaması.',
-      ),
-      // ÖZDEMİR Holding Kayıtları
-      AttendanceRecord(
-        id: 106,
-        companyId: 'cmp_ozdemir',
-        employeeId: 21,
-        employeeName: 'Murat Yıldız',
-        type: AttendanceType.checkIn,
-        timestamp: now.subtract(const Duration(hours: 5, minutes: 0)),
-        calculatedDistanceMeters: 55.0,
-        isLocationVerified: true,
-        verificationMethod: VerificationMethod.qrCode,
-        note: 'Maslak Plaza Turnike QR Giriş',
-      ),
-    ];
-
-    _leaves = [
-      LeaveRequest(
-        id: 201,
-        companyId: 'cmp_acme',
-        employeeId: 1,
-        employeeName: 'Ahmet Yılmaz',
-        type: LeaveType.annual,
-        startDate: now.add(const Duration(days: 10)),
-        endDate: now.add(const Duration(days: 14)),
-        totalDays: 5,
-        reason: 'Yıllık yaz tatili planı',
-        status: LeaveStatus.pending,
-        createdAt: now.subtract(const Duration(days: 1)),
-      ),
-      LeaveRequest(
-        id: 202,
-        companyId: 'cmp_acme',
-        employeeId: 6,
-        employeeName: 'Elif Şahin',
-        type: LeaveType.medical,
-        startDate: now.subtract(const Duration(days: 2)),
-        endDate: now.subtract(const Duration(days: 1)),
-        totalDays: 2,
-        reason: 'Grip ve doktor istirahat raporu',
-        status: LeaveStatus.approved,
-        managerComment: 'Rapor incelendi, onaylandı.',
-        createdAt: now.subtract(const Duration(days: 2)),
-      ),
-      LeaveRequest(
-        id: 203,
-        companyId: 'cmp_nova',
-        employeeId: 11,
-        employeeName: 'Can Demir',
-        type: LeaveType.annual,
-        startDate: now.add(const Duration(days: 20)),
-        endDate: now.add(const Duration(days: 25)),
-        totalDays: 5,
-        reason: 'Yıllık izin talebi',
-        status: LeaveStatus.pending,
-        createdAt: now.subtract(const Duration(hours: 12)),
-      ),
-    ];
+    _records = [];
+    _leaves = [];
+    _payrolls = [];
 
     _shifts = [
       ShiftSchedule(
@@ -950,7 +794,7 @@ class PdksState extends ChangeNotifier {
         endTime: '17:30',
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 5,
+        assignedEmployeeCount: 0,
       ),
       ShiftSchedule(
         id: 2,
@@ -960,7 +804,7 @@ class PdksState extends ChangeNotifier {
         endTime: '19:00',
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 1,
+        assignedEmployeeCount: 0,
       ),
       ShiftSchedule(
         id: 3,
@@ -970,7 +814,7 @@ class PdksState extends ChangeNotifier {
         endTime: '15:00',
         breakMinutes: 45,
         activeDays: ['Cumartesi'],
-        assignedEmployeeCount: 1,
+        assignedEmployeeCount: 0,
       ),
       ShiftSchedule(
         id: 4,
@@ -980,7 +824,7 @@ class PdksState extends ChangeNotifier {
         endTime: '17:00',
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 4,
+        assignedEmployeeCount: 0,
       ),
       ShiftSchedule(
         id: 5,
@@ -990,367 +834,13 @@ class PdksState extends ChangeNotifier {
         endTime: '16:30',
         breakMinutes: 60,
         activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
-        assignedEmployeeCount: 4,
+        assignedEmployeeCount: 0,
       ),
     ];
 
-    _payrolls = [
-      // Ahmet Yılmaz (Ekim 2026 - Son Dönem)
-      PayrollSlip(
-        id: 'brd_2026_10_01',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 1,
-        employeeName: 'Ahmet Yılmaz',
-        employeeTitle: 'Kıdemli Mobil Geliştirici',
-        department: 'Yazılım & Ar-Ge',
-        tcKimlikNo: '28491028472',
-        sicilNo: '1001',
-        iban: 'TR42 0006 2000 0001 2345 6789 01',
-        bankName: 'Garanti BBVA',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 8.5,
-        baseGrossSalary: 56000.0,
-        overtimePay: 3173.33,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 2500.0,
-        incomeTax: 7600.0,
-        stampTax: 468.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Ahmet Yılmaz (Eylül 2026)
-      PayrollSlip(
-        id: 'brd_2026_09_01',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 1,
-        employeeName: 'Ahmet Yılmaz',
-        employeeTitle: 'Kıdemli Mobil Geliştirici',
-        department: 'Yazılım & Ar-Ge',
-        tcKimlikNo: '28491028472',
-        sicilNo: '1001',
-        iban: 'TR42 0006 2000 0001 2345 6789 01',
-        bankName: 'Garanti BBVA',
-        periodMonth: 9,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 9, 28),
-        paymentDate: DateTime(2026, 10, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 12.0,
-        baseGrossSalary: 56000.0,
-        overtimePay: 4480.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 7400.0,
-        stampTax: 459.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 9, 28, 17, 30),
-      ),
-      // Ahmet Yılmaz (Ağustos 2026)
-      PayrollSlip(
-        id: 'brd_2026_08_01',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 1,
-        employeeName: 'Ahmet Yılmaz',
-        employeeTitle: 'Kıdemli Mobil Geliştirici',
-        department: 'Yazılım & Ar-Ge',
-        tcKimlikNo: '28491028472',
-        sicilNo: '1001',
-        iban: 'TR42 0006 2000 0001 2345 6789 01',
-        bankName: 'Garanti BBVA',
-        periodMonth: 8,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 8, 28),
-        paymentDate: DateTime(2026, 9, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 5.0,
-        baseGrossSalary: 56000.0,
-        overtimePay: 1866.67,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 5000.0,
-        incomeTax: 8100.0,
-        stampTax: 477.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 8, 28, 17, 30),
-      ),
-      // Zeynep Kaya (İK - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_02',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 2,
-        employeeName: 'Zeynep Kaya',
-        employeeTitle: 'İK Direktörü',
-        department: 'İnsan Kaynakları',
-        tcKimlikNo: '31592039481',
-        sicilNo: '1002',
-        iban: 'TR55 0006 4000 0002 3456 7890 12',
-        bankName: 'İş Bankası',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 4.0,
-        baseGrossSalary: 68000.0,
-        overtimePay: 1813.33,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 5000.0,
-        incomeTax: 9800.0,
-        stampTax: 568.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Kemal Özdemir (Patron - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_03',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 3,
-        employeeName: 'Kemal Özdemir',
-        employeeTitle: 'Genel Müdür / CEO',
-        department: 'Yönetim Kurulu',
-        tcKimlikNo: '19482019485',
-        sicilNo: '1003',
-        iban: 'TR12 0006 2000 0003 4567 8901 23',
-        bankName: 'Garanti BBVA',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 0.0,
-        baseGrossSalary: 120000.0,
-        overtimePay: 0.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 16500.0,
-        stampTax: 910.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Serkan Arslan (Admin - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_04',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 4,
-        employeeName: 'Serkan Arslan',
-        employeeTitle: 'Sistem Yöneticisi',
-        department: 'Bilgi İşlem & IT',
-        tcKimlikNo: '47281039482',
-        sicilNo: '1004',
-        iban: 'TR77 0001 5000 0004 5678 9012 34',
-        bankName: 'Vakıfbank',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 6.0,
-        baseGrossSalary: 62000.0,
-        overtimePay: 2480.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 8100.0,
-        stampTax: 489.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Mehmet Demir (Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_05',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 5,
-        employeeName: 'Mehmet Demir',
-        employeeTitle: 'Bölge Satış Müdürü',
-        department: 'Satış & Pazarlama',
-        tcKimlikNo: '58291039471',
-        sicilNo: '1005',
-        iban: 'TR88 0006 2000 0005 6789 0123 45',
-        bankName: 'Yapı Kredi',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 14.0,
-        baseGrossSalary: 48000.0,
-        overtimePay: 4480.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 3000.0,
-        incomeTax: 6900.0,
-        stampTax: 421.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Elif Şahin (Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_06',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 6,
-        employeeName: 'Elif Şahin',
-        employeeTitle: 'Muhasebe Uzmanı',
-        department: 'Mali İşler',
-        tcKimlikNo: '69382049182',
-        sicilNo: '1006',
-        iban: 'TR99 0006 4000 0006 7890 1234 56',
-        bankName: 'İş Bankası',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 2.0,
-        baseGrossSalary: 45000.0,
-        overtimePay: 600.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 5900.0,
-        stampTax: 346.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Hasan Usta (Yemekhane - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_07',
-        companyId: 'cmp_acme',
-        companyName: 'ACME Teknoloji ve Bilişim A.Ş.',
-        employeeId: 7,
-        employeeName: 'Hasan Usta',
-        employeeTitle: 'Mutfak Şefi',
-        department: 'Yemekhane & Sosyal Tesisler',
-        tcKimlikNo: '71829304918',
-        sicilNo: '1007',
-        iban: 'TR23 0001 0000 0007 8901 2345 67',
-        bankName: 'Ziraat Bankası',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 10.0,
-        baseGrossSalary: 38000.0,
-        overtimePay: 2533.33,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 4900.0,
-        stampTax: 307.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Can Demir (NOVA - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_11',
-        companyId: 'cmp_nova',
-        companyName: 'NOVA Savunma Teknolojileri A.Ş.',
-        employeeId: 11,
-        employeeName: 'Can Demir',
-        employeeTitle: 'Kıdemli Sistem Mühendisi',
-        department: 'Aviyonik & Radar',
-        tcKimlikNo: '12384920192',
-        sicilNo: '2001',
-        iban: 'TR34 0006 2000 0008 9012 3456 78',
-        bankName: 'Garanti BBVA',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 6.0,
-        baseGrossSalary: 65000.0,
-        overtimePay: 2600.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 4000.0,
-        incomeTax: 8900.0,
-        stampTax: 543.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-      // Murat Yıldız (ÖZDEMİR - Ekim 2026)
-      PayrollSlip(
-        id: 'brd_2026_10_21',
-        companyId: 'cmp_ozdemir',
-        companyName: 'ÖZDEMİR Sanayi ve Yatırım Holding',
-        employeeId: 21,
-        employeeName: 'Murat Yıldız',
-        employeeTitle: 'Lojistik Operasyon Uzmanı',
-        department: 'Depolama & Sevkiyat',
-        tcKimlikNo: '98472910283',
-        sicilNo: '3001',
-        iban: 'TR91 0006 2000 0012 3456 7890 12',
-        bankName: 'Yapı Kredi',
-        periodMonth: 10,
-        periodYear: 2026,
-        issueDate: DateTime(2026, 10, 28),
-        paymentDate: DateTime(2026, 11, 5),
-        workedDays: 22,
-        workedHours: 176.0,
-        overtimeHours: 16.0,
-        baseGrossSalary: 42000.0,
-        overtimePay: 4480.0,
-        mealAllowance: 4500.0,
-        travelAllowance: 1800.0,
-        bonus: 0.0,
-        incomeTax: 5600.0,
-        stampTax: 352.0,
-        taxExemption: 3200.0,
-        status: PayrollStatus.paid,
-        isSigned: true,
-        signatureTimestamp: DateTime(2026, 10, 28, 17, 30),
-      ),
-    ];
-
-    _isCheckedIn = true;
-    _lastCheckInTime = now.subtract(const Duration(hours: 4, minutes: 25));
+    _isCheckedIn = false;
+    _lastCheckInTime = null;
+    _workedToday = Duration.zero;
   }
 
   // Giriş Yapma: YALNIZCA GİRİŞ BİLGİLERİNE GÖRE ROL BELİRLENİR

@@ -59,6 +59,10 @@ class AttendanceRecord {
     }
   }
 
+  bool get isLate {
+    return type == AttendanceType.checkIn && (timestamp.hour > 9 || (timestamp.hour == 9 && timestamp.minute > 0));
+  }
+
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
       id: json['id'] ?? 0,

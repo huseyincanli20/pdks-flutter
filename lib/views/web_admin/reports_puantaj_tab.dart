@@ -33,13 +33,14 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
 
     for (int i = 0; i < employees.length; i++) {
       final emp = employees[i];
-      final normalHours = 112 + (i * 12);
-      final otHours = (i % 2 == 0) ? (i * 4.5).toStringAsFixed(1) : '0';
-      final missingHours = (i == 4) ? '8' : '0';
-      final netHours = normalHours + double.parse(otHours) - double.parse(missingHours);
+      final empRecords = pdks.records.where((r) => r.employeeId == emp.id).toList();
+      final normalHours = empRecords.length * 8;
+      const otHours = '0.0';
+      const missingHours = '0.0';
+      final netHours = normalHours.toDouble();
 
       buffer.writeln(
-        '${i + 1};${1001 + emp.id};"${emp.fullName}";"${emp.department}";"${emp.title}";$normalHours;$otHours;$missingHours;${emp.usedLeaveDays};${emp.remainingLeaveDays};$netHours;Onaylandı',
+        '${i + 1};${1001 + emp.id};"${emp.fullName}";"${emp.department}";"${emp.title}";$normalHours;$otHours;$missingHours;${emp.usedLeaveDays};${emp.remainingLeaveDays};$netHours;${empRecords.isNotEmpty ? "Onaylandı" : "Kayıt Yok"}',
       );
     }
 
@@ -317,27 +318,19 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
                               ),
                             ),
                             DataCell(Text(emp.department)),
-                            DataCell(Text('${112 + (emp.id * 12)} Sa.')),
-                            DataCell(
-                              Text(
-                                emp.id % 2 == 0 ? '+${emp.id * 4.5} Sa.' : '-',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: emp.id % 2 == 0 ? AppColors.success : AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
+                            const DataCell(Text('0 Sa.')),
+                            const DataCell(Text('-')),
                             DataCell(Text('${emp.remainingLeaveDays} Gün')),
                             DataCell(
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.12),
+                                  color: AppColors.textSecondary.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
-                                  'Onaylandı',
-                                  style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold),
+                                  'Bekliyor',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),

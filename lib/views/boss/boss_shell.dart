@@ -170,9 +170,11 @@ class _BossShellState extends State<BossShell> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Genel Devamlılık Oranı: %94.2',
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                Text(
+                  pdks.employees.isNotEmpty
+                      ? 'Genel Devamlılık Oranı: %${((pdks.presentEmployeesCount / pdks.employees.length) * 100).toStringAsFixed(1)}'
+                      : 'Genel Devamlılık Oranı: %0.0',
+                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -182,23 +184,33 @@ class _BossShellState extends State<BossShell> {
                 const SizedBox(height: 16),
                 const Divider(color: Colors.white12),
                 const SizedBox(height: 12),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Toplam Fazla Mesai', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                        SizedBox(height: 2),
-                        Text('+24.5 Saat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text('Toplam Fazla Mesai', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        const SizedBox(height: 2),
+                        Text(
+                          pdks.payrolls.isNotEmpty
+                              ? '+${pdks.payrolls.fold<double>(0.0, (acc, p) => acc + p.overtimeHours).toStringAsFixed(1)} Saat'
+                              : '0.0 Saat',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                       ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('Tahmini Mesai Maliyeti', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                        SizedBox(height: 2),
-                        Text('₺36.750 TL', style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text('Tahmini Mesai Maliyeti', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                        const SizedBox(height: 2),
+                        Text(
+                          pdks.payrolls.isNotEmpty
+                              ? '₺${pdks.payrolls.fold<double>(0.0, (acc, p) => acc + p.overtimePay).toStringAsFixed(0)} TL'
+                              : '₺0 TL',
+                          style: const TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                       ],
                     ),
                   ],
