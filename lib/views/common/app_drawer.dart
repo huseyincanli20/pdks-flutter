@@ -55,7 +55,9 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<PdksState>().currentUser;
+    final pdks = context.watch<PdksState>();
+    final user = pdks.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Color roleColor;
     String roleName;
@@ -80,7 +82,7 @@ class AppDrawer extends StatelessWidget {
     }
 
     return Drawer(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(24)),
       ),
@@ -90,98 +92,118 @@ class AppDrawer extends StatelessWidget {
             // Üst Profil Bilgisi Kartı (Apple / Samsung OneUI Header)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: roleColor, width: 2),
-                            gradient: LinearGradient(
-                              colors: [roleColor.withOpacity(0.3), roleColor],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                      },
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: roleColor, width: 2),
+                          gradient: LinearGradient(
+                            colors: [roleColor.withOpacity(0.3), roleColor],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.fullName,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                fontSize: 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user.email,
+                              style: const TextStyle(color: Colors.white60, fontSize: 11),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 5),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: roleColor.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: roleColor.withOpacity(0.5), width: 0.8),
+                              ),
+                              child: Text(
+                                roleName,
+                                style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.fullName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user.email,
-                                style: const TextStyle(color: Colors.white60, fontSize: 11),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: roleColor.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: roleColor.withOpacity(0.5), width: 0.8),
-                                ),
-                                child: Text(
-                                  roleName,
-                                  style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 14),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Hızlı Tema Değiştirme Butonu (Güneş / Ay)
+                    IconButton(
+                      icon: Icon(
+                        isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        color: isDark ? const Color(0xFFFBBF24) : Colors.white70,
+                        size: 22,
+                      ),
+                      tooltip: isDark ? 'Aydınlık Temaya Geç' : 'Koyu Temaya Geç',
+                      onPressed: () {
+                        pdks.toggleTheme();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 1),
+                            content: Text(isDark ? 'Aydınlık tema açıldı.' : 'Koyu tema açıldı.'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -244,7 +266,7 @@ class AppDrawer extends StatelessWidget {
                     icon: Icons.settings_outlined,
                     color: const Color(0xFF475569),
                     title: 'Ayarlar',
-                    subtitle: 'Bildirimler, biyometri & izinler',
+                    subtitle: 'Tema (${pdks.themeModeName}), bildirim & izinler',
                     destination: const SettingsScreen(),
                   ),
                   _buildDrawerTile(
@@ -259,7 +281,7 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFE2E8F0)),
+            Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.cardBorder(context)),
 
             // En Altta: Oturumu Kapat
             Padding(
@@ -323,9 +345,9 @@ class AppDrawer extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBg(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+              border: Border.all(color: AppColors.cardBorder(context), width: 0.8),
             ),
             child: Row(
               children: [
@@ -344,12 +366,12 @@ class AppDrawer extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

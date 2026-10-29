@@ -7,7 +7,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Hakkında', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
@@ -44,20 +44,20 @@ class AboutScreen extends StatelessWidget {
                     child: const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 52),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'PDKS Enterprise',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textPrimary, letterSpacing: 0.3),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.text(context), letterSpacing: 0.3),
                   ),
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
+                      color: AppColors.cardBorder(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Sürüm 1.0.0 (Build 2026.10.1)',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.textSub(context), fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -71,9 +71,9 @@ class AboutScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -93,20 +93,20 @@ class AboutScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
+                  Text(
                     'Bu sistem; çalışanların ofis, şantiye ve uzaktan çalışma alanlarındaki devam ve mesailerini güvenli bir şekilde takip etmek üzere Flutter & Modern Cross-Platform altyapısıyla geliştirilmiştir.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+                    style: TextStyle(color: AppColors.textSub(context), fontSize: 13, height: 1.5),
                   ),
                   const SizedBox(height: 16),
-                  const Divider(color: Color(0xFFF1F5F9)),
+                  Divider(color: AppColors.cardBorder(context)),
                   const SizedBox(height: 10),
                   const Text('Aktif Güvenlik Katmanları:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 8),
-                  _buildBulletPoint('10s Dinamik HMAC-SHA256 Token (QR Anti-Cheat)'),
-                  _buildBulletPoint('Haversine GPS Geofencing (150m Ofis Yarıçapı)'),
-                  _buildBulletPoint('Android & iOS Mock Location (Sahte GPS) Filtresi'),
-                  _buildBulletPoint('Apple FaceID & Android Biometric Doğrulama'),
-                  _buildBulletPoint('Ofis Wi-Fi BSSID / Kurumsal IP Kontrolü'),
+                  _buildBulletPoint(context, '10s Dinamik HMAC-SHA256 Token (QR Anti-Cheat)'),
+                  _buildBulletPoint(context, 'Haversine GPS Geofencing (150m Ofis Yarıçapı)'),
+                  _buildBulletPoint(context, 'Android & iOS Mock Location (Sahte GPS) Filtresi'),
+                  _buildBulletPoint(context, 'Apple FaceID & Android Biometric Doğrulama'),
+                  _buildBulletPoint(context, 'Ofis Wi-Fi BSSID / Kurumsal IP Kontrolü'),
                 ],
               ),
             ),
@@ -118,9 +118,9 @@ class AboutScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -129,20 +129,20 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
                       Icon(Icons.shield_outlined, color: AppColors.success, size: 20),
                       SizedBox(width: 8),
                       Text('KVKK ve Veri Gizliliği', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
                     'Konum verileri sadece check-in ve check-out butonuna tıklandığı an mesafeyi teyit etmek için anlık olarak işlenir. Mesai saatleri dışında veya arka planda sürekli konum takibi kesinlikle yapılmaz.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.5),
+                    style: TextStyle(color: AppColors.textSub(context), fontSize: 12, height: 1.5),
                   ),
                 ],
               ),
@@ -160,7 +160,7 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBulletPoint(String text) {
+  Widget _buildBulletPoint(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -168,7 +168,7 @@ class AboutScreen extends StatelessWidget {
         children: [
           const Text('• ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3)),
+            child: Text(text, style: TextStyle(fontSize: 12, color: AppColors.textSub(context), height: 1.3)),
           ),
         ],
       ),

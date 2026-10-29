@@ -88,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Profilim', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
@@ -124,9 +124,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.04),
@@ -173,12 +173,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 14),
                   Text(
                     user.fullName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${user.department} • ${user.title}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    style: TextStyle(color: AppColors.textSub(context), fontSize: 13),
                   ),
                   const SizedBox(height: 10),
                   Container(
@@ -206,9 +206,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBg(context),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: AppColors.cardBorder(context)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.02),
@@ -231,7 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: const Icon(Icons.beach_access, color: AppColors.success, size: 18),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Kalan İzin', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('Kalan İzin', style: TextStyle(color: AppColors.textSub(context), fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -248,9 +248,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cardBg(context),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: AppColors.cardBorder(context)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.02),
@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: const Icon(Icons.history, color: AppColors.primary, size: 18),
                             ),
                             const SizedBox(width: 8),
-                            const Text('Kullanılan', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text('Kullanılan', style: TextStyle(color: AppColors.textSub(context), fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -294,9 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -308,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Kişisel Bilgiler', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  Text('Kişisel Bilgiler', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context))),
                   const SizedBox(height: 16),
                   _buildModernField('Ad Soyad', _nameController, Icons.person_outline_rounded, enabled: _isEditing),
                   const SizedBox(height: 14),
@@ -334,20 +334,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           enabled: enabled,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text(context)),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: enabled ? AppColors.primary : AppColors.textSecondary),
+            prefixIcon: Icon(icon, size: 20, color: enabled ? AppColors.primary : AppColors.textSub(context)),
             filled: true,
-            fillColor: enabled ? Colors.white : const Color(0xFFF8FAFC),
+            fillColor: enabled ? AppColors.cardBg(context) : AppColors.inputBg(context),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderSide: BorderSide(color: AppColors.cardBorder(context)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -355,7 +355,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              borderSide: BorderSide(color: AppColors.cardBorder(context)),
             ),
           ),
         ),
@@ -367,24 +367,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.inputBg(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.cardBorder(context)),
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: AppColors.textSecondary),
+              Icon(icon, size: 20, color: AppColors.textSub(context)),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   value,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.text(context)),
                 ),
               ),
               const Icon(Icons.lock_rounded, size: 14, color: AppColors.textMuted),

@@ -62,7 +62,7 @@ END:VCARD''';
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Dijital Kartvizitim', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
@@ -181,9 +181,9 @@ END:VCARD''';
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.03),
@@ -194,15 +194,15 @@ END:VCARD''';
               ),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Rehbere Kaydetmek İçin Okutun',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(context)),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'iPhone veya Samsung kamera uygulamasıyla okutulduğunda vCard olarak rehbere eklenir.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.4),
+                    style: TextStyle(color: AppColors.textSub(context), fontSize: 12, height: 1.4),
                   ),
                   const SizedBox(height: 20),
                   Container(

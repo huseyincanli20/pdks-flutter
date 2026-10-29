@@ -40,14 +40,14 @@ class _HrShellState extends State<HrShell> {
     final user = context.watch<PdksState>().currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('İK Paneli • ${_titles[_currentIndex]}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-            Text('${user.fullName} (${user.title})', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text('${user.fullName} (${user.title})', style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
           ],
         ),
         actions: [

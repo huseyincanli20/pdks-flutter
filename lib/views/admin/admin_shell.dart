@@ -35,14 +35,14 @@ class _AdminShellState extends State<AdminShell> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Admin • ${titles[_currentIndex]}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-            Text('${user.fullName} (Süper Admin)', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text('${user.fullName} (Süper Admin)', style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
           ],
         ),
         actions: [
@@ -104,14 +104,14 @@ class _AdminShellState extends State<AdminShell> {
         MediaQuery.of(context).padding.bottom + 24,
       ),
       children: [
-        const Text(
+        Text(
           'Kullanıcı Rolü & Yetki Atama',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Kullanıcı giriş yaptığında açılacak ekranı (Personel, İK, Patron veya Admin) buradan belirleyin.',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
         ),
         const SizedBox(height: 16),
 
@@ -119,9 +119,9 @@ class _AdminShellState extends State<AdminShell> {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -235,17 +235,17 @@ class _AdminShellState extends State<AdminShell> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ofis Geofence & Lokasyon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Ofis Geofence & Lokasyon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
           const SizedBox(height: 4),
-          const Text('Personelin giriş yapabilmesi için izin verilen ofis yarıçapı ve GPS sınırları.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          Text('Personelin giriş yapabilmesi için izin verilen ofis yarıçapı ve GPS sınırları.', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
           const SizedBox(height: 16),
 
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBg(context),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.cardBorder(context)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.02),
@@ -344,24 +344,28 @@ class _AdminShellState extends State<AdminShell> {
         const SizedBox(height: 16),
 
         _buildAuditTile(
+          context,
           title: 'Sahte GPS Engellendi',
           subtitle: 'Ahmet Yılmaz • Mock Location tespit edildi, işlem engellendi.',
           time: 'Bugün 08:34',
           isWarning: true,
         ),
         _buildAuditTile(
+          context,
           title: 'QR Kod Zaman Aşımı',
           subtitle: 'Turnike 1 • Süresi dolmuş QR okutuldu (Süre > 10s).',
           time: 'Dün 17:45',
           isWarning: true,
         ),
         _buildAuditTile(
+          context,
           title: 'Yetkili Giriş Doğrulandı',
           subtitle: 'Zeynep Kaya • Geofence 18m mesafe içinde onaylandı.',
           time: 'Dün 08:28',
           isWarning: false,
         ),
         _buildAuditTile(
+          context,
           title: 'Wi-Fi IP Eşleşmesi',
           subtitle: 'Mehmet Demir • Kurumsal Sirket_Personel ağı ile check-in yapıldı.',
           time: 'Dün 09:12',
@@ -371,14 +375,14 @@ class _AdminShellState extends State<AdminShell> {
     );
   }
 
-  Widget _buildAuditTile({required String title, required String subtitle, required String time, required bool isWarning}) {
+  Widget _buildAuditTile(BuildContext context, {required String title, required String subtitle, required String time, required bool isWarning}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.cardBorder(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -408,10 +412,10 @@ class _AdminShellState extends State<AdminShell> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isWarning ? AppColors.danger : AppColors.textPrimary),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isWarning ? AppColors.danger : AppColors.text(context)),
                 ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                Text(subtitle, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
               ],
             ),
           ),
@@ -433,17 +437,17 @@ class _AdminShellState extends State<AdminShell> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Turnike & Kiosk Yapılandırması', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Turnike & Kiosk Yapılandırması', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
           const SizedBox(height: 4),
-          const Text('Turnike tabletindeki dinamik QR kodun güvenlik parametreleri.', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          Text('Turnike tabletindeki dinamik QR kodun güvenlik parametreleri.', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
           const SizedBox(height: 16),
 
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardBg(context),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.cardBorder(context)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.02),

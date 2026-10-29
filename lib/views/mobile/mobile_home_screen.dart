@@ -165,12 +165,24 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Merhaba, ${user.fullName}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(user.department, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            Text(user.department, style: TextStyle(fontSize: 12, color: AppColors.textSub(context))),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: AppColors.textPrimary),
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFFFBBF24)
+                  : AppColors.text(context),
+            ),
+            tooltip: Theme.of(context).brightness == Brightness.dark ? 'Aydınlık Temaya Geç' : 'Koyu Temaya Geç',
+            onPressed: () => pdks.toggleTheme(),
+          ),
+          IconButton(
+            icon: Icon(Icons.notifications_none, color: AppColors.text(context)),
             onPressed: () {},
           ),
         ],
@@ -323,9 +335,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   const SizedBox(height: 24),
 
                   // 2. Hızlı Menü
-                  const Text(
+                  Text(
                     'Hızlı İşlemler',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -379,9 +391,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Son Turnike & Konum Hareketleri',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                       ),
                       TextButton(
                         onPressed: () => _showAttendanceHistoryModal(context),
@@ -411,9 +423,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardBg(context),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.cardBorder(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -434,9 +446,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context))),
             const SizedBox(height: 2),
-            Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            Text(subtitle, style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
           ],
         ),
       ),
@@ -449,9 +461,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -492,7 +504,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                     ),
                     Text(
                       DateFormat('HH:mm').format(record.timestamp),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context)),
                     ),
                   ],
                 ),
@@ -506,13 +518,13 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                               ? Icons.wifi
                               : Icons.gps_fixed,
                       size: 13,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSub(context),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: MarqueeText(
                         text: '${record.methodLabel} • ${record.note ?? ""}',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context), fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -527,10 +539,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
 
   void _showAttendanceHistoryModal(BuildContext context) {
     final records = context.read<PdksState>().records;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBg(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -546,22 +560,22 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDark ? Colors.white24 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 children: [
                   Text(
                     'Tüm Giriş & Çıkış Hareketleri',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                   ),
                 ],
               ),
             ),
-            const Divider(),
+            Divider(color: AppColors.cardBorder(context)),
             Expanded(
               child: ListView.builder(
                 controller: controller,

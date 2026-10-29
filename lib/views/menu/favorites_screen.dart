@@ -6,9 +6,12 @@ class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   void _showInfoDialog(BuildContext context, String title, String content, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
@@ -22,13 +25,16 @@ class FavoritesScreen extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+              ),
             ),
           ],
         ),
         content: Text(
           content,
-          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.6),
+          style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : AppColors.textPrimary, height: 1.6),
         ),
         actions: [
           ElevatedButton(
@@ -48,7 +54,7 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Sık Kullanılanlar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
@@ -162,9 +168,9 @@ class FavoritesScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.cardBorder(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -197,12 +203,12 @@ class FavoritesScreen extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context)),
                       ),
                       const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

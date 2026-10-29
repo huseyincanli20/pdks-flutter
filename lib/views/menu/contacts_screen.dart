@@ -19,6 +19,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Widget build(BuildContext context) {
     final employees = context.watch<PdksState>().employees;
     final departments = ['Tümü', ...employees.map((e) => e.department).toSet()];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final filtered = employees.where((e) {
       final matchesSearch = e.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -29,7 +30,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('Şirket Rehberi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
@@ -40,9 +41,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.cardBorder(context)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -52,7 +53,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 ],
               ),
               child: TextField(
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14, color: AppColors.text(context)),
                 decoration: InputDecoration(
                   hintText: 'İsim, unvan veya departman ara...',
                   hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
@@ -85,15 +86,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     selected: isSelected,
                     selectedColor: AppColors.primary,
                     checkmarkColor: Colors.white,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppColors.cardBg(context),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+                        color: isSelected ? AppColors.primary : AppColors.cardBorder(context),
                       ),
                     ),
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      color: isSelected ? Colors.white : AppColors.text(context),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                       fontSize: 12,
                     ),
@@ -130,7 +131,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (_, index) {
                       final emp = filtered[index];
-                      return _buildContactCard(context, emp);
+                      return _buildContactCard(context, emp, isDark);
                     },
                   ),
           ),
@@ -139,7 +140,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     );
   }
 
-  Widget _buildContactCard(BuildContext context, Employee emp) {
+  Widget _buildContactCard(BuildContext context, Employee emp, bool isDark) {
     Color roleBadgeColor;
     String roleBadgeText;
     switch (emp.role) {
@@ -165,9 +166,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.cardBorder(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -206,7 +207,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     Flexible(
                       child: Text(
                         emp.fullName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -227,7 +228,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 const SizedBox(height: 3),
                 Text(
                   '${emp.department} • ${emp.title}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -238,8 +239,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
           ),
           IconButton.filledTonal(
             style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFEFF6FF),
-              foregroundColor: AppColors.primary,
+              backgroundColor: isDark ? const Color(0xFF1E3A8A).withOpacity(0.4) : const Color(0xFFEFF6FF),
+              foregroundColor: AppColors.primaryLight,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.phone_rounded, size: 18),
@@ -256,8 +257,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
           const SizedBox(width: 6),
           IconButton.filledTonal(
             style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFFF1F5F9),
-              foregroundColor: AppColors.textSecondary,
+              backgroundColor: isDark ? const Color(0xFF334155).withOpacity(0.5) : const Color(0xFFF1F5F9),
+              foregroundColor: isDark ? Colors.white70 : AppColors.textSecondary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.mail_outline_rounded, size: 18),

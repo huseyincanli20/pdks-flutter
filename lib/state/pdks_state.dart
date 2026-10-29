@@ -32,12 +32,42 @@ class PdksState extends ChangeNotifier {
   double _allowedRadiusMeters = 150.0;
   String _allowedWifiSsid = 'Sirket_Personel';
 
+  // Görünüm Teması: Sistem, Aydınlık, Koyu
+  ThemeMode _themeMode = ThemeMode.system;
+
   // Getters
   Employee get currentUser => _currentUser;
   bool get isLoggedIn => _isLoggedIn;
   bool get isCheckedIn => _isCheckedIn;
   DateTime? get lastCheckInTime => _lastCheckInTime;
   Duration get workedToday => _workedToday;
+
+  ThemeMode get themeMode => _themeMode;
+  String get themeModeName {
+    switch (_themeMode) {
+      case ThemeMode.light:
+        return 'Aydınlık';
+      case ThemeMode.dark:
+        return 'Koyu (Gece)';
+      case ThemeMode.system:
+      default:
+        return 'Sistem';
+    }
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+  }
+
+  void toggleTheme() {
+    if (_themeMode == ThemeMode.dark) {
+      _themeMode = ThemeMode.light;
+    } else {
+      _themeMode = ThemeMode.dark;
+    }
+    notifyListeners();
+  }
 
   List<Employee> get employees => _employees;
   List<AttendanceRecord> get records => _records;

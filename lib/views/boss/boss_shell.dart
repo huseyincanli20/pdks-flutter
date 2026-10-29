@@ -14,13 +14,14 @@ class BossShell extends StatelessWidget {
     final user = pdks.currentUser;
 
     return Scaffold(
+      backgroundColor: AppColors.bg(context),
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Patron Paneli (Yönetim)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('${user.fullName} • ${user.title}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Text('${user.fullName} • ${user.title}', style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
           ],
         ),
         actions: [
@@ -131,6 +132,7 @@ class BossShell extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildMetricTile(
+                    context,
                     title: 'Aktif İçeride',
                     value: pdks.presentEmployeesCount.toString(),
                     color: AppColors.success,
@@ -140,6 +142,7 @@ class BossShell extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricTile(
+                    context,
                     title: 'İzinli / Raporlu',
                     value: pdks.onLeaveEmployeesCount.toString(),
                     color: AppColors.warning,
@@ -149,6 +152,7 @@ class BossShell extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricTile(
+                    context,
                     title: 'Geç Kalan',
                     value: pdks.lateEmployeesCount.toString(),
                     color: AppColors.danger,
@@ -164,24 +168,24 @@ class BossShell extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.cardBorder(context)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Departman Bazlı Devam Oranları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('Departman Bazlı Devam Oranları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
                   const SizedBox(height: 16),
-                  _buildDeptRow('Yazılım & Ar-Ge Ekibi', 0.96, '5/6 Aktif', AppColors.primary),
+                  _buildDeptRow(context, 'Yazılım & Ar-Ge Ekibi', 0.96, '5/6 Aktif', AppColors.primary),
                   const SizedBox(height: 12),
-                  _buildDeptRow('İnsan Kaynakları', 1.0, '2/2 Aktif', AppColors.success),
+                  _buildDeptRow(context, 'İnsan Kaynakları', 1.0, '2/2 Aktif', AppColors.success),
                   const SizedBox(height: 12),
-                  _buildDeptRow('Satış & Pazarlama', 0.88, '3/4 Aktif', AppColors.warning),
+                  _buildDeptRow(context, 'Satış & Pazarlama', 0.88, '3/4 Aktif', AppColors.warning),
                   const SizedBox(height: 12),
-                  _buildDeptRow('Mali İşler & Muhasebe', 0.94, '3/3 Aktif', AppColors.primary),
+                  _buildDeptRow(context, 'Mali İşler & Muhasebe', 0.94, '3/3 Aktif', AppColors.primary),
                   const SizedBox(height: 12),
-                  _buildDeptRow('Operasyon & Saha', 0.90, '9/10 Aktif', AppColors.info),
+                  _buildDeptRow(context, 'Operasyon & Saha', 0.90, '9/10 Aktif', AppColors.info),
                 ],
               ),
             ),
@@ -192,14 +196,14 @@ class BossShell extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.cardBorder(context)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Son Giriş & Turnike Hareketleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('Son Giriş & Turnike Hareketleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
                   const SizedBox(height: 12),
                   ...pdks.records.take(3).map((r) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -211,9 +215,9 @@ class BossShell extends StatelessWidget {
                               color: r.type == AttendanceType.checkIn ? AppColors.success : AppColors.danger,
                             ),
                             const SizedBox(width: 8),
-                            Text(r.employeeName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(r.employeeName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context))),
                             const Spacer(),
-                            Text(r.methodLabel, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            Text(r.methodLabel, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
                           ],
                         ),
                       )),
@@ -226,13 +230,13 @@ class BossShell extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricTile({required String title, required String value, required Color color, required IconData icon}) {
+  Widget _buildMetricTile(BuildContext context, {required String title, required String value, required Color color, required IconData icon}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder(context)),
       ),
       child: Column(
         children: [
@@ -240,21 +244,21 @@ class BossShell extends StatelessWidget {
           const SizedBox(height: 8),
           Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 2),
-          Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          Text(title, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
         ],
       ),
     );
   }
 
-  Widget _buildDeptRow(String name, double percent, String count, Color color) {
+  Widget _buildDeptRow(BuildContext context, String name, double percent, String count, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            Text(count, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            Text(name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.text(context))),
+            Text(count, style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
           ],
         ),
         const SizedBox(height: 6),
@@ -262,7 +266,7 @@ class BossShell extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: percent,
-            backgroundColor: AppColors.divider,
+            backgroundColor: AppColors.cardBorder(context),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 6,
           ),
