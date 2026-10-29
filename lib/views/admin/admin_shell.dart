@@ -8,6 +8,7 @@ import '../notifications/notifications_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
+import '../common/firebase_config_dialog.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -76,6 +77,14 @@ class _AdminShellState extends State<AdminShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              Icons.local_fire_department_rounded,
+              color: pdks.isFirebaseConnected ? const Color(0xFF10B981) : const Color(0xFFFF5722),
+            ),
+            tooltip: 'Firebase Bulut Veritabanı',
+            onPressed: () => showFirebaseConfigDialog(context),
+          ),
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,

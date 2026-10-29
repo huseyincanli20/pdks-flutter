@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../state/pdks_state.dart';
 import '../common/email_preview_dialog.dart';
-import '../common/firebase_config_dialog.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -307,47 +306,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     'Çoklu Şirket & Personel Devam Takip Sistemi',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
-                  const SizedBox(height: 12),
-
-                  // Firebase Bulut Bağlantı Rozeti / Butonu
-                  InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => showFirebaseConfigDialog(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: pdks.isFirebaseConnected
-                            ? const Color(0xFF10B981).withOpacity(0.18)
-                            : const Color(0xFFFF5722).withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: pdks.isFirebaseConnected
-                              ? const Color(0xFF10B981).withOpacity(0.4)
-                              : const Color(0xFFFF5722).withOpacity(0.4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.local_fire_department_rounded, size: 16, color: Color(0xFFFF9800)),
-                          const SizedBox(width: 6),
-                          Text(
-                            pdks.isFirebaseConnected
-                                ? 'Firebase Bulut DB: Bağlı'
-                                : 'Firebase Bulut DB: Hazır',
-                            style: TextStyle(
-                              color: pdks.isFirebaseConnected ? const Color(0xFF34D399) : const Color(0xFFFFAB91),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.settings_outlined, size: 14, color: Colors.white54),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Form Kartı (Glass & Card style)
                   Container(

@@ -406,16 +406,17 @@ class AppDrawer extends StatelessWidget {
                     subtitle: 'Hızlı kısayollar, yemek & servis',
                     destination: const FavoritesScreen(),
                   ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.local_fire_department_rounded,
-                    color: const Color(0xFFFF5722),
-                    title: 'Firebase Bulut DB',
-                    subtitle: pdks.isFirebaseConnected
-                        ? 'Merkezi bulut eşitlendi (Online)'
-                        : 'Yerel ve bulut senkronizasyonu',
-                    onTapCustom: () => showFirebaseConfigDialog(context),
-                  ),
+                  if (user.role == UserRole.admin || user.role == UserRole.boss)
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.local_fire_department_rounded,
+                      color: const Color(0xFFFF5722),
+                      title: 'Firebase Bulut DB',
+                      subtitle: pdks.isFirebaseConnected
+                          ? 'Merkezi bulut eşitlendi (Online)'
+                          : 'Yerel ve bulut senkronizasyonu',
+                      onTapCustom: () => showFirebaseConfigDialog(context),
+                    ),
                   _buildDrawerTile(
                     context,
                     icon: Icons.settings_outlined,
