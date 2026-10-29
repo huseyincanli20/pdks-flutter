@@ -11,6 +11,7 @@ import '../../state/pdks_state.dart';
 import 'qr_scanner_screen.dart';
 import 'leave_request_screen.dart';
 import '../common/app_drawer.dart';
+import '../../core/utils/marquee_text.dart';
 
 class MobileHomeScreen extends StatefulWidget {
   const MobileHomeScreen({super.key});
@@ -503,14 +504,15 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                           : record.verificationMethod == VerificationMethod.wifiIp
                               ? Icons.wifi
                               : Icons.gps_fixed,
-                      size: 12,
+                      size: 13,
                       color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${record.methodLabel} • ${record.note ?? ""}',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: MarqueeText(
+                        text: '${record.methodLabel} • ${record.note ?? ""}',
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ],
                 ),

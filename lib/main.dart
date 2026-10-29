@@ -81,58 +81,6 @@ class _MainAdaptiveRootState extends State<MainAdaptiveRoot> {
       );
     }
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          currentWidget,
-
-          // Sağ üstte hızlı platform değiştirme çubuğu (iOS/Android/Web/Kiosk simülasyonu)
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.75),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPlatformChip('Oto', 'auto'),
-                  _buildPlatformChip('Mobil (iOS/Android)', 'mobile'),
-                  _buildPlatformChip('Web İK Paneli', 'web_admin'),
-                  _buildPlatformChip('Tablet Kiosk', 'kiosk'),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlatformChip(String label, String mode) {
-    final isSelected = _activeViewMode == mode;
-    return InkWell(
-      onTap: () => setState(() => _activeViewMode = mode),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2563EB) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white70,
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
+    return currentWidget;
   }
 }
