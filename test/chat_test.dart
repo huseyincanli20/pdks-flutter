@@ -1,11 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdks_flutter/state/pdks_state.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('PDKS Mesajlaşma Sistemi Testleri', () {
     late PdksState state;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       state = PdksState();
     });
 

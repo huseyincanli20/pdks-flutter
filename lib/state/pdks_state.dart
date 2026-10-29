@@ -13,6 +13,7 @@ import '../models/chat_message.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
+import '../core/services/firebase_service.dart';
 import '../core/services/ios_notification_service.dart';
 import '../core/theme/app_theme_type.dart';
 import '../core/theme/app_theme.dart';
@@ -20,6 +21,8 @@ import '../core/theme/app_theme.dart';
 class PdksState extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   final DatabaseService _db = DatabaseService();
+  final FirebaseService _firebase = FirebaseService();
+  Timer? _cloudSyncTimer;
 
   // Aktif Giriş Yapan Kullanıcı
   late Employee _currentUser;
@@ -573,6 +576,9 @@ class PdksState extends ChangeNotifier {
     );
     _chatMessages.add(creatorMsg);
     _db.insertChatMessage(creatorMsg);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(creatorMsg);
+    }
 
     // iPhone Bildirimi Gönder
     IosNotificationService.showIosNotification(
@@ -654,6 +660,9 @@ class PdksState extends ChangeNotifier {
 
     _chatMessages.add(newMsg);
     _db.insertChatMessage(newMsg);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(newMsg);
+    }
     notifyListeners();
 
     // iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
@@ -681,6 +690,9 @@ class PdksState extends ChangeNotifier {
         );
         _chatMessages.add(replyMsg);
         _db.insertChatMessage(replyMsg);
+        if (_firebase.isEnabled) {
+          _firebase.pushMessageToCloud(replyMsg);
+        }
         notifyListeners();
 
         // İK Destek yanıtı için iPhone Bildirimi
@@ -1192,6 +1204,146 @@ class PdksState extends ChangeNotifier {
   PdksState() {
     _initializeSeedData();
     _startTimer();
+    _initFirebase();
+  }
+
+  // ==========================================
+  // FIREBASE BULUT VERİTABANI VE SENKRONİZASYON
+  // ==========================================
+  FirebaseService get firebase => _firebase;
+  bool get isFirebaseConnected => _firebase.isConnected;
+  bool get isFirebaseEnabled => _firebase.isEnabled;
+  String get firebaseProjectId => _firebase.projectId;
+
+  void _initFirebase() {
+    _firebase.init().then((_) {
+      notifyListeners();
+      _startCloudSyncTimer();
+    }).catchError((e) {
+      debugPrint('Firebase init hatası: $e');
+    });
+  }
+
+  void _startCloudSyncTimer() {
+    _cloudSyncTimer?.cancel();
+    _cloudSyncTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_firebase.isEnabled && _firebase.isConnected) {
+        _syncCloudData();
+      }
+    });
+  }
+
+  Future<void> _syncCloudData() async {
+    try {
+      final cloudMsgs = await _firebase.fetchNewMessagesFromCloud();
+      bool hasNew = false;
+      for (final m in cloudMsgs) {
+        if (!_chatMessages.any((local) => local.id == m.id)) {
+          _chatMessages.add(m);
+          _db.insertChatMessage(m);
+          hasNew = true;
+          if (m.senderId != _currentUser.id) {
+            IosNotificationService.showIosNotification(
+              title: '💬 ${m.senderName}',
+              body: m.text,
+              icon: Icons.chat_bubble_outline_rounded,
+            );
+          }
+        }
+      }
+      if (hasNew) notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<bool> updateFirebaseConfig({
+    required String projectId,
+    String? apiKey,
+    required bool isEnabled,
+  }) async {
+    final success = await _firebase.updateConfig(
+      projectId: projectId,
+      apiKey: apiKey,
+      isEnabled: isEnabled,
+    );
+    notifyListeners();
+    return success;
+  }
+
+  Future<bool> testFirebaseConnection() async {
+    final ok = await _firebase.testConnection();
+    notifyListeners();
+    return ok;
+  }
+
+  Future<({int employees, int messages, int records, bool success})> syncLocalDbToFirebase() async {
+    final res = await _firebase.syncLocalDbToFirebase(_db);
+    notifyListeners();
+    return res;
+  }
+
+  Future<bool> checkCloudDuplicate(String email, String phone) async {
+    return await _firebase.checkUserExistsOnCloud(email, phone);
+  }
+
+  Future<({bool success, bool isPendingApproval, String message})> loginFromCloudAsync(String email, String pin) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPin = pin.trim();
+
+    try {
+      final cloudEmp = await _firebase.getEmployeeFromCloudByEmail(cleanEmail);
+      if (cloudEmp != null) {
+        if (!_employees.any((e) => e.id == cloudEmp.id)) {
+          _employees.add(cloudEmp);
+          _db.insertEmployee(cloudEmp);
+        } else {
+          final idx = _employees.indexWhere((e) => e.id == cloudEmp.id);
+          _employees[idx] = cloudEmp;
+          _db.updateEmployee(cloudEmp);
+        }
+
+        if (cloudEmp.pinCode != cleanPin) {
+          return (
+            success: false,
+            isPendingApproval: false,
+            message: 'Hatalı PIN kodu girdiniz. Lütfen 4 haneli PIN kodunuzu kontrol ediniz.',
+          );
+        }
+        if (!cloudEmp.isApproved) {
+          return (
+            success: false,
+            isPendingApproval: true,
+            message: 'Sayın ${cloudEmp.fullName}, başvurunuz Firebase bulut veritabanında kayıtlıdır ancak henüz İK tarafından onaylanmamıştır.',
+          );
+        }
+
+        _currentUser = cloudEmp;
+        _activeCompanyId = _currentUser.companyId;
+        _isLoggedIn = true;
+        _startTimer();
+
+        IosNotificationService.showIosNotification(
+          title: '🔥 Firebase • Giriş Başarılı',
+          body: 'Sayın ${cloudEmp.fullName}, Firebase bulut veritabanından başarıyla giriş yaptınız.',
+          icon: Icons.verified_user_rounded,
+          iconColor: const Color(0xFF10B981),
+        );
+
+        notifyListeners();
+        return (
+          success: true,
+          isPendingApproval: false,
+          message: 'Firebase bulut veritabanından giriş başarılı.',
+        );
+      }
+    } catch (e) {
+      debugPrint('Cloud login hatası: $e');
+    }
+
+    return (
+      success: false,
+      isPendingApproval: false,
+      message: 'Veritabanında kayıtlı kullanıcı bulunamadı! Lütfen önce "Kayıt Ol" sekmesinden kaydolun.',
+    );
   }
 
   void _startTimer() {
@@ -1676,6 +1828,11 @@ class PdksState extends ChangeNotifier {
     _employees.add(newEmployee);
     _db.insertEmployee(newEmployee);
 
+    // Firebase Bulutuna Aktar
+    if (_firebase.isEnabled) {
+      _firebase.saveEmployeeToCloud(newEmployee);
+    }
+
     // İK yetkililerine sistem içi bildirim ekle & veritabanına kaydet
     final hrNotif = AppNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
@@ -1690,6 +1847,10 @@ class PdksState extends ChangeNotifier {
 
     _notifications.insert(0, hrNotif);
     _db.insertNotification(hrNotif);
+
+    if (_firebase.isEnabled) {
+      _firebase.pushNotificationToCloud(hrNotif);
+    }
 
     // 3. IPHONE PUSH BİLDİRİMİ GÖNDER
     IosNotificationService.showIosNotification(
@@ -1740,6 +1901,11 @@ class PdksState extends ChangeNotifier {
 
     _employees[index] = updated;
     _db.updateEmployee(updated);
+
+    // Firebase Bulutuna Aktar
+    if (_firebase.isEnabled) {
+      _firebase.saveEmployeeToCloud(updated);
+    }
 
     final compName = _companies.firstWhere((c) => c.id == updated.companyId, orElse: () => activeCompany).name;
 
@@ -2082,6 +2248,11 @@ class PdksState extends ChangeNotifier {
     _employees[index] = updated;
     _db.updateEmployee(updated);
 
+    // Firebase Bulutuna Aktar
+    if (_firebase.isEnabled) {
+      _firebase.saveEmployeeToCloud(updated);
+    }
+
     // Eğer o an aktif giriş yapan personel güncellendiyse oturumu senkronize et
     if (_currentUser.id == employeeId) {
       _currentUser = updated;
@@ -2190,6 +2361,9 @@ class PdksState extends ChangeNotifier {
 
     _records.insert(0, newRecord);
     _db.insertAttendanceRecord(newRecord);
+    if (_firebase.isEnabled) {
+      _firebase.pushAttendanceToCloud(newRecord);
+    }
 
     if (type == AttendanceType.checkIn) {
       _isCheckedIn = true;
@@ -2234,6 +2408,9 @@ class PdksState extends ChangeNotifier {
 
     _leaves.insert(0, newLeave);
     _db.insertLeaveRequest(newLeave);
+    if (_firebase.isEnabled) {
+      _firebase.pushLeaveToCloud(newLeave);
+    }
 
     // iPhone Bildirimi Tetikle
     IosNotificationService.showIosNotification(
@@ -2268,6 +2445,9 @@ class PdksState extends ChangeNotifier {
       );
       _leaves[index] = updatedLeave;
       _db.updateLeaveRequest(updatedLeave);
+      if (_firebase.isEnabled) {
+        _firebase.pushLeaveToCloud(updatedLeave);
+      }
 
       if (newStatus == LeaveStatus.approved && old.type == LeaveType.annual) {
         final empIndex = _employees.indexWhere((e) => e.id == old.employeeId);
@@ -2309,6 +2489,7 @@ class PdksState extends ChangeNotifier {
   @override
   void dispose() {
     _workTimer?.cancel();
+    _cloudSyncTimer?.cancel();
     super.dispose();
   }
 }

@@ -5,6 +5,7 @@ import '../../core/theme/app_theme_type.dart';
 import '../../state/pdks_state.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
+import '../common/firebase_config_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -372,6 +373,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconColor: const Color(0xFF06B6D4),
               value: _autoGps,
               onChanged: (val) => setState(() => _autoGps = val),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildSectionHeader('BULUT VE VERİTABANI'),
+          _buildCardGroup(context, [
+            _buildActionItem(
+              context,
+              title: 'Firebase Bulut Veritabanı',
+              subtitle: pdks.isFirebaseConnected
+                  ? 'Canlı senkronizasyon aktif (Proje: ${pdks.firebaseProjectId})'
+                  : 'Yerel ve bulut DB yönetimi (Proje: ${pdks.firebaseProjectId})',
+              icon: Icons.local_fire_department_rounded,
+              iconColor: const Color(0xFFFF5722),
+              trailingText: pdks.isFirebaseConnected ? 'Bağlı (Online)' : 'Standby',
+              trailingBadgeColor: pdks.isFirebaseConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+              onTap: () => showFirebaseConfigDialog(context),
             ),
           ]),
 

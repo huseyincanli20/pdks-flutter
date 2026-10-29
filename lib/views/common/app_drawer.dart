@@ -14,6 +14,7 @@ import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
+import 'firebase_config_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -407,6 +408,16 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerTile(
                     context,
+                    icon: Icons.local_fire_department_rounded,
+                    color: const Color(0xFFFF5722),
+                    title: 'Firebase Bulut DB',
+                    subtitle: pdks.isFirebaseConnected
+                        ? 'Merkezi bulut eşitlendi (Online)'
+                        : 'Yerel ve bulut senkronizasyonu',
+                    onTapCustom: () => showFirebaseConfigDialog(context),
+                  ),
+                  _buildDrawerTile(
+                    context,
                     icon: Icons.settings_outlined,
                     color: const Color(0xFF475569),
                     title: 'Ayarlar',
@@ -474,7 +485,8 @@ class AppDrawer extends StatelessWidget {
     required Color color,
     required String title,
     required String subtitle,
-    required Widget destination,
+    Widget? destination,
+    VoidCallback? onTapCustom,
     int? badgeCount,
   }) {
     return Padding(
@@ -485,7 +497,11 @@ class AppDrawer extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: () {
             Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+            if (onTapCustom != null) {
+              onTapCustom();
+            } else if (destination != null) {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
