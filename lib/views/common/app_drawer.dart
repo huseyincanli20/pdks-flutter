@@ -11,7 +11,6 @@ import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
-import '../company/company_management_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -221,75 +220,6 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // Aktif Şirket Bilgisi & Değiştir Butonu
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              child: InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CompanyManagementScreen()));
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg(context),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder(context)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryOf(context).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.apartment_rounded, color: AppColors.primaryOf(context), size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryOf(context).withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    pdks.activeCompany.code,
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryOf(context)),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    pdks.activeCompany.name,
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.text(context)),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Şirket Değiştir (${pdks.companies.length} Kayıtlı Firma)',
-                              style: TextStyle(fontSize: 10, color: AppColors.textSub(context)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.chevron_right_rounded, color: AppColors.textSub(context), size: 18),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
               child: Align(
@@ -318,14 +248,6 @@ class AppDrawer extends StatelessWidget {
                     title: 'Profil',
                     subtitle: 'Kişisel bilgiler & izin bakiyesi',
                     destination: const ProfileScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.business_rounded,
-                    color: const Color(0xFF0D9488),
-                    title: 'Şirket Yönetimi (SaaS)',
-                    subtitle: 'Çoklu firma değiştir & yeni şirket ekle',
-                    destination: const CompanyManagementScreen(),
                   ),
                   _buildDrawerTile(
                     context,
