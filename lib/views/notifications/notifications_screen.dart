@@ -19,7 +19,7 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   String _selectedFilter = 'all';
-  bool _isAppleLockScreenMode = true; // Kullanıcının istediği iOS Kilit Ekranı varsayılan
+  final bool _isAppleLockScreenMode = false; // Apple Kilit Ekranı gizlendi, kurumsal liste varsayılan
   bool _isFlashlightOn = false;
 
   String _formatLockScreenDate(DateTime dt) {
@@ -63,85 +63,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: _isAppleLockScreenMode ? const Color(0xFF090D14) : AppColors.bg(context),
       appBar: AppBar(
         backgroundColor: _isAppleLockScreenMode ? const Color(0xFF0F172A) : null,
-        title: Text(
-          _isAppleLockScreenMode ? '🍎 Apple Kilit Ekranı' : 'Bildirimler',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: const Text(
+          'Bildirimler',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          // Görünüm Modu Değiştirici (Apple Kilit Ekranı <-> Standart Liste)
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            decoration: BoxDecoration(
-              color: _isAppleLockScreenMode
-                  ? Colors.white.withOpacity(0.12)
-                  : AppColors.primaryOf(context).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _isAppleLockScreenMode
-                    ? Colors.white.withOpacity(0.2)
-                    : AppColors.primaryOf(context).withOpacity(0.2),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InkWell(
-                  onTap: () => setState(() => _isAppleLockScreenMode = true),
-                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _isAppleLockScreenMode ? const Color(0xFF2563EB) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.apple_rounded, size: 16, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          'Kilit Ekranı',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () => setState(() => _isAppleLockScreenMode = false),
-                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: !_isAppleLockScreenMode ? const Color(0xFF2563EB) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.view_agenda_rounded,
-                          size: 16,
-                          color: !_isAppleLockScreenMode ? Colors.white : Colors.white70,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Liste',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: !_isAppleLockScreenMode ? Colors.white : Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          if (!_isAppleLockScreenMode && pdks.unreadNotificationsCount > 0)
+          if (pdks.unreadNotificationsCount > 0)
             IconButton(
               tooltip: 'Tümünü Okundu Say',
               icon: const Icon(Icons.done_all_rounded, size: 20),
@@ -149,8 +76,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 pdks.markAllNotificationsAsRead();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    behavior: SnackBarBehavior.floating,
                     content: Text('Tüm bildirimler okundu olarak işaretlendi.'),
+                    behavior: SnackBarBehavior.floating,
                   ),
                 );
               },

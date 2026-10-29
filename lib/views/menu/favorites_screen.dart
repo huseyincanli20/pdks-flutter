@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/employee.dart';
+import '../../state/pdks_state.dart';
 import '../mobile/leave_request_screen.dart';
+import '../common/quick_menu_manager_dialog.dart';
+import '../common/field_work_dialog.dart';
+import '../cafeteria/cafeteria_menu_view_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -53,10 +59,21 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pdks = context.watch<PdksState>();
+    final canManage = pdks.currentUser.role == UserRole.boss || pdks.currentUser.role == UserRole.admin;
+
     return Scaffold(
       backgroundColor: AppColors.bg(context),
       appBar: AppBar(
-        title: const Text('Sık Kullanılanlar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Sık Kullanılanlar & Hızlı Menü', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        actions: [
+          if (canManage)
+            IconButton(
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: 'Hızlı Menüyü Düzenle (CEO / Admin)',
+              onPressed: () => QuickMenuManagerDialog.show(context),
+            ),
+        ],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -66,6 +83,34 @@ class FavoritesScreen extends StatelessWidget {
           MediaQuery.of(context).padding.bottom + 24,
         ),
         children: [
+          if (canManage) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF2563EB), size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Yönetici Yetkisi: Hızlı menüleri gizleyebilir veya yeni kısayollar ekleyebilirsiniz.',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E40AF)),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => QuickMenuManagerDialog.show(context),
+                    child: const Text('Düzenle ›', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const Padding(
             padding: EdgeInsets.only(left: 4, bottom: 12),
             child: Text(
@@ -74,16 +119,44 @@ class FavoritesScreen extends StatelessWidget {
             ),
           ),
 
-          _buildFavoriteCard(
-            context,
-            icon: Icons.beach_access_rounded,
-            color: const Color(0xFFF59E0B),
-            title: 'Hızlı İzin Talebi',
-            subtitle: 'Yıllık izin veya mazeret talebi oluşturun',
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-            },
-          ),
+          // Dinamik Hızlı Menü Öğeleri
+          ...pdks.visibleQuickMenuItems.map((item) {
+            return _buildFavoriteCard(
+              context,
+              icon: item.icon,
+              color: item.color,
+              title: item.title,
+              subtitle: item.subtitle,
+              onTap: () {
+                switch (item.actionType) {
+                  case 'leave':
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+                    break;
+                  case 'field_work':
+                    FieldWorkDialog.show(context);
+                    break;
+                  case 'cafeteria':
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                    break;
+                  case 'overtime':
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+                    );
+                    break;
+                  case 'info_dialog':
+                  default:
+                    _showInfoDialog(
+                      context,
+                      item.title,
+                      item.customContent ?? item.subtitle,
+                      item.icon,
+                      item.color,
+                    );
+                    break;
+                }
+              },
+            );
+          }),
 
           _buildFavoriteCard(
             context,

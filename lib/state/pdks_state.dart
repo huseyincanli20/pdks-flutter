@@ -10,6 +10,7 @@ import '../models/company.dart';
 import '../models/payroll_slip.dart';
 import '../models/page_customization.dart';
 import '../models/chat_message.dart';
+import '../models/quick_menu_item.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
@@ -219,6 +220,12 @@ class PdksState extends ChangeNotifier {
 
   String _activeCompanyId = 'cmp_acme';
 
+  // Hızlı Menü & Dışarıda Çalışma Durumu
+  List<QuickMenuItem> _quickMenuItems = [];
+  bool _isFieldWorkActive = false;
+  String? _activeFieldWorkTitle;
+  String? _activeFieldWorkAddress;
+
   // Görünüm Teması: Sistem, Aydınlık, Koyu, Lacivert, Zümrüt, Mor, Kehribar
   ThemeMode _themeMode = ThemeMode.system;
   AppThemeType _currentTheme = AppThemeType.system;
@@ -229,6 +236,12 @@ class PdksState extends ChangeNotifier {
   bool get isCheckedIn => _isCheckedIn;
   DateTime? get lastCheckInTime => _lastCheckInTime;
   Duration get workedToday => _workedToday;
+
+  List<QuickMenuItem> get quickMenuItems => List.unmodifiable(_quickMenuItems);
+  List<QuickMenuItem> get visibleQuickMenuItems => _quickMenuItems.where((m) => m.isVisible).toList();
+  bool get isFieldWorkActive => _isFieldWorkActive;
+  String? get activeFieldWorkTitle => _activeFieldWorkTitle;
+  String? get activeFieldWorkAddress => _activeFieldWorkAddress;
 
   AppThemeType get currentTheme => _currentTheme;
   ThemeData get activeThemeData => AppTheme.getThemeData(_currentTheme);
@@ -1292,9 +1305,14 @@ class PdksState extends ChangeNotifier {
   void updateEmployeeAvatar(int employeeId, String avatarUrl) {
     final idx = _employees.indexWhere((e) => e.id == employeeId);
     if (idx != -1) {
-      _employees[idx] = _employees[idx].copyWith(avatarUrl: avatarUrl);
+      final updated = _employees[idx].copyWith(avatarUrl: avatarUrl);
+      _employees[idx] = updated;
       if (_currentUser.id == employeeId) {
-        _currentUser = _employees[idx];
+        _currentUser = updated;
+      }
+      _db.updateEmployee(updated);
+      if (_firebase.isEnabled) {
+        _firebase.saveEmployeeToCloud(updated);
       }
       notifyListeners();
     }
@@ -1812,6 +1830,8 @@ class PdksState extends ChangeNotifier {
       _todayMenu = _db.getTodayMenu()!;
     }
 
+    _quickMenuItems = List.from(_db.getAllQuickMenuItems());
+
     _isCheckedIn = false;
     _lastCheckInTime = null;
     _workedToday = Duration.zero;
@@ -1998,6 +2018,17 @@ class PdksState extends ChangeNotifier {
         _currentUser.role != UserRole.boss &&
         _currentUser.role != UserRole.admin) {
       return (success: false, message: 'Bu onay işlemini yalnızca İK veya Yönetim yetkilileri yapabilir.', dispatchedNotification: null);
+    }
+
+    // İK Güvenlik Kontrolü: Admin rolü veya unvanı veremez
+    if (_currentUser.role == UserRole.hr) {
+      if (role == UserRole.admin || title.trim().toLowerCase().contains('admin') || title.trim().toLowerCase().contains('sistem yöneticisi')) {
+        return (
+          success: false,
+          message: 'Güvenlik Kuralı: İK (İnsan Kaynakları) personeline Sistem Yöneticisi (Admin) yetki rolü veya unvanı veremez.',
+          dispatchedNotification: null,
+        );
+      }
     }
 
     final index = _employees.indexWhere((e) => e.id == employeeId);
@@ -2196,7 +2227,24 @@ class PdksState extends ChangeNotifier {
 
     final target = _employees[index];
 
-    // GÜVENLİK KONTROLLERİ (Patron İçin):
+    // GÜVENLİK KONTROLLERİ:
+    if (_currentUser.role == UserRole.hr) {
+      // 1. İK kimseye Admin rolü ATAYAMAZ
+      if (newBaseRole == UserRole.admin || (customRoleName != null && customRoleName.toLowerCase().contains('admin'))) {
+        return (
+          success: false,
+          message: 'Güvenlik Sınırı: İK (İnsan Kaynakları) seviyesinde kimseye Sistem Yöneticisi (Admin) unvanı verilemez!',
+        );
+      }
+      // 2. İK mevcut Admin kullanıcısının yetkisini DEĞİŞTİREMEZ
+      if (target.role == UserRole.admin) {
+        return (
+          success: false,
+          message: 'Güvenlik Sınırı: Sistem Yöneticisi (Admin) kullanıcısının yetkisi İK tarafından değiştirilemez.',
+        );
+      }
+    }
+
     if (_currentUser.role == UserRole.boss) {
       // 1. Patron kimseye Admin rolü ATAYAMAZ
       if (newBaseRole == UserRole.admin) {
@@ -2222,6 +2270,11 @@ class PdksState extends ChangeNotifier {
     );
 
     _employees[index] = updated;
+    _db.updateEmployee(updated);
+    if (_firebase.isEnabled) {
+      _firebase.saveEmployeeToCloud(updated);
+    }
+
     if (_currentUser.id == employeeId) {
       _currentUser = updated;
     }
@@ -2239,6 +2292,193 @@ class PdksState extends ChangeNotifier {
     changeEmployeeRoleByActor(
       employeeId: employeeId,
       newBaseRole: newRole,
+    );
+  }
+
+  // ==========================================
+  // HIZLI MENÜ YÖNETİMİ (CEO & ADMİN YETKİSİ)
+  // ==========================================
+
+  ({bool success, String message}) toggleQuickMenuItemVisibility(String id) {
+    if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Yalnızca CEO ve Admin hızlı menü görünürlüğünü değiştirebilir.');
+    }
+    final index = _quickMenuItems.indexWhere((m) => m.id == id);
+    if (index == -1) return (success: false, message: 'Menü bulunamadı.');
+
+    final current = _quickMenuItems[index];
+    final updated = current.copyWith(isVisible: !current.isVisible);
+    _quickMenuItems[index] = updated;
+    _db.saveQuickMenuItems(_quickMenuItems);
+    notifyListeners();
+    return (
+      success: true,
+      message: '"${current.title}" menüsü ${updated.isVisible ? 'görünür yapıldı' : 'gizlendi'}.',
+    );
+  }
+
+  ({bool success, String message}) addQuickMenuItem({
+    required String title,
+    required String subtitle,
+    required int iconCode,
+    required int colorValue,
+    required String actionType,
+    String? customContent,
+  }) {
+    if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Yalnızca CEO ve Admin yeni hızlı menü ekleyebilir.');
+    }
+    if (title.trim().isEmpty) {
+      return (success: false, message: 'Menü başlığı boş bırakılamaz.');
+    }
+    final newItem = QuickMenuItem(
+      id: 'qm_${DateTime.now().millisecondsSinceEpoch}',
+      title: title.trim(),
+      subtitle: subtitle.trim(),
+      iconCode: iconCode,
+      colorValue: colorValue,
+      isVisible: true,
+      actionType: actionType,
+      customContent: customContent,
+    );
+    _quickMenuItems.add(newItem);
+    _db.saveQuickMenuItems(_quickMenuItems);
+    notifyListeners();
+    return (success: true, message: '"$title" hızlı menüsü başarıyla eklendi.');
+  }
+
+  ({bool success, String message}) deleteQuickMenuItem(String id) {
+    if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Yalnızca CEO ve Admin hızlı menü silebilir.');
+    }
+    _quickMenuItems.removeWhere((m) => m.id == id);
+    _db.saveQuickMenuItems(_quickMenuItems);
+    notifyListeners();
+    return (success: true, message: 'Hızlı menü silindi.');
+  }
+
+  // ==========================================
+  // DIŞARIDA ÇALIŞMA SİSTEMİ (SAHA / OFİS DIŞI)
+  // ==========================================
+
+  ({bool success, String message}) startFieldWork({
+    required String missionTitle,
+    required String missionNote,
+    required double latitude,
+    required double longitude,
+    required String addressName,
+  }) {
+    if (!_isLoggedIn) {
+      return (success: false, message: 'Lütfen önce giriş yapınız.');
+    }
+
+    final newId = (_records.isNotEmpty ? _records.map((r) => r.id).reduce((a, b) => a > b ? a : b) : 0) + 1;
+    final cleanTitle = missionTitle.trim().isEmpty ? 'Saha Görevi' : missionTitle.trim();
+    final cleanAddress = addressName.trim().isEmpty ? 'Saha Lokasyonu' : addressName.trim();
+    final cleanNote = missionNote.trim();
+
+    final newRecord = AttendanceRecord(
+      id: newId,
+      companyId: _activeCompanyId,
+      employeeId: _currentUser.id,
+      employeeName: _currentUser.fullName,
+      type: AttendanceType.checkIn,
+      timestamp: DateTime.now(),
+      userLatitude: latitude,
+      userLongitude: longitude,
+      calculatedDistanceMeters: 0.0,
+      isLocationVerified: true,
+      verificationMethod: VerificationMethod.geofenceGps,
+      note: '📍 Dışarıda Çalışma: $cleanTitle ($cleanAddress) - $cleanNote',
+    );
+
+    _records.insert(0, newRecord);
+    _db.insertAttendanceRecord(newRecord);
+    if (_firebase.isEnabled) {
+      _firebase.pushAttendanceToCloud(newRecord);
+    }
+
+    _isCheckedIn = true;
+    _isFieldWorkActive = true;
+    _activeFieldWorkTitle = cleanTitle;
+    _activeFieldWorkAddress = cleanAddress;
+
+    // İK'ya Anlık Yüksek Öncelikli Konum ve Görev Bildirimi Gönder
+    final hrNotification = AppNotification(
+      id: 'field_work_${DateTime.now().millisecondsSinceEpoch}',
+      title: '📍 Dışarıda Çalışma Bildirimi: ${_currentUser.fullName}',
+      message: '${_currentUser.fullName} (${_currentUser.department} - ${_currentUser.title}) ofis dışı saha çalışması başlattı.\n\n• Görev / Amaç: $cleanTitle\n• Konum: $cleanAddress (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})\n• Not: $cleanNote\n• Başlangıç Saati: ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+      timestamp: DateTime.now(),
+      type: NotificationType.attendance,
+      icon: Icons.location_on_rounded,
+      color: const Color(0xFF10B981),
+      isPushSent: true,
+    );
+    _notifications.insert(0, hrNotification);
+    _db.insertNotification(hrNotification);
+
+    IosNotificationService.showIosNotification(
+      title: '📍 Dışarıda Çalışma Bildirimi',
+      body: '${_currentUser.fullName} dışarıda çalışma başlattı: $cleanTitle ($cleanAddress)',
+      icon: Icons.location_on_rounded,
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: 'Dışarıda çalışma başarıyla başlatıldı ve anlık GPS konumunuz İK birimine iletildi.',
+    );
+  }
+
+  ({bool success, String message}) endFieldWork({String? exitNote}) {
+    if (!_isCheckedIn) {
+      return (success: false, message: 'Aktif bir çalışma oturumu bulunmamaktadır.');
+    }
+
+    final newId = (_records.isNotEmpty ? _records.map((r) => r.id).reduce((a, b) => a > b ? a : b) : 0) + 1;
+    final mission = _activeFieldWorkTitle ?? 'Saha Çalışması';
+
+    final exitRecord = AttendanceRecord(
+      id: newId,
+      companyId: _activeCompanyId,
+      employeeId: _currentUser.id,
+      employeeName: _currentUser.fullName,
+      type: AttendanceType.checkOut,
+      timestamp: DateTime.now(),
+      calculatedDistanceMeters: 0.0,
+      isLocationVerified: true,
+      verificationMethod: VerificationMethod.geofenceGps,
+      note: '🏁 Dışarıda Çalışma Bitişi: $mission - ${exitNote ?? "Görev tamamlandı"}',
+    );
+
+    _records.insert(0, exitRecord);
+    _db.insertAttendanceRecord(exitRecord);
+    if (_firebase.isEnabled) {
+      _firebase.pushAttendanceToCloud(exitRecord);
+    }
+
+    _isCheckedIn = false;
+    _isFieldWorkActive = false;
+    _activeFieldWorkTitle = null;
+    _activeFieldWorkAddress = null;
+
+    final hrEndNotification = AppNotification(
+      id: 'field_end_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🏁 Dışarıda Çalışma Bitti: ${_currentUser.fullName}',
+      message: '${_currentUser.fullName} dışarıda çalışmasını sonlandırdı.\n• Tamamlanan Görev: $mission\n• Bitiş Saati: ${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.check_circle_rounded,
+      color: const Color(0xFF2563EB),
+      isPushSent: true,
+    );
+    _notifications.insert(0, hrEndNotification);
+    _db.insertNotification(hrEndNotification);
+
+    notifyListeners();
+    return (
+      success: true,
+      message: 'Dışarıda çalışma tamamlandı ve İK sistemine çıkış kaydınız işlendi.',
     );
   }
 
@@ -2343,6 +2583,24 @@ class PdksState extends ChangeNotifier {
     }
 
     final existing = _employees[index];
+
+    // İK Güvenlik Kontrolleri: Admin rolü veya unvanı veremez
+    if (_currentUser.role == UserRole.hr) {
+      if (role == UserRole.admin || title.trim().toLowerCase().contains('admin') || title.trim().toLowerCase().contains('sistem yöneticisi')) {
+        return (
+          success: false,
+          message: 'Güvenlik Kısıtlaması: İK (İnsan Kaynakları) personeline Sistem Yöneticisi (Admin) unvanı veya yetkisi veremez.',
+          dispatchedNotification: null,
+        );
+      }
+      if (existing.role == UserRole.admin) {
+        return (
+          success: false,
+          message: 'Güvenlik Sınırı: Sistem Yöneticisi (Admin) personelin bilgileri ve unvanı İK tarafından değiştirilemez.',
+          dispatchedNotification: null,
+        );
+      }
+    }
     final updated = existing.copyWith(
       fullName: fullName.trim().isEmpty ? existing.fullName : fullName.trim(),
       phone: phone.trim().isEmpty ? existing.phone : phone.trim(),

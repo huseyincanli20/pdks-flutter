@@ -26,7 +26,7 @@ void main() {
       expect(file, isNull);
     });
 
-    testWidgets('NotificationsScreen varsayılan olarak Apple Kilit Ekranı modunda açılmalı', (tester) async {
+    testWidgets('NotificationsScreen kurumsal bildirim listesi modunda açılmalı ve kilit ekranı gizli olmalı', (tester) async {
       final pdksState = PdksState();
 
       try {
@@ -41,23 +41,11 @@ void main() {
 
         await tester.pump();
 
-        // Apple Kilit Ekranı bileşenleri ekranda olmalı
-        expect(find.text('🍎 Apple Kilit Ekranı'), findsOneWidget);
-        expect(find.text('Turkcell'), findsOneWidget);
-        expect(find.text('PDKS'), findsWidgets);
-        expect(find.text('100'), findsOneWidget);
-        expect(find.byIcon(Icons.flashlight_on_rounded), findsOneWidget);
-        expect(find.byIcon(Icons.camera_alt_rounded), findsOneWidget);
-
-        // Liste görünümüne geçiş yapılabilmeli
-        final listButton = find.text('Liste');
-        expect(listButton, findsOneWidget);
-        await tester.tap(listButton);
-        await tester.pump();
-
-        // Liste görünümünde test butonu ve filtreler görünmeli
-        expect(find.text('Apple Push Bildirimini Test Et'), findsOneWidget);
+        // Standart kurumsal bildirim başlığı ve filtreler görünmeli
+        expect(find.text('Bildirimler'), findsOneWidget);
+        expect(find.text('🍎 Apple Kilit Ekranı'), findsNothing);
         expect(find.textContaining('Mesaj & Onaylar'), findsOneWidget);
+        expect(find.text('Apple Push Bildirimini Test Et'), findsOneWidget);
       } finally {
         pdksState.dispose();
       }

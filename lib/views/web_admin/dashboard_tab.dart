@@ -129,6 +129,11 @@ class DashboardTab extends StatelessWidget {
               ],
             ),
 
+          const SizedBox(height: 20),
+
+          // Saha ve Dışarıda Çalışma Durumu
+          _buildFieldWorkSection(context, pdks),
+
           SizedBox(height: isMobile ? 20 : 28),
 
           // Alt Panel: Canlı Hareket Akışı & Departman Durumu
@@ -320,6 +325,129 @@ class DashboardTab extends StatelessWidget {
           _buildDepartmentProgress(context, 'Mali İşler & Muhasebe', 1.0, '3/3 Personel'),
           const SizedBox(height: 14),
           _buildDepartmentProgress(context, 'Operasyon & Saha', 0.90, '9/10 Personel'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldWorkSection(BuildContext context, PdksState pdks) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fieldRecords = pdks.records
+        .where((r) => r.note != null && r.note!.contains('Dışarıda Çalışma'))
+        .toList();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: fieldRecords.isNotEmpty
+              ? const Color(0xFF10B981).withOpacity(0.4)
+              : AppColors.cardBorder(context),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Saha / Dışarıda Çalışma Bildirimleri',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${fieldRecords.length} Kayıt',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (fieldRecords.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Şu an sahada veya ofis dışında çalışan personel bildirimi bulunmamaktadır.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSub(context)),
+              ),
+            )
+          else
+            ...fieldRecords.take(4).map((rec) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFF10B981),
+                      child: Icon(Icons.person_pin_circle_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(rec.employeeName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text('GPS İletildi', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF047857))),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(rec.note ?? '', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569))),
+                          if (rec.userLatitude != null && rec.userLongitude != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '📍 Koordinat: ${rec.userLatitude!.toStringAsFixed(4)}° K, ${rec.userLongitude!.toStringAsFixed(4)}° D',
+                              style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${rec.timestamp.hour.toString().padLeft(2, '0')}:${rec.timestamp.minute.toString().padLeft(2, '0')}',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textSub(context)),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

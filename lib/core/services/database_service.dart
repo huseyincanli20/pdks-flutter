@@ -9,6 +9,7 @@ import '../../models/shift_schedule.dart';
 import '../../models/chat_message.dart';
 import '../../models/app_notification.dart';
 import '../../models/cafeteria_menu.dart';
+import '../../models/quick_menu_item.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -27,6 +28,7 @@ class DatabaseService {
   static const String _keyChannels = 'pdks_db_channels_v1';
   static const String _keyNotifications = 'pdks_db_notifications_v1';
   static const String _keyMenu = 'pdks_db_menu_v1';
+  static const String _keyQuickMenu = 'pdks_db_quick_menu_v1';
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -40,6 +42,7 @@ class DatabaseService {
   final List<ChatMessage> _messages = [];
   final List<ChatChannel> _customChannels = [];
   final List<AppNotification> _notifications = [];
+  final List<QuickMenuItem> _quickMenuItems = [];
   CafeteriaMenu? _todayMenu;
 
   bool get isInitialized => _isInitialized;
@@ -171,6 +174,18 @@ class DatabaseService {
         _todayMenu = CafeteriaMenu.fromJson(jsonDecode(menuRaw));
       } catch (e) {
         debugPrint('⚠️ Menü yüklenirken hata: $e');
+      }
+    }
+
+    // 10. Hızlı Menü Öğeleri
+    final quickMenuRaw = prefs.getString(_keyQuickMenu);
+    if (quickMenuRaw != null && quickMenuRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(quickMenuRaw);
+        _quickMenuItems.clear();
+        _quickMenuItems.addAll(list.map((item) => QuickMenuItem.fromJson(Map<String, dynamic>.from(item))));
+      } catch (e) {
+        debugPrint('⚠️ Hızlı menü yüklenirken hata: $e');
       }
     }
   }
@@ -649,6 +664,78 @@ class DatabaseService {
       await prefs.setString(_keyMenu, jsonEncode(menu.toJson()));
     } catch (e) {
       debugPrint('⚠️ Menü diske kaydedilemedi: $e');
+    }
+  }
+
+  // ==========================================
+  // HIZLI MENÜ (QUICK MENU MANAGEMENT)
+  // ==========================================
+
+  static List<QuickMenuItem> defaultQuickMenuItems() => const [
+    QuickMenuItem(
+      id: 'qm_leave',
+      title: 'İzin Talebi',
+      subtitle: 'Yıllık izin veya mazeret talebi oluşturun',
+      iconCode: 0xe156,
+      colorValue: 0xFFF59E0B,
+      isVisible: true,
+      actionType: 'leave',
+    ),
+    QuickMenuItem(
+      id: 'qm_records',
+      title: 'Giriş/Çıkışlar',
+      subtitle: 'Geçmiş devam ve yoklama kayıtları',
+      iconCode: 0xe314,
+      colorValue: 0xFF2563EB,
+      isVisible: true,
+      actionType: 'records',
+    ),
+    QuickMenuItem(
+      id: 'qm_field_work',
+      title: 'Dışarıda Çalışma 📍',
+      subtitle: 'Saha görevi ve anlık konum bildirimi',
+      iconCode: 0xe425,
+      colorValue: 0xFF10B981,
+      isVisible: true,
+      actionType: 'field_work',
+    ),
+    QuickMenuItem(
+      id: 'qm_overtime',
+      title: 'Fazla Mesai',
+      subtitle: 'Ek mesai saat talebi bildirin',
+      iconCode: 0xe40f,
+      colorValue: 0xFF9333EA,
+      isVisible: true,
+      actionType: 'overtime',
+    ),
+    QuickMenuItem(
+      id: 'qm_cafeteria',
+      title: 'Günün Yemek Menüsü',
+      subtitle: 'Kalori ve öğün içeriklerini inceleyin',
+      iconCode: 0xe506,
+      colorValue: 0xFFE11D48,
+      isVisible: true,
+      actionType: 'cafeteria',
+    ),
+  ];
+
+  List<QuickMenuItem> getAllQuickMenuItems() {
+    if (_quickMenuItems.isEmpty) {
+      return defaultQuickMenuItems();
+    }
+    return List.unmodifiable(_quickMenuItems);
+  }
+
+  Future<void> saveQuickMenuItems(List<QuickMenuItem> items) async {
+    _quickMenuItems.clear();
+    _quickMenuItems.addAll(items);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final list = _quickMenuItems.map((q) => q.toJson()).toList();
+      await prefs.setString(_keyQuickMenu, jsonEncode(list));
+    } catch (e) {
+      debugPrint('⚠️ Hızlı menü diske kaydedilemedi: $e');
     }
   }
 }

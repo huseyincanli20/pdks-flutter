@@ -638,7 +638,15 @@ class EmployeesTab extends StatelessWidget {
                                   filled: true,
                                   fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                                 ),
-                                validator: (v) => v == null || v.trim().isEmpty ? 'Unvan boş bırakılamaz' : null,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Unvan boş bırakılamaz';
+                                  if (pdks.currentUser.role == UserRole.hr && emp.role != UserRole.admin) {
+                                    if (v.toLowerCase().contains('admin') || v.toLowerCase().contains('sistem yöneticisi')) {
+                                      return 'İK paneli personeline Admin unvanı veremez';
+                                    }
+                                  }
+                                  return null;
+                                },
                               ),
                             ),
                           ],
@@ -648,23 +656,52 @@ class EmployeesTab extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: DropdownButtonFormField<UserRole>(
-                                value: selectedRole,
-                                decoration: InputDecoration(
-                                  labelText: 'Yetki Rolü',
-                                  prefixIcon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                  filled: true,
-                                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                                ),
-                                items: UserRole.values.map((role) {
-                                  return DropdownMenuItem(
-                                    value: role,
-                                    child: Text(role.label, style: const TextStyle(fontSize: 13)),
+                              child: Builder(
+                                builder: (context) {
+                                  final isCurrentUserHr = pdks.currentUser.role == UserRole.hr;
+                                  final isTargetAdmin = emp.role == UserRole.admin;
+
+                                  List<UserRole> selectableRoles;
+                                  if (isCurrentUserHr) {
+                                    selectableRoles = isTargetAdmin
+                                        ? [UserRole.admin]
+                                        : [UserRole.employee, UserRole.hr, UserRole.cafeteria];
+                                  } else {
+                                    selectableRoles = UserRole.values;
+                                  }
+
+                                  return DropdownButtonFormField<UserRole>(
+                                    value: selectedRole,
+                                    decoration: InputDecoration(
+                                      labelText: 'Yetki Rolü',
+                                      helperText: isCurrentUserHr
+                                          ? (isTargetAdmin ? 'Admin yetkisi İK tarafından değiştirilemez' : 'İK paneli Admin yetkisi veremez')
+                                          : null,
+                                      helperStyle: TextStyle(fontSize: 10, color: isTargetAdmin ? Colors.purple : Colors.amber.shade800),
+                                      prefixIcon: const Icon(Icons.admin_panel_settings_outlined, size: 20),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      filled: true,
+                                      fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                    ),
+                                    items: selectableRoles.map((role) {
+                                      return DropdownMenuItem(
+                                        value: role,
+                                        child: Text(
+                                          role == UserRole.admin && isCurrentUserHr ? 'Admin (Korumalı)' : role.label,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: role == UserRole.admin ? FontWeight.bold : FontWeight.normal,
+                                            color: role == UserRole.admin ? Colors.purple : null,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (isCurrentUserHr && isTargetAdmin)
+                                        ? null
+                                        : (val) {
+                                            if (val != null) setModalState(() => selectedRole = val);
+                                          },
                                   );
-                                }).toList(),
-                                onChanged: (val) {
-                                  if (val != null) setModalState(() => selectedRole = val);
                                 },
                               ),
                             ),

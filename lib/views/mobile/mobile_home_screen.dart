@@ -21,6 +21,8 @@ import '../menu/settings_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../../core/utils/marquee_text.dart';
 import '../common/admin_edit_mode_bar.dart';
+import '../common/quick_menu_manager_dialog.dart';
+import '../common/field_work_dialog.dart';
 import '../../models/page_customization.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -554,49 +556,134 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Hızlı İşlemler',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Hızlı İşlemler',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                    ),
+                    if (user.role == UserRole.boss || user.role == UserRole.admin)
+                      InkWell(
+                        onTap: () => QuickMenuManagerDialog.show(context),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryOf(context).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.tune_rounded, size: 14, color: Color(0xFF2563EB)),
+                              SizedBox(width: 4),
+                              Text('Menüyü Düzenle', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.beach_access_rounded,
-                        color: Colors.amber.shade700,
-                        title: 'İzin Talebi',
-                        subtitle: 'Kalan: ${user.remainingLeaveDays} Gün',
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                        },
-                      ),
+
+                // Aktif Dışarıda Çalışma Bildirim Kartı
+                if (pdks.isFieldWorkActive) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.35)),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.history_rounded,
-                        color: Colors.blue.shade600,
-                        title: 'Giriş/Çıkışlar',
-                        subtitle: '${pdks.records.length} Kayıt',
-                        onTap: () => setState(() => _currentIndex = 1),
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_rounded, color: Color(0xFF10B981), size: 24),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Aktif Saha: ${pdks.activeFieldWorkTitle}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Konum İK\'ya iletildi (${pdks.activeFieldWorkAddress})', style: const TextStyle(fontSize: 11, color: Color(0xFF047857))),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => FieldWorkDialog.show(context),
+                          child: const Text('Yönet ›', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildQuickActionCard(
-                        icon: Icons.more_time_rounded,
-                        color: Colors.purple.shade600,
-                        title: 'Fazla Mesai',
-                        subtitle: 'Talep Bildir',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
+                ],
+
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: pdks.visibleQuickMenuItems.map((item) {
+                      return Container(
+                        width: 130,
+                        margin: const EdgeInsets.only(right: 10),
+                        child: _buildQuickActionCard(
+                          icon: item.icon,
+                          color: item.color,
+                          title: item.title,
+                          subtitle: item.actionType == 'leave' ? 'Kalan: ${user.remainingLeaveDays} Gün' : item.subtitle,
+                          onTap: () {
+                            switch (item.actionType) {
+                              case 'leave':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+                                break;
+                              case 'records':
+                                setState(() => _currentIndex = 1);
+                                break;
+                              case 'field_work':
+                                FieldWorkDialog.show(context);
+                                break;
+                              case 'cafeteria':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                                break;
+                              case 'overtime':
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+                                );
+                                break;
+                              case 'info_dialog':
+                              default:
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    title: Row(
+                                      children: [
+                                        Icon(item.icon, color: item.color, size: 22),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                                      ],
+                                    ),
+                                    content: Text(item.customContent ?? item.subtitle, style: const TextStyle(fontSize: 13, height: 1.5)),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+                                    ],
+                                  ),
+                                );
+                                break;
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ],
             ),
