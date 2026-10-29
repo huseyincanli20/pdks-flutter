@@ -12,11 +12,14 @@ import '../models/page_customization.dart';
 import '../models/chat_message.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
+import '../core/services/database_service.dart';
+import '../core/services/ios_notification_service.dart';
 import '../core/theme/app_theme_type.dart';
 import '../core/theme/app_theme.dart';
 
 class PdksState extends ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final DatabaseService _db = DatabaseService();
 
   // Aktif Giriş Yapan Kullanıcı
   late Employee _currentUser;
@@ -554,10 +557,11 @@ class PdksState extends ChangeNotifier {
     );
 
     _customGroupChannels.add(newChannel);
+    _db.insertCustomChannel(newChannel);
 
     // Gruba ilk kurucu açılış mesajını ekle
     final creatorRole = _currentUser.role == UserRole.boss ? 'Patron (CEO)' : 'Sistem Yöneticisi (Admin)';
-    _chatMessages.add(ChatMessage(
+    final creatorMsg = ChatMessage(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
       senderId: _currentUser.id,
       senderName: _currentUser.fullName,
@@ -566,7 +570,17 @@ class PdksState extends ChangeNotifier {
       text: '🎉 "$trimmed" grubu ${_currentUser.fullName} ($creatorRole) tarafından kuruldu.',
       timestamp: DateTime.now(),
       isRead: true,
-    ));
+    );
+    _chatMessages.add(creatorMsg);
+    _db.insertChatMessage(creatorMsg);
+
+    // iPhone Bildirimi Gönder
+    IosNotificationService.showIosNotification(
+      title: '👥 Yeni Grup Kanalı Kuruldu',
+      body: '"$trimmed" grubu ${_currentUser.fullName} tarafından oluşturuldu.',
+      icon: newChannel.icon,
+      iconColor: newChannel.iconColor,
+    );
 
     notifyListeners();
     return (success: true, message: '"$trimmed" grubu başarıyla oluşturuldu.', channel: newChannel);
@@ -639,7 +653,18 @@ class PdksState extends ChangeNotifier {
     );
 
     _chatMessages.add(newMsg);
+    _db.insertChatMessage(newMsg);
     notifyListeners();
+
+    // iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
+    IosNotificationService.showIosNotification(
+      title: '💬 ${_currentUser.fullName}',
+      body: type == MessageType.document
+          ? '📄 Belge gönderildi: ${attachmentName ?? "Belge.pdf"}'
+          : (type == MessageType.location ? '📍 Konum paylaşıldı' : newMsg.text),
+      icon: Icons.chat_bubble_rounded,
+      iconColor: const Color(0xFF2563EB),
+    );
 
     // İK Destek kanalına yazıldığında otomatik destek yanıt simülasyonu
     if (channelId == 'hr_support' && _currentUser.role != UserRole.hr) {
@@ -655,7 +680,16 @@ class PdksState extends ChangeNotifier {
           isRead: false,
         );
         _chatMessages.add(replyMsg);
+        _db.insertChatMessage(replyMsg);
         notifyListeners();
+
+        // İK Destek yanıtı için iPhone Bildirimi
+        IosNotificationService.showIosNotification(
+          title: '💬 Zeynep Kaya (İK Destek)',
+          body: replyMsg.text,
+          icon: Icons.support_agent_rounded,
+          iconColor: const Color(0xFF0284C7),
+        );
       });
     }
   }
@@ -1379,69 +1413,114 @@ class PdksState extends ChangeNotifier {
       usedLeaveDays: 0,
     );
 
-    _currentUser = personel; // Varsayılan personel
-    _employees = [
-      personel, ik, patron, admin, diger1, diger2, yemekhane,
-      novaPersonel, novaIk, novaPatron, novaAdmin,
-      ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
-    ];
+    // Veritabanı Servisinden Verileri Yükle
+    if (_db.getAllEmployees().isNotEmpty) {
+      _employees = List.from(_db.getAllEmployees());
+      _currentUser = _employees.firstWhere((e) => e.id == 1, orElse: () => _employees.first);
+    } else {
+      _currentUser = personel; // Varsayılan personel
+      _employees = [
+        personel, ik, patron, admin, diger1, diger2, yemekhane,
+        novaPersonel, novaIk, novaPatron, novaAdmin,
+        ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
+      ];
+      for (final e in _employees) {
+        _db.insertEmployee(e);
+      }
+    }
 
-    _records = [];
-    _leaves = [];
+    if (_db.getAllRecords().isNotEmpty) {
+      _records = List.from(_db.getAllRecords());
+    } else {
+      _records = [];
+    }
+
+    if (_db.getAllLeaves().isNotEmpty) {
+      _leaves = List.from(_db.getAllLeaves());
+    } else {
+      _leaves = [];
+    }
+
     _payrolls = [];
 
-    _shifts = [
-      ShiftSchedule(
-        id: 1,
-        companyId: 'cmp_acme',
-        title: 'Standart Ofis Vardiyası',
-        startTime: '08:30',
-        endTime: '17:30',
-        breakMinutes: 60,
-        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 0,
-      ),
-      ShiftSchedule(
-        id: 2,
-        companyId: 'cmp_acme',
-        title: 'Geç / Esnek Vardiya',
-        startTime: '10:00',
-        endTime: '19:00',
-        breakMinutes: 60,
-        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 0,
-      ),
-      ShiftSchedule(
-        id: 3,
-        companyId: 'cmp_acme',
-        title: 'Hafta Sonu Nöbetçi Ekip',
-        startTime: '09:00',
-        endTime: '15:00',
-        breakMinutes: 45,
-        activeDays: ['Cumartesi'],
-        assignedEmployeeCount: 0,
-      ),
-      ShiftSchedule(
-        id: 4,
-        companyId: 'cmp_nova',
-        title: 'Savunma Ar-Ge Mühendislik Vardiyası',
-        startTime: '08:00',
-        endTime: '17:00',
-        breakMinutes: 60,
-        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-        assignedEmployeeCount: 0,
-      ),
-      ShiftSchedule(
-        id: 5,
-        companyId: 'cmp_ozdemir',
-        title: 'Lojistik & Operasyon Vardiyası',
-        startTime: '07:30',
-        endTime: '16:30',
-        breakMinutes: 60,
-        activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
-        assignedEmployeeCount: 0,
-      ),
-    ];
+    if (_db.getAllShifts().isNotEmpty) {
+      _shifts = List.from(_db.getAllShifts());
+    } else {
+      _shifts = [
+        ShiftSchedule(
+          id: 1,
+          companyId: 'cmp_acme',
+          title: 'Standart Ofis Vardiyası',
+          startTime: '08:30',
+          endTime: '17:30',
+          breakMinutes: 60,
+          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
+          assignedEmployeeCount: 0,
+        ),
+        ShiftSchedule(
+          id: 2,
+          companyId: 'cmp_acme',
+          title: 'Geç / Esnek Vardiya',
+          startTime: '10:00',
+          endTime: '19:00',
+          breakMinutes: 60,
+          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
+          assignedEmployeeCount: 0,
+        ),
+        ShiftSchedule(
+          id: 3,
+          companyId: 'cmp_acme',
+          title: 'Hafta Sonu Nöbetçi Ekip',
+          startTime: '09:00',
+          endTime: '15:00',
+          breakMinutes: 45,
+          activeDays: ['Cumartesi'],
+          assignedEmployeeCount: 0,
+        ),
+        ShiftSchedule(
+          id: 4,
+          companyId: 'cmp_nova',
+          title: 'Savunma Ar-Ge Mühendislik Vardiyası',
+          startTime: '08:00',
+          endTime: '17:00',
+          breakMinutes: 60,
+          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
+          assignedEmployeeCount: 0,
+        ),
+        ShiftSchedule(
+          id: 5,
+          companyId: 'cmp_ozdemir',
+          title: 'Lojistik & Operasyon Vardiyası',
+          startTime: '07:30',
+          endTime: '16:30',
+          breakMinutes: 60,
+          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+          assignedEmployeeCount: 0,
+        ),
+      ];
+      for (final s in _shifts) {
+        _db.insertShift(s);
+      }
+    }
+
+    if (_db.getCustomChannels().isNotEmpty) {
+      _customGroupChannels.clear();
+      _customGroupChannels.addAll(_db.getCustomChannels());
+    }
+
+    if (_db.getAllMessages().isNotEmpty) {
+      _chatMessages.clear();
+      _chatMessages.addAll(_db.getAllMessages());
+    }
+
+    if (_db.getAllNotifications().isNotEmpty) {
+      _notifications.clear();
+      _notifications.addAll(_db.getAllNotifications());
+    }
+
+    if (_db.getTodayMenu() != null) {
+      _todayMenu = _db.getTodayMenu()!;
+    }
 
     _isCheckedIn = false;
     _lastCheckInTime = null;
@@ -1449,30 +1528,46 @@ class PdksState extends ChangeNotifier {
   }
 
   // Giriş Yapma: YALNIZCA GİRİŞ BİLGİLERİNE GÖRE ROL BELİRLENİR
-  // Giriş Yapma: İK ONAYI KONTROLÜ İLE BİRLİKTE
+  // Giriş Yapma: VERİTABANI KONTROLÜ VE İK ONAYI İLE BİRLİKTE
   ({bool success, bool isPendingApproval, String message}) login(String email, String pin) {
     final cleanEmail = email.trim().toLowerCase();
     final cleanPin = pin.trim();
 
-    // 1. Önce tam e-posta ve PIN eşleşmesine bak
-    final found = _employees.where(
-      (e) => e.email.toLowerCase() == cleanEmail && e.pinCode == cleanPin,
-    );
+    // 1. Veritabanından kullanıcıyı çek (Database lookup)
+    final user = _db.getEmployeeByEmail(cleanEmail) ??
+        _employees.cast<Employee?>().firstWhere(
+          (e) => e?.email.trim().toLowerCase() == cleanEmail,
+          orElse: () => null,
+        );
 
-    if (found.isNotEmpty) {
-      final user = found.first;
-      // İK ONAYI KONTROLÜ
+    if (user != null) {
+      if (user.pinCode != cleanPin) {
+        return (
+          success: false,
+          isPendingApproval: false,
+          message: 'Hatalı PIN kodu girdiniz. Lütfen 4 haneli PIN kodunuzu kontrol ediniz.',
+        );
+      }
       if (!user.isApproved) {
         return (
           success: false,
           isPendingApproval: true,
-          message: 'Hesabınız henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır. Lütfen İK yöneticinizin onayını ve görev atamasını bekleyin.',
+          message: 'Sayın ${user.fullName}, başvurunuz veritabanımızda kayıtlıdır ancak henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır. Lütfen İK yöneticinizin onayını bekleyiniz.',
         );
       }
       _currentUser = user;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
+
+      // iPhone Bildirimi Tetikle (Ses + Web Push + iOS Dynamic Island Banner)
+      IosNotificationService.showIosNotification(
+        title: 'PDKS • Hoş Geldiniz 📱',
+        body: 'Sayın ${user.fullName}, veritabanından başarıyla giriş yaptınız.',
+        icon: Icons.verified_user_rounded,
+        iconColor: const Color(0xFF10B981),
+      );
+
       notifyListeners();
       return (
         success: true,
@@ -1481,48 +1576,36 @@ class PdksState extends ChangeNotifier {
       );
     }
 
-    // E-posta doğru fakat PIN henüz onaylanmamış bir hesap mı?
-    final pendingWithEmail = _employees.where(
-      (e) => e.email.toLowerCase() == cleanEmail && !e.isApproved,
-    );
-    if (pendingWithEmail.isNotEmpty) {
-      return (
-        success: false,
-        isPendingApproval: true,
-        message: 'Kaydınız oluşturulmuş olup İnsan Kaynakları (İK) onayı beklemektedir. İK yöneticiniz departman ve unvanınızı atayıp onayladıktan sonra PIN kodunuz ile giriş yapabilirsiniz.',
-      );
-    }
-
-    // 2. Demo kısayolları için kullanıcı adı bazlı kontrol
-    Employee? matched;
-    // Aktif şirketin personelleri içinden eşleştir
-    final companyPool = _employees.where((e) => e.companyId == _activeCompanyId && e.isApproved).toList();
-    final fallbackPool = companyPool.isNotEmpty ? companyPool : _employees.where((e) => e.isApproved).toList();
+    // Demo Kısayolları (personel, ik, patron, admin)
+    Employee? demoMatched;
+    final pool = _employees.where((e) => e.companyId == _activeCompanyId && e.isApproved).toList();
+    final fallbackPool = pool.isNotEmpty ? pool : _employees.where((e) => e.isApproved).toList();
 
     if (cleanEmail == 'personel@sirket.com' || cleanEmail == 'personel') {
-      matched = fallbackPool.firstWhere((e) => e.role == UserRole.employee, orElse: () => _employees.firstWhere((e) => e.role == UserRole.employee));
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.employee, orElse: () => _employees.firstWhere((e) => e.role == UserRole.employee));
     } else if (cleanEmail == 'ik@sirket.com' || cleanEmail == 'ik') {
-      matched = fallbackPool.firstWhere((e) => e.role == UserRole.hr, orElse: () => _employees.firstWhere((e) => e.role == UserRole.hr));
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.hr, orElse: () => _employees.firstWhere((e) => e.role == UserRole.hr));
     } else if (cleanEmail == 'patron@sirket.com' || cleanEmail == 'patron') {
-      matched = fallbackPool.firstWhere((e) => e.role == UserRole.boss, orElse: () => _employees.firstWhere((e) => e.role == UserRole.boss));
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.boss, orElse: () => _employees.firstWhere((e) => e.role == UserRole.boss));
     } else if (cleanEmail == 'admin@sirket.com' || cleanEmail == 'admin') {
-      matched = fallbackPool.firstWhere((e) => e.role == UserRole.admin, orElse: () => _employees.firstWhere((e) => e.role == UserRole.admin));
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.admin, orElse: () => _employees.firstWhere((e) => e.role == UserRole.admin));
     } else if (cleanEmail == 'yemekhane@sirket.com' || cleanEmail == 'yemekhane') {
-      matched = fallbackPool.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => _employees.firstWhere((e) => e.role == UserRole.cafeteria));
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => _employees.firstWhere((e) => e.role == UserRole.cafeteria));
     }
 
-    if (matched != null) {
-      if (!matched.isApproved) {
-        return (
-          success: false,
-          isPendingApproval: true,
-          message: 'Hesabınız henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır.',
-        );
-      }
-      _currentUser = matched;
+    if (demoMatched != null && demoMatched.isApproved) {
+      _currentUser = demoMatched;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
+
+      IosNotificationService.showIosNotification(
+        title: 'PDKS • Hoş Geldiniz 📱',
+        body: 'Sayın ${demoMatched.fullName}, giriş yapıldı.',
+        icon: Icons.verified_user_rounded,
+        iconColor: const Color(0xFF10B981),
+      );
+
       notifyListeners();
       return (
         success: true,
@@ -1534,7 +1617,7 @@ class PdksState extends ChangeNotifier {
     return (
       success: false,
       isPendingApproval: false,
-      message: 'Hatalı e-posta veya PIN kodu!',
+      message: 'Veritabanında kayıtlı kullanıcı bulunamadı! Lütfen önce "Kayıt Ol" sekmesinden kaydolun.',
     );
   }
 
@@ -1558,17 +1641,20 @@ class PdksState extends ChangeNotifier {
       );
     }
 
-    // E-posta mükerrer kontrolü
+    // 1. VERİTABANI MÜKERRER KAYIT KONTROLÜ (E-posta ve Telefon)
     final cleanEmail = email.trim().toLowerCase();
-    if (_employees.any((e) => e.email.trim().toLowerCase() == cleanEmail)) {
+    final isAlreadyRegistered = _db.isEmailOrPhoneRegistered(cleanEmail, phone) ||
+        _employees.any((e) => e.email.trim().toLowerCase() == cleanEmail);
+
+    if (isAlreadyRegistered) {
       return (
         success: false,
-        message: 'Bu e-posta adresiyle ("$cleanEmail") zaten kayıtlı bir hesap bulunmaktadır.',
+        message: 'Kayıt Kabul Edilmedi: "$cleanEmail" e-posta adresi veya telefon numarası veritabanında zaten kayıtlıdır! Lütfen doğrudan Giriş Yapınız.',
       );
     }
 
     final targetCompany = _companies[idx];
-    final newId = _employees.length + 1;
+    final newId = (_employees.isNotEmpty ? _employees.map((e) => e.id).reduce((a, b) => a > b ? a : b) : 0) + 1;
     final newEmployee = Employee(
       id: newId,
       companyId: targetCompany.id,
@@ -1586,21 +1672,31 @@ class PdksState extends ChangeNotifier {
       registeredAt: DateTime.now(),
     );
 
+    // 2. VERİTABANINA KALICI OLARAK KAYDET
     _employees.add(newEmployee);
+    _db.insertEmployee(newEmployee);
 
-    // İK yetkililerine sistem içi bildirim ekle
-    _notifications.insert(
-      0,
-      AppNotification(
-        id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
-        title: 'Yeni Personel Kayıt Talebi ⏳',
-        message: '${newEmployee.fullName} ("${targetCompany.name}") şirketine kayıt oldu. İK onayı, departman ve unvan ataması bekleniyor.',
-        timestamp: DateTime.now(),
-        type: NotificationType.system,
-        icon: Icons.person_add_alt_1_rounded,
-        color: const Color(0xFFF59E0B),
-        isRead: false,
-      ),
+    // İK yetkililerine sistem içi bildirim ekle & veritabanına kaydet
+    final hrNotif = AppNotification(
+      id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Yeni Personel Kayıt Talebi ⏳',
+      message: '${newEmployee.fullName} ("${targetCompany.name}") şirketine kayıt oldu. İK onayı, departman ve unvan ataması bekleniyor.',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.person_add_alt_1_rounded,
+      color: const Color(0xFFF59E0B),
+      isRead: false,
+    );
+
+    _notifications.insert(0, hrNotif);
+    _db.insertNotification(hrNotif);
+
+    // 3. IPHONE PUSH BİLDİRİMİ GÖNDER
+    IosNotificationService.showIosNotification(
+      title: '📲 PDKS • Yeni Kayıt Alındı',
+      body: '${newEmployee.fullName} veritabanına kaydedildi. İK onayı sonrası PIN ile giriş yapabilirsiniz.',
+      icon: Icons.app_registration_rounded,
+      iconColor: const Color(0xFF10B981),
     );
 
     // Oturum açılmaz, İK onayı beklenir
@@ -1610,7 +1706,7 @@ class PdksState extends ChangeNotifier {
 
     return (
       success: true,
-      message: 'Kaydınız başarıyla oluşturuldu! Güvenlik gereği ilk önce İnsan Kaynakları (İK) departmanı kaydınızı onaylayacak ve görevinizi atayacaktır. Onaylandıktan sonra PIN kodunuz ile giriş yapabilirsiniz.',
+      message: 'Kaydınız veritabanına başarıyla kaydedildi! Kurumsal güvenlik gereği ilk önce İnsan Kaynakları (İK) departmanı kaydınızı onaylayacak ve görevinizi atayacaktır. Onaylandıktan sonra PIN kodunuz ile giriş yapabilirsiniz.',
     );
   }
 
@@ -1643,6 +1739,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _employees[index] = updated;
+    _db.updateEmployee(updated);
 
     final compName = _companies.firstWhere((c) => c.id == updated.companyId, orElse: () => activeCompany).name;
 
@@ -1676,7 +1773,16 @@ class PdksState extends ChangeNotifier {
     );
 
     _notifications.insert(0, phoneNotification);
+    _db.insertNotification(phoneNotification);
     _lastDispatchedPhoneNotification = phoneNotification;
+
+    // iPhone Bildirimi Tetikle
+    IosNotificationService.showIosNotification(
+      title: '🎉 Kayıt Onaylandı: ${updated.fullName}',
+      body: '$compName bünyesinde ${updated.department} • ${updated.title} olarak kaydı onaylandı.',
+      icon: Icons.verified_user_rounded,
+      iconColor: const Color(0xFF10B981),
+    );
 
     notifyListeners();
     return (
@@ -1701,8 +1807,9 @@ class PdksState extends ChangeNotifier {
 
     final name = _employees[index].fullName;
     _employees.removeAt(index);
+    _db.deleteEmployee(employeeId);
     notifyListeners();
-    return (success: true, message: '$name personelinin kayıt başvurusu reddedildi ve listeden kaldırıldı.');
+    return (success: true, message: '$name personelinin kayıt başvurusu reddedildi ve veritabanından kaldırıldı.');
   }
 
   // Oturumu Kapat
@@ -1916,6 +2023,7 @@ class PdksState extends ChangeNotifier {
     _currentUser = updated;
     if (index != -1) {
       _employees[index] = updated;
+      _db.updateEmployee(updated);
     }
     notifyListeners();
   }
@@ -1972,6 +2080,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _employees[index] = updated;
+    _db.updateEmployee(updated);
 
     // Eğer o an aktif giriş yapan personel güncellendiyse oturumu senkronize et
     if (_currentUser.id == employeeId) {
@@ -2028,7 +2137,16 @@ class PdksState extends ChangeNotifier {
     );
 
     _notifications.insert(0, hrNotification);
+    _db.insertNotification(hrNotification);
     _lastDispatchedPhoneNotification = hrNotification;
+
+    // iPhone Bildirimi Tetikle
+    IosNotificationService.showIosNotification(
+      title: '📝 Bilgileriniz Güncellendi',
+      body: 'Sayın ${updated.fullName}, özlük ve unvan bilgileriniz İK tarafından güncellendi.',
+      icon: Icons.assignment_ind_rounded,
+      iconColor: const Color(0xFF2563EB),
+    );
 
     notifyListeners();
     return (
@@ -2071,6 +2189,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _records.insert(0, newRecord);
+    _db.insertAttendanceRecord(newRecord);
 
     if (type == AttendanceType.checkIn) {
       _isCheckedIn = true;
@@ -2078,6 +2197,14 @@ class PdksState extends ChangeNotifier {
     } else {
       _isCheckedIn = false;
     }
+
+    // iPhone Bildirimi Tetikle
+    IosNotificationService.showIosNotification(
+      title: type == AttendanceType.checkIn ? '⏰ Mesai Girişi Başarılı' : '🚪 Mesai Çıkışı Kaydedildi',
+      body: '${_currentUser.fullName} • ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} • ${newRecord.methodLabel}',
+      icon: type == AttendanceType.checkIn ? Icons.login_rounded : Icons.logout_rounded,
+      iconColor: type == AttendanceType.checkIn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+    );
 
     notifyListeners();
     return response;
@@ -2106,6 +2233,16 @@ class PdksState extends ChangeNotifier {
     );
 
     _leaves.insert(0, newLeave);
+    _db.insertLeaveRequest(newLeave);
+
+    // iPhone Bildirimi Tetikle
+    IosNotificationService.showIosNotification(
+      title: '🏖️ İzin Talebi İletildi',
+      body: '${newLeave.typeLabel} (${newLeave.totalDays} gün) onay için İK departmanına gönderildi.',
+      icon: Icons.beach_access_rounded,
+      iconColor: const Color(0xFF0284C7),
+    );
+
     notifyListeners();
     return true;
   }
@@ -2115,7 +2252,7 @@ class PdksState extends ChangeNotifier {
     final index = _leaves.indexWhere((l) => l.id == leaveId);
     if (index != -1) {
       final old = _leaves[index];
-      _leaves[index] = LeaveRequest(
+      final updatedLeave = LeaveRequest(
         id: old.id,
         companyId: old.companyId,
         employeeId: old.employeeId,
@@ -2129,25 +2266,41 @@ class PdksState extends ChangeNotifier {
         managerComment: comment ?? (newStatus == LeaveStatus.approved ? 'Yönetici onayladı.' : 'Talebiniz reddedildi.'),
         createdAt: old.createdAt,
       );
+      _leaves[index] = updatedLeave;
+      _db.updateLeaveRequest(updatedLeave);
 
       if (newStatus == LeaveStatus.approved && old.type == LeaveType.annual) {
         final empIndex = _employees.indexWhere((e) => e.id == old.employeeId);
         if (empIndex != -1) {
           final emp = _employees[empIndex];
-          _employees[empIndex] = Employee(
-            id: emp.id,
-            fullName: emp.fullName,
-            email: emp.email,
-            phone: emp.phone,
-            department: emp.department,
-            title: emp.title,
-            pinCode: emp.pinCode,
-            role: emp.role,
-            annualLeaveAllowance: emp.annualLeaveAllowance,
+          final updatedEmp = emp.copyWith(
             usedLeaveDays: emp.usedLeaveDays + old.totalDays,
           );
+          _employees[empIndex] = updatedEmp;
+          _db.updateEmployee(updatedEmp);
         }
       }
+
+      // İzin Bildirimi
+      final notif = AppNotification(
+        id: 'leave_notif_${DateTime.now().millisecondsSinceEpoch}',
+        title: newStatus == LeaveStatus.approved ? '✅ İzin Talebiniz Onaylandı' : '❌ İzin Talebiniz Reddedildi',
+        message: 'Sayın ${old.employeeName}, ${old.typeLabel} (${old.totalDays} gün) talebiniz ${newStatus == LeaveStatus.approved ? "onaylanmıştır." : "reddedilmiştir."}',
+        timestamp: DateTime.now(),
+        type: NotificationType.leave,
+        icon: newStatus == LeaveStatus.approved ? Icons.check_circle_rounded : Icons.cancel_rounded,
+        color: newStatus == LeaveStatus.approved ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+      );
+      _notifications.insert(0, notif);
+      _db.insertNotification(notif);
+
+      // iPhone Bildirimi Tetikle
+      IosNotificationService.showIosNotification(
+        title: notif.title,
+        body: notif.message,
+        icon: notif.icon,
+        iconColor: notif.color,
+      );
 
       notifyListeners();
     }

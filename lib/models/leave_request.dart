@@ -58,6 +58,7 @@ class LeaveRequest {
   factory LeaveRequest.fromJson(Map<String, dynamic> json) {
     return LeaveRequest(
       id: json['id'] ?? 0,
+      companyId: json['companyId'] ?? 'cmp_acme',
       employeeId: json['employeeId'] ?? 0,
       employeeName: json['employeeName'] ?? 'Personel',
       type: LeaveType.values.firstWhere(
@@ -80,6 +81,7 @@ class LeaveRequest {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'companyId': companyId,
       'employeeId': employeeId,
       'employeeName': employeeName,
       'type': type.name,

@@ -15,7 +15,33 @@ class ShiftSchedule {
     required this.startTime,
     required this.endTime,
     this.breakMinutes = 60,
-    required this.activeDays,
+    this.activeDays = const [],
     this.assignedEmployeeCount = 0,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'companyId': companyId,
+      'title': title,
+      'startTime': startTime,
+      'endTime': endTime,
+      'breakMinutes': breakMinutes,
+      'activeDays': activeDays,
+      'assignedEmployeeCount': assignedEmployeeCount,
+    };
+  }
+
+  factory ShiftSchedule.fromJson(Map<String, dynamic> json) {
+    return ShiftSchedule(
+      id: json['id'] ?? 0,
+      companyId: json['companyId'] ?? 'cmp_acme',
+      title: json['title'] ?? '',
+      startTime: json['startTime'] ?? '08:30',
+      endTime: json['endTime'] ?? '17:30',
+      breakMinutes: json['breakMinutes'] ?? 60,
+      activeDays: (json['activeDays'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      assignedEmployeeCount: json['assignedEmployeeCount'] ?? 0,
+    );
+  }
 }

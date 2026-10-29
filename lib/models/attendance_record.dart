@@ -66,11 +66,16 @@ class AttendanceRecord {
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
       id: json['id'] ?? 0,
+      companyId: json['companyId'] ?? 'cmp_acme',
       employeeId: json['employeeId'] ?? 0,
       employeeName: json['employeeName'] ?? 'Personel',
       type: json['type'] == 'checkIn' || json['type'] == 0
           ? AttendanceType.checkIn
-          : AttendanceType.checkOut,
+          : (json['type'] == 'breakStart'
+              ? AttendanceType.breakStart
+              : (json['type'] == 'breakEnd'
+                  ? AttendanceType.breakEnd
+                  : AttendanceType.checkOut)),
       timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
       userLatitude: (json['userLatitude'] as num?)?.toDouble(),
       userLongitude: (json['userLongitude'] as num?)?.toDouble(),
@@ -88,6 +93,7 @@ class AttendanceRecord {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'companyId': companyId,
       'employeeId': employeeId,
       'employeeName': employeeName,
       'type': type.name,

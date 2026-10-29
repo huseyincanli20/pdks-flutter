@@ -78,4 +78,68 @@ class AppNotification {
       emailBody: emailBody ?? this.emailBody,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'timestamp': timestamp.toIso8601String(),
+      'isRead': isRead,
+      'type': type.name,
+      'iconCode': icon.codePoint,
+      'iconFontFamily': icon.fontFamily,
+      'iconFontPackage': icon.fontPackage,
+      'colorValue': color.value,
+      'targetPhone': targetPhone,
+      'targetEmail': targetEmail,
+      'isPushSent': isPushSent,
+      'isSmsSent': isSmsSent,
+      'isEmailSent': isEmailSent,
+      'emailSubject': emailSubject,
+      'emailBody': emailBody,
+    };
+  }
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    NotificationType parsedType = NotificationType.system;
+    try {
+      parsedType = NotificationType.values.firstWhere(
+        (t) => t.name == json['type'],
+        orElse: () => NotificationType.system,
+      );
+    } catch (_) {}
+
+    IconData parsedIcon = Icons.notifications_rounded;
+    if (json['iconCode'] != null) {
+      parsedIcon = IconData(
+        json['iconCode'] as int,
+        fontFamily: json['iconFontFamily'] as String? ?? 'MaterialIcons',
+        fontPackage: json['iconFontPackage'] as String?,
+      );
+    }
+
+    Color parsedColor = const Color(0xFF2563EB);
+    if (json['colorValue'] != null) {
+      parsedColor = Color(json['colorValue'] as int);
+    }
+
+    return AppNotification(
+      id: json['id']?.toString() ?? 'notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+      isRead: json['isRead'] ?? false,
+      type: parsedType,
+      icon: parsedIcon,
+      color: parsedColor,
+      targetPhone: json['targetPhone'],
+      targetEmail: json['targetEmail'],
+      isPushSent: json['isPushSent'] ?? false,
+      isSmsSent: json['isSmsSent'] ?? false,
+      isEmailSent: json['isEmailSent'] ?? false,
+      emailSubject: json['emailSubject'],
+      emailBody: json['emailBody'],
+    );
+  }
 }
