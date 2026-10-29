@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../state/pdks_state.dart';
@@ -136,6 +137,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         const SnackBar(
           backgroundColor: AppColors.danger,
           content: Text('Lütfen Şirket Kodu, Ad Soyad, E-posta ve PIN alanlarını doldurun.'),
+        ),
+      );
+      return;
+    }
+
+    if (phone.isNotEmpty && phone.length > 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Telefon numarası 11 haneyi geçemez (Örn: 05XXXXXXXXX).'),
         ),
       );
       return;
@@ -589,7 +600,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress),
           const SizedBox(height: 8),
-          _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '05XX XXX XX XX', keyboardType: TextInputType.phone),
+          _buildInput(
+            'Telefon Numarası (En fazla 11 hane)',
+            _regPhoneController,
+            Icons.phone_outlined,
+            hint: '05XX XXX XX XX',
+            keyboardType: TextInputType.phone,
+            maxLength: 11,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+          ),
           const SizedBox(height: 10),
 
           // İK Onay Bilgilendirme Kutusu
@@ -662,6 +684,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
     String? helperText,
+    int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,8 +696,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
+          maxLength: maxLength,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hint,
+            counterText: '',
             helperText: helperText,
             helperStyle: const TextStyle(fontSize: 10, color: AppColors.textMuted),
             prefixIcon: Icon(icon, size: 18),

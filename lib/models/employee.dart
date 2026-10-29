@@ -78,6 +78,13 @@ class Employee {
   final String tcKimlikNo;
   final String iban;
   final String bankName;
+  final DateTime? hireDate;
+  final int? heightCm;
+  final int? weightKg;
+  final String? shirtSize;
+  final String? pantSize;
+  final int? shoeSize;
+  final String? outerwearSize;
 
   Employee({
     required this.id,
@@ -101,6 +108,13 @@ class Employee {
     this.tcKimlikNo = '28491028472',
     this.iban = 'TR42 0006 2000 0001 2345 6789 01',
     this.bankName = 'Garanti BBVA',
+    this.hireDate,
+    this.heightCm,
+    this.weightKg,
+    this.shirtSize,
+    this.pantSize,
+    this.shoeSize,
+    this.outerwearSize,
   });
 
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
@@ -130,6 +144,13 @@ class Employee {
     String? tcKimlikNo,
     String? iban,
     String? bankName,
+    DateTime? hireDate,
+    int? heightCm,
+    int? weightKg,
+    String? shirtSize,
+    String? pantSize,
+    int? shoeSize,
+    String? outerwearSize,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -153,6 +174,13 @@ class Employee {
       tcKimlikNo: tcKimlikNo ?? this.tcKimlikNo,
       iban: iban ?? this.iban,
       bankName: bankName ?? this.bankName,
+      hireDate: hireDate ?? this.hireDate,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
+      shirtSize: shirtSize ?? this.shirtSize,
+      pantSize: pantSize ?? this.pantSize,
+      shoeSize: shoeSize ?? this.shoeSize,
+      outerwearSize: outerwearSize ?? this.outerwearSize,
     );
   }
 
@@ -186,6 +214,13 @@ class Employee {
       tcKimlikNo: json['tcKimlikNo'] ?? '28491028472',
       iban: json['iban'] ?? 'TR42 0006 2000 0001 2345 6789 01',
       bankName: json['bankName'] ?? 'Garanti BBVA',
+      hireDate: json['hireDate'] != null ? DateTime.tryParse(json['hireDate']) : null,
+      heightCm: json['heightCm'],
+      weightKg: json['weightKg'],
+      shirtSize: json['shirtSize'],
+      pantSize: json['pantSize'],
+      shoeSize: json['shoeSize'],
+      outerwearSize: json['outerwearSize'],
     );
   }
 
@@ -212,6 +247,13 @@ class Employee {
       'tcKimlikNo': tcKimlikNo,
       'iban': iban,
       'bankName': bankName,
+      'hireDate': hireDate?.toIso8601String(),
+      'heightCm': heightCm,
+      'weightKg': weightKg,
+      'shirtSize': shirtSize,
+      'pantSize': pantSize,
+      'shoeSize': shoeSize,
+      'outerwearSize': outerwearSize,
     };
   }
 }

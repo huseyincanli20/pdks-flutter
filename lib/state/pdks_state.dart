@@ -1653,20 +1653,42 @@ class PdksState extends ChangeNotifier {
   }
 
   // Profil Güncelle
-  void updateProfile({required String fullName, required String phone, required String department, required String title}) {
+  void updateProfile({
+    required String fullName,
+    required String phone,
+    String? department,
+    String? title,
+    DateTime? hireDate,
+    int? heightCm,
+    int? weightKg,
+    String? shirtSize,
+    String? pantSize,
+    int? shoeSize,
+    String? outerwearSize,
+  }) {
     final index = _employees.indexWhere((e) => e.id == _currentUser.id);
-    final updated = Employee(
-      id: _currentUser.id,
+
+    // Güvenlik Kuralı: İK veya Admin haricinde departman ve unvan değiştirilemez!
+    final isHrOrAdmin = _currentUser.role == UserRole.hr || _currentUser.role == UserRole.admin;
+    final finalDept = (isHrOrAdmin && department != null && department.trim().isNotEmpty)
+        ? department.trim()
+        : _currentUser.department;
+    final finalTitle = (isHrOrAdmin && title != null && title.trim().isNotEmpty)
+        ? title.trim()
+        : _currentUser.title;
+
+    final updated = _currentUser.copyWith(
       fullName: fullName,
-      email: _currentUser.email,
       phone: phone,
-      department: department,
-      title: title,
-      pinCode: _currentUser.pinCode,
-      role: _currentUser.role,
-      annualLeaveAllowance: _currentUser.annualLeaveAllowance,
-      usedLeaveDays: _currentUser.usedLeaveDays,
-      isActive: _currentUser.isActive,
+      department: finalDept,
+      title: finalTitle,
+      hireDate: hireDate ?? _currentUser.hireDate,
+      heightCm: heightCm ?? _currentUser.heightCm,
+      weightKg: weightKg ?? _currentUser.weightKg,
+      shirtSize: shirtSize ?? _currentUser.shirtSize,
+      pantSize: pantSize ?? _currentUser.pantSize,
+      shoeSize: shoeSize ?? _currentUser.shoeSize,
+      outerwearSize: outerwearSize ?? _currentUser.outerwearSize,
     );
 
     _currentUser = updated;

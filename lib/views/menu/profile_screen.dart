@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
@@ -16,7 +18,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _deptController;
   late TextEditingController _titleController;
+  late TextEditingController _heightController;
+  late TextEditingController _weightController;
+
+  late DateTime _hireDate;
+  late String _selectedShirtSize;
+  late String _selectedPantSize;
+  late int _selectedShoeSize;
+  late String _selectedOuterwearSize;
+
   bool _isEditing = false;
+
+  final List<String> _shirtSizes = const ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+  final List<String> _pantSizes = const ['28', '30', '32', '34', '36', '38', '40', '42', '44'];
+  final List<int> _shoeSizes = const [38, 39, 40, 41, 42, 43, 44, 45, 46];
+  final List<String> _outerwearSizes = const ['S', 'M', 'L', 'XL', '2XL', '3XL'];
 
   @override
   void initState() {
@@ -26,6 +42,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneController = TextEditingController(text: user.phone);
     _deptController = TextEditingController(text: user.department);
     _titleController = TextEditingController(text: user.title);
+    _heightController = TextEditingController(text: (user.heightCm ?? 178).toString());
+    _weightController = TextEditingController(text: (user.weightKg ?? 75).toString());
+
+    _hireDate = user.hireDate ?? user.registeredAt ?? DateTime(2023, 4, 1);
+    _selectedShirtSize = user.shirtSize ?? 'L';
+    _selectedPantSize = user.pantSize ?? '32';
+    _selectedShoeSize = user.shoeSize ?? 42;
+    _selectedOuterwearSize = user.outerwearSize ?? 'L';
   }
 
   @override
@@ -34,15 +58,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneController.dispose();
     _deptController.dispose();
     _titleController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
   void _saveProfile() {
+    final phone = _phoneController.text.trim();
+    if (phone.length > 11) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Telefon numarası en fazla 11 haneli olmalıdır.'),
+        ),
+      );
+      return;
+    }
+
+    final height = int.tryParse(_heightController.text.trim()) ?? 178;
+    final weight = int.tryParse(_weightController.text.trim()) ?? 75;
+
     context.read<PdksState>().updateProfile(
       fullName: _nameController.text.trim(),
-      phone: _phoneController.text.trim(),
+      phone: phone,
       department: _deptController.text.trim(),
       title: _titleController.text.trim(),
+      hireDate: _hireDate,
+      heightCm: height,
+      weightKg: weight,
+      shirtSize: _selectedShirtSize,
+      pantSize: _selectedPantSize,
+      shoeSize: _selectedShoeSize,
+      outerwearSize: _selectedOuterwearSize,
     );
     setState(() => _isEditing = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -54,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(Icons.check_circle, color: Colors.white, size: 20),
             SizedBox(width: 8),
-            Text('Profil bilgileriniz başarıyla güncellendi.'),
+            Text('Profil bilgileriniz ve kıyafet bedenleriniz kaydedildi.'),
           ],
         ),
       ),
@@ -103,98 +150,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: Container(
                   width: 44,
-                  height: 5,
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    color: Colors.grey.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOf(context).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.add_a_photo_rounded, color: AppColors.primaryOf(context), size: 22),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Profil Fotoğrafı Seç',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.text(context)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Hazır avatarlardan seçin veya fotoğraf URL\'si girin',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Profil Fotoğrafı Seç', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
-                        const SizedBox(height: 2),
-                        Text('Hazır avatarlardan seçin veya fotoğraf URL\'si girin', style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
-                      ],
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 20),
-              Text('Hazır Kurumsal Avatarlar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context))),
-              const SizedBox(height: 12),
-
-              // 8 Avatar Grid
+              const SizedBox(height: 16),
+              Text(
+                'Hazır Kurumsal Avatarlar',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
+              ),
+              const SizedBox(height: 10),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                itemCount: presetAvatars.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                   childAspectRatio: 0.85,
                 ),
-                itemCount: presetAvatars.length,
-                itemBuilder: (context, i) {
-                  final av = presetAvatars[i];
+                itemBuilder: (context, index) {
+                  final av = presetAvatars[index];
                   final isSelected = user.avatarUrl == av['url'];
-
-                  return GestureDetector(
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(16),
                     onTap: () {
                       pdks.updateCurrentUserAvatar(av['url']!);
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           backgroundColor: AppColors.success,
                           behavior: SnackBarBehavior.floating,
-                          content: Text('Profil fotoğrafınız güncellendi.'),
+                          content: Text('${av['title']} fotoğrafınız olarak ayarlandı.'),
                         ),
                       );
                     },
                     child: Column(
                       children: [
                         Container(
-                          width: 58,
-                          height: 58,
+                          width: 56,
+                          height: 56,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: isSelected ? AppColors.primaryOf(context) : Colors.transparent,
                               width: 3,
                             ),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2)),
-                            ],
                             image: DecorationImage(
                               image: NetworkImage(av['url']!),
                               fit: BoxFit.cover,
                             ),
                           ),
-                          child: isSelected
-                              ? Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryOf(context).withOpacity(0.4),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.check, color: Colors.white, size: 24),
-                                )
-                              : null,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -209,7 +243,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-
               const SizedBox(height: 18),
               Text('Özel Fotoğraf Bağlantısı (URL)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context))),
               const SizedBox(height: 6),
@@ -256,7 +289,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-
               if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Center(
@@ -284,9 +316,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _selectHireDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _hireDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      locale: const Locale('tr', 'TR'),
+    );
+    if (picked != null && picked != _hireDate) {
+      setState(() => _hireDate = picked);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<PdksState>().currentUser;
+    final isHrOrAdmin = user.role == UserRole.hr || user.role == UserRole.admin;
 
     Color roleColor;
     String roleName;
@@ -302,6 +348,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case UserRole.hr:
         roleColor = const Color(0xFF0284C7);
         roleName = 'İnsan Kaynakları';
+        break;
+      case UserRole.cafeteria:
+        roleColor = const Color(0xFFEA580C);
+        roleName = 'Yemekhane Şefi';
         break;
       case UserRole.employee:
       default:
@@ -342,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
-            // Apple/Samsung Modern Profil Kartı
+            // Profil Kartı
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
@@ -386,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 : null,
                           ),
                           child: user.avatarUrl == null || user.avatarUrl!.isEmpty
-                              ? Center(
+                               ? Center(
                                   child: Text(
                                     user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
                                     style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold),
@@ -535,7 +585,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // Inset Grouped Kişisel Bilgiler Kartı (iOS & OneUI Style)
+            // Kişisel & Kurumsal Bilgiler Kartı
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -553,19 +603,246 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Kişisel Bilgiler', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Kişisel & Kurumsal Bilgiler', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+                      if (!isHrOrAdmin && _isEditing)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_rounded, size: 12, color: Colors.amber),
+                              SizedBox(width: 4),
+                              Text(
+                                'Departman/Unvan İK Korumalı',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
+
                   _buildModernField('Ad Soyad', _nameController, Icons.person_outline_rounded, enabled: _isEditing),
                   const SizedBox(height: 14),
+
                   _buildReadOnlyField('E-Posta Adresi', user.email, Icons.mail_outline_rounded),
                   const SizedBox(height: 14),
-                  _buildModernField('Telefon Numarası', _phoneController, Icons.phone_outlined, enabled: _isEditing),
+
+                  _buildModernField(
+                    'Telefon Numarası (En Fazla 11 Hane)',
+                    _phoneController,
+                    Icons.phone_outlined,
+                    enabled: _isEditing,
+                    maxLength: 11,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                  ),
                   const SizedBox(height: 14),
-                  _buildModernField('Departman', _deptController, Icons.business_outlined, enabled: _isEditing),
+
+                  // İşe İlk Giriş Tarihi
+                  _buildHireDateField(context, isHrOrAdmin: isHrOrAdmin),
                   const SizedBox(height: 14),
-                  _buildModernField('Unvan', _titleController, Icons.badge_outlined, enabled: _isEditing),
+
+                  // Departman: Sadece İK veya Admin Değiştirebilir
+                  if (isHrOrAdmin)
+                    _buildModernField('Departman', _deptController, Icons.business_outlined, enabled: _isEditing)
+                  else
+                    _buildReadOnlyField(
+                      'Departman',
+                      user.department,
+                      Icons.business_outlined,
+                      lockNote: 'Departman değişikliği sadece İK tarafından yapılabilir.',
+                    ),
                   const SizedBox(height: 14),
-                  _buildReadOnlyField('Giriş PIN Kodu', '•••• (Güvenli Kriptolu)', Icons.lock_outline_rounded),
+
+                  // Unvan: Sadece İK veya Admin Değiştirebilir
+                  if (isHrOrAdmin)
+                    _buildModernField('Unvan', _titleController, Icons.badge_outlined, enabled: _isEditing)
+                  else
+                    _buildReadOnlyField(
+                      'Unvan',
+                      user.title,
+                      Icons.badge_outlined,
+                      lockNote: 'Unvan değişikliği sadece İK tarafından yapılabilir.',
+                    ),
+
+                  // NOT: "giriş pin kodu yazan yeri gizle" talebi gereğince PIN alanı kaldırılmıştır.
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Fiziksel Bilgiler Kartı (Boy & Kilo)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg(context),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.cardBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.fitness_center_rounded, color: Color(0xFF0284C7), size: 16),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Fiziksel Bilgiler (Boy & Kilo)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModernField(
+                          'Boy (cm)',
+                          _heightController,
+                          Icons.height_rounded,
+                          enabled: _isEditing,
+                          maxLength: 3,
+                          keyboardType: TextInputType.number,
+                          suffixText: 'cm',
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModernField(
+                          'Kilo (kg)',
+                          _weightController,
+                          Icons.monitor_weight_outlined,
+                          enabled: _isEditing,
+                          maxLength: 3,
+                          keyboardType: TextInputType.number,
+                          suffixText: 'kg',
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Kıyafet & Zimmet Beden Bilgileri Kartı
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.cardBg(context),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.cardBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.checkroom_rounded, color: Color(0xFF8B5CF6), size: 16),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Kıyafet & Beden Bilgileri',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                            ),
+                            Text(
+                              'Kurumsal forma, iş tulumu ve güvenlik ayakkabısı',
+                              style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 1. Tişört / Üst Beden
+                  _buildSizeOptionRow(
+                    label: 'Tişört / Gömlek Bedeni',
+                    icon: Icons.dry_cleaning_rounded,
+                    color: const Color(0xFF3B82F6),
+                    selectedValue: _selectedShirtSize,
+                    options: _shirtSizes,
+                    onSelected: (val) => setState(() => _selectedShirtSize = val),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 2. Pantolon Bedeni
+                  _buildSizeOptionRow(
+                    label: 'Pantolon Bedeni',
+                    icon: Icons.roller_shades_closed,
+                    color: const Color(0xFF10B981),
+                    selectedValue: _selectedPantSize,
+                    options: _pantSizes,
+                    onSelected: (val) => setState(() => _selectedPantSize = val),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 3. Ayakkabı Numarası
+                  _buildShoeSizeRow(
+                    label: 'İş Ayakkabısı Numarası',
+                    icon: Icons.skateboarding,
+                    color: const Color(0xFFF59E0B),
+                    selectedValue: _selectedShoeSize,
+                    options: _shoeSizes,
+                    onSelected: (val) => setState(() => _selectedShoeSize = val),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. Mont / Yelek Bedeni
+                  _buildSizeOptionRow(
+                    label: 'Mont / Yelek / İş Tulumu',
+                    icon: Icons.layers_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    selectedValue: _selectedOuterwearSize,
+                    options: _outerwearSizes,
+                    onSelected: (val) => setState(() => _selectedOuterwearSize = val),
+                  ),
                 ],
               ),
             ),
@@ -575,7 +852,252 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildModernField(String label, TextEditingController controller, IconData icon, {required bool enabled}) {
+  Widget _buildHireDateField(BuildContext context, {required bool isHrOrAdmin}) {
+    final dateStr = DateFormat('dd MMMM yyyy', 'tr_TR').format(_hireDate);
+    final canEdit = isHrOrAdmin && _isEditing;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('İşe İlk Giriş Tarihi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+            if (canEdit)
+              InkWell(
+                onTap: () => _selectHireDate(context),
+                borderRadius: BorderRadius.circular(6),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text('Tarih Değiştir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: canEdit ? () => _selectHireDate(context) : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: canEdit ? AppColors.cardBg(context) : AppColors.inputBg(context),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: canEdit ? const Color(0xFF2563EB) : AppColors.cardBorder(context)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.event_available_rounded, size: 20, color: Color(0xFF2563EB)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    dateStr,
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text(context)),
+                  ),
+                ),
+                if (canEdit)
+                  const Icon(Icons.calendar_month_rounded, size: 18, color: Color(0xFF2563EB))
+                else
+                  const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF10B981)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSizeOptionRow({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required String selectedValue,
+    required List<String> options,
+    required ValueChanged<String> onSelected,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 6),
+                Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Beden: $selectedValue',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (_isEditing)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: options.map((opt) {
+                final isCurrent = opt == selectedValue;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    label: Text(opt),
+                    selected: isCurrent,
+                    onSelected: (_) => onSelected(opt),
+                    selectedColor: color,
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                      color: isCurrent ? Colors.white : AppColors.text(context),
+                    ),
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    side: BorderSide(color: isCurrent ? color : AppColors.cardBorder(context)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.inputBg(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.cardBorder(context)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Kayıtlı Ölçü',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSub(context)),
+                ),
+                Text(
+                  selectedValue,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildShoeSizeRow({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required int selectedValue,
+    required List<int> options,
+    required ValueChanged<int> onSelected,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 6),
+                Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Numara: $selectedValue',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (_isEditing)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: options.map((sizeNum) {
+                final isCurrent = sizeNum == selectedValue;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    label: Text(sizeNum.toString()),
+                    selected: isCurrent,
+                    onSelected: (_) => onSelected(sizeNum),
+                    selectedColor: color,
+                    labelStyle: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                      color: isCurrent ? Colors.white : AppColors.text(context),
+                    ),
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    side: BorderSide(color: isCurrent ? color : AppColors.cardBorder(context)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.inputBg(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.cardBorder(context)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Kayıtlı Ayakkabı Numarası',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSub(context)),
+                ),
+                Text(
+                  '$selectedValue Numara',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildModernField(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    required bool enabled,
+    int? maxLength,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    String? suffixText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -584,8 +1106,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextField(
           controller: controller,
           enabled: enabled,
+          maxLength: maxLength,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text(context)),
           decoration: InputDecoration(
+            counterText: '',
+            suffixText: suffixText,
+            suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSub(context)),
             prefixIcon: Icon(icon, size: 20, color: enabled ? AppColors.primary : AppColors.textSub(context)),
             filled: true,
             fillColor: enabled ? AppColors.cardBg(context) : AppColors.inputBg(context),
@@ -608,11 +1136,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildReadOnlyField(String label, String value, IconData icon) {
+  Widget _buildReadOnlyField(String label, String value, IconData icon, {String? lockNote}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+            if (lockNote != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_outline_rounded, size: 12, color: Colors.amber),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Sadece İK',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.amber.shade800),
+                  ),
+                ],
+              ),
+          ],
+        ),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
@@ -636,6 +1181,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
+        if (lockNote != null && _isEditing) ...[
+          const SizedBox(height: 4),
+          Text(
+            lockNote,
+            style: TextStyle(fontSize: 10.5, color: Colors.amber.shade800, fontStyle: FontStyle.italic),
+          ),
+        ],
       ],
     );
   }
