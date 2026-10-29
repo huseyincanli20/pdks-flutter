@@ -18,12 +18,25 @@ class CafeteriaShell extends StatefulWidget {
 
 class _CafeteriaShellState extends State<CafeteriaShell> {
   late TextEditingController _soupCtrl;
+  late TextEditingController _soupCalCtrl;
+
   late TextEditingController _mainDishCtrl;
+  late TextEditingController _mainDishCalCtrl;
+
   late TextEditingController _sideDishCtrl;
+  late TextEditingController _sideDishCalCtrl;
+
   late TextEditingController _dessertCtrl;
+  late TextEditingController _dessertCalCtrl;
+
   late TextEditingController _drinkCtrl;
+  late TextEditingController _drinkCalCtrl;
+
   late TextEditingController _caloriesCtrl;
+
   late TextEditingController _vegCtrl;
+  late TextEditingController _vegCalCtrl;
+
   late TextEditingController _noteCtrl;
 
   @override
@@ -33,39 +46,84 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
     final menu = pdks.todayMenu;
 
     _soupCtrl = TextEditingController(text: menu.soup);
+    _soupCalCtrl = TextEditingController(text: menu.soupCalories.toString());
+
     _mainDishCtrl = TextEditingController(text: menu.mainDish);
+    _mainDishCalCtrl = TextEditingController(text: menu.mainDishCalories.toString());
+
     _sideDishCtrl = TextEditingController(text: menu.sideDish);
+    _sideDishCalCtrl = TextEditingController(text: menu.sideDishCalories.toString());
+
     _dessertCtrl = TextEditingController(text: menu.dessertOrSalad);
+    _dessertCalCtrl = TextEditingController(text: menu.dessertCalories.toString());
+
     _drinkCtrl = TextEditingController(text: menu.drink);
+    _drinkCalCtrl = TextEditingController(text: menu.drinkCalories.toString());
+
     _caloriesCtrl = TextEditingController(text: menu.totalCalories.toString());
+
     _vegCtrl = TextEditingController(text: menu.vegetarianAlternative ?? '');
+    _vegCalCtrl = TextEditingController(text: menu.vegetarianCalories.toString());
+
     _noteCtrl = TextEditingController(text: menu.chefNote ?? '');
   }
 
   @override
   void dispose() {
     _soupCtrl.dispose();
+    _soupCalCtrl.dispose();
     _mainDishCtrl.dispose();
+    _mainDishCalCtrl.dispose();
     _sideDishCtrl.dispose();
+    _sideDishCalCtrl.dispose();
     _dessertCtrl.dispose();
+    _dessertCalCtrl.dispose();
     _drinkCtrl.dispose();
+    _drinkCalCtrl.dispose();
     _caloriesCtrl.dispose();
     _vegCtrl.dispose();
+    _vegCalCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
   }
 
+  void _calculateTotalCalories() {
+    final s = int.tryParse(_soupCalCtrl.text.trim()) ?? 0;
+    final m = int.tryParse(_mainDishCalCtrl.text.trim()) ?? 0;
+    final side = int.tryParse(_sideDishCalCtrl.text.trim()) ?? 0;
+    final d = int.tryParse(_dessertCalCtrl.text.trim()) ?? 0;
+    final dr = int.tryParse(_drinkCalCtrl.text.trim()) ?? 0;
+    final total = s + m + side + d + dr;
+    if (total > 0) {
+      _caloriesCtrl.text = total.toString();
+    }
+  }
+
   void _saveMenu() {
     final pdks = context.read<PdksState>();
+    final sCal = int.tryParse(_soupCalCtrl.text.trim()) ?? 160;
+    final mCal = int.tryParse(_mainDishCalCtrl.text.trim()) ?? 380;
+    final sideCal = int.tryParse(_sideDishCalCtrl.text.trim()) ?? 210;
+    final desCal = int.tryParse(_dessertCalCtrl.text.trim()) ?? 190;
+    final drCal = int.tryParse(_drinkCalCtrl.text.trim()) ?? 80;
+    final vCal = int.tryParse(_vegCalCtrl.text.trim()) ?? 260;
+    final totalCal = int.tryParse(_caloriesCtrl.text.trim()) ?? (sCal + mCal + sideCal + desCal + drCal);
+
     final updated = CafeteriaMenu(
       date: DateTime.now(),
       soup: _soupCtrl.text.trim().isEmpty ? 'Süzme Mercimek Çorbası' : _soupCtrl.text.trim(),
+      soupCalories: sCal,
       mainDish: _mainDishCtrl.text.trim().isEmpty ? 'Hasanpaşa Köfte' : _mainDishCtrl.text.trim(),
+      mainDishCalories: mCal,
       sideDish: _sideDishCtrl.text.trim().isEmpty ? 'Tereyağlı Pirinç Pilavı' : _sideDishCtrl.text.trim(),
+      sideDishCalories: sideCal,
       dessertOrSalad: _dessertCtrl.text.trim().isEmpty ? 'Mevsim Salata & Kazandibi' : _dessertCtrl.text.trim(),
+      dessertCalories: desCal,
       drink: _drinkCtrl.text.trim().isEmpty ? 'Ayran / Su' : _drinkCtrl.text.trim(),
-      totalCalories: int.tryParse(_caloriesCtrl.text.trim()) ?? 820,
+      drinkCalories: drCal,
+      totalCalories: totalCal,
       vegetarianAlternative: _vegCtrl.text.trim().isEmpty ? null : _vegCtrl.text.trim(),
+      vegetarianCalories: vCal,
       chefNote: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       updatedBy: pdks.currentUser.fullName,
     );
@@ -76,24 +134,42 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
       const SnackBar(
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
-        content: Text('Günün yemekhane menüsü kaydedildi ve tüm personele duyuruldu! 🍽️'),
+        content: Text('Günün yemekhane menüsü ve kalorileri kaydedildi! 🍽️'),
       ),
     );
   }
 
-  void _applyTemplate(String soup, String mainDish, String side, String dessert, String veg, int cal) {
+  void _applyTemplate(
+    String soup,
+    int soupCal,
+    String mainDish,
+    int mainCal,
+    String side,
+    int sideCal,
+    String dessert,
+    int desCal,
+    String veg,
+    int vegCal,
+    int drCal,
+  ) {
     setState(() {
       _soupCtrl.text = soup;
+      _soupCalCtrl.text = soupCal.toString();
       _mainDishCtrl.text = mainDish;
+      _mainDishCalCtrl.text = mainCal.toString();
       _sideDishCtrl.text = side;
+      _sideDishCalCtrl.text = sideCal.toString();
       _dessertCtrl.text = dessert;
+      _dessertCalCtrl.text = desCal.toString();
       _vegCtrl.text = veg;
-      _caloriesCtrl.text = cal.toString();
+      _vegCalCtrl.text = vegCal.toString();
+      _drinkCalCtrl.text = drCal.toString();
+      _caloriesCtrl.text = (soupCal + mainCal + sideCal + desCal + drCal).toString();
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        content: Text('"$mainDish" şablonu yüklendi.'),
+        content: Text('"$mainDish" şablonu ve kalorileri yüklendi.'),
       ),
     );
   }
@@ -385,7 +461,7 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
 
             // Şablon Menüler
             Text(
-              'Hızlı Menü Şablonları',
+              'Hızlı Menü Şablonları & Kalorileri',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.text(context)),
             ),
             const SizedBox(height: 10),
@@ -396,41 +472,61 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                   _buildTemplateChip(
                     'Geleneksel Türk',
                     'Ezogelin Çorbası',
+                    150,
                     'Hünkar Beğendi',
+                    410,
                     'Pirinç Pilavı',
+                    210,
                     'Fırın Sütlaç',
+                    210,
                     'Zeytinyağlı Taze Fasulye',
-                    860,
+                    220,
+                    80,
                   ),
                   const SizedBox(width: 8),
                   _buildTemplateChip(
                     'Kebap Günü',
                     'Mercimek Çorbası',
+                    160,
                     'Adana / Urfa Kebap',
+                    450,
                     'Bulgur Pilavı & Köz',
+                    190,
                     'Künefe / Baklava',
+                    280,
                     'Mantar Sote',
-                    920,
+                    220,
+                    35,
                   ),
                   const SizedBox(width: 8),
                   _buildTemplateChip(
                     'İtalyan Mutfağı',
                     'Domates Çorbası',
+                    150,
                     'Fırın Tavuk Parmigiana',
+                    380,
                     'Fettuccine Alfredo',
+                    230,
                     'Tiramisu',
+                    220,
                     'Sebzeli Lazanya',
-                    790,
+                    260,
+                    80,
                   ),
                   const SizedBox(width: 8),
                   _buildTemplateChip(
                     'Hafif & Akdeniz',
                     'Köz Patlıcan Çorbası',
+                    130,
                     'Fırında Somon / Levrek',
-                    'Kinoa & Mevsim Yeşillikleri',
+                    350,
+                    'Kinoa & Yeşillik',
+                    130,
                     'Meyve Salatası',
+                    120,
                     'Zeytinyağlı Enginar',
-                    640,
+                    190,
+                    35,
                   ),
                 ],
               ),
@@ -465,12 +561,12 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Günün Menüsünü Belirle',
+                              'Günün Menüsünü & Kalorilerini Belirle',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Yayınlandığında tüm personelin ana sayfasına yansır',
+                              'Yemek isimlerinin yanında kalori kutucukları bulunur',
                               style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
                             ),
                           ],
@@ -480,81 +576,122 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 1. Çorba
-                  _buildMenuInputField(
+                  // 1. Çorba + Kalori
+                  _buildMenuInputFieldWithCalorie(
                     label: 'Günün Çorbası',
                     hint: 'Örn: Süzme Mercimek Çorbası, Ezogelin',
-                    controller: _soupCtrl,
+                    nameCtrl: _soupCtrl,
+                    calCtrl: _soupCalCtrl,
                     icon: Icons.soup_kitchen_rounded,
                     color: const Color(0xFFF59E0B),
+                    defaultCal: '160',
                   ),
                   const SizedBox(height: 14),
 
-                  // 2. Ana Yemek
-                  _buildMenuInputField(
+                  // 2. Ana Yemek + Kalori
+                  _buildMenuInputFieldWithCalorie(
                     label: 'Ana Yemek',
                     hint: 'Örn: Hasanpaşa Köfte, Orman Kebabı, Fırın Tavuk',
-                    controller: _mainDishCtrl,
+                    nameCtrl: _mainDishCtrl,
+                    calCtrl: _mainDishCalCtrl,
                     icon: Icons.restaurant_rounded,
                     color: const Color(0xFFEF4444),
+                    defaultCal: '380',
                   ),
                   const SizedBox(height: 14),
 
-                  // 3. Yan Yemek / Garnitür
-                  _buildMenuInputField(
+                  // 3. Yan Yemek / Garnitür + Kalori
+                  _buildMenuInputFieldWithCalorie(
                     label: 'Yan Yemek / Pilav / Makarna',
                     hint: 'Örn: Tereyağlı Pirinç Pilavı, Soslu Spagetti',
-                    controller: _sideDishCtrl,
+                    nameCtrl: _sideDishCtrl,
+                    calCtrl: _sideDishCalCtrl,
                     icon: Icons.rice_bowl_rounded,
                     color: const Color(0xFF10B981),
+                    defaultCal: '210',
                   ),
                   const SizedBox(height: 14),
 
-                  // 4. Tatlı / Meyve / Salata
-                  _buildMenuInputField(
+                  // 4. Tatlı / Meyve / Salata + Kalori
+                  _buildMenuInputFieldWithCalorie(
                     label: 'Tatlı / Meyve / Salata',
                     hint: 'Örn: Kazandibi, Mevsim Salata, Elma',
-                    controller: _dessertCtrl,
+                    nameCtrl: _dessertCtrl,
+                    calCtrl: _dessertCalCtrl,
                     icon: Icons.icecream_rounded,
                     color: const Color(0xFFEC4899),
+                    defaultCal: '190',
                   ),
                   const SizedBox(height: 14),
 
-                  // 5. İçecek & Kalori
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildMenuInputField(
-                          label: 'İçecek',
-                          hint: 'Ayran / Su',
-                          controller: _drinkCtrl,
-                          icon: Icons.local_drink_rounded,
-                          color: const Color(0xFF0284C7),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildMenuInputField(
-                          label: 'Toplam Kalori (kcal)',
-                          hint: '820',
-                          controller: _caloriesCtrl,
-                          icon: Icons.local_fire_department_rounded,
-                          color: const Color(0xFFEA580C),
-                        ),
-                      ),
-                    ],
+                  // 5. İçecek + Kalori
+                  _buildMenuInputFieldWithCalorie(
+                    label: 'İçecek',
+                    hint: 'Ayran / Su, Şalgam, Komposto',
+                    nameCtrl: _drinkCtrl,
+                    calCtrl: _drinkCalCtrl,
+                    icon: Icons.local_drink_rounded,
+                    color: const Color(0xFF0284C7),
+                    defaultCal: '80',
                   ),
                   const SizedBox(height: 14),
 
-                  // 6. Vejetaryen Alternatif
-                  _buildMenuInputField(
+                  // 6. Vejetaryen Alternatif + Kalori
+                  _buildMenuInputFieldWithCalorie(
                     label: 'Vejetaryen Alternatif (Opsiyonel)',
                     hint: 'Örn: Zeytinyağlı Enginar & Fırın Sebze',
-                    controller: _vegCtrl,
+                    nameCtrl: _vegCtrl,
+                    calCtrl: _vegCalCtrl,
                     icon: Icons.eco_rounded,
                     color: const Color(0xFF10B981),
+                    defaultCal: '260',
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
+
+                  // Günlük Toplam Kalori Alanı (Hesaplanan ve elle değiştirilebilen)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEA580C).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFEA580C).withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.local_fire_department_rounded, color: Color(0xFFEA580C), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Günlük Toplam Kalori', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text('Yemeklerin kalorileri değiştikçe otomatik toplanır', style: TextStyle(fontSize: 10.5, color: AppColors.textSub(context))),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: TextField(
+                            controller: _caloriesCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFEA580C), fontSize: 14),
+                            textAlign: TextAlign.center,
+                            decoration: InputDecoration(
+                              suffixText: 'kcal',
+                              suffixStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                              filled: true,
+                              fillColor: AppColors.cardBg(context),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEA580C))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: const Color(0xFFEA580C).withOpacity(0.4))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEA580C), width: 1.5)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // 7. Şefin Notu
                   _buildMenuInputField(
@@ -611,6 +748,79 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
     );
   }
 
+  Widget _buildMenuInputFieldWithCalorie({
+    required String label,
+    required String hint,
+    required TextEditingController nameCtrl,
+    required TextEditingController calCtrl,
+    required IconData icon,
+    required Color color,
+    required String defaultCal,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+            const Spacer(),
+            Text('Kalori', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSub(context))),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            // Yemek Adı
+            Expanded(
+              flex: 7,
+              child: TextField(
+                controller: nameCtrl,
+                style: TextStyle(fontSize: 14, color: AppColors.text(context)),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: TextStyle(fontSize: 12, color: AppColors.textSub(context)),
+                  filled: true,
+                  fillColor: AppColors.inputBg(context),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: color, width: 1.5)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Kalori Kutusu
+            Expanded(
+              flex: 3,
+              child: TextField(
+                controller: calCtrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                onChanged: (_) => _calculateTotalCalories(),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                decoration: InputDecoration(
+                  hintText: defaultCal,
+                  suffixText: 'kcal',
+                  suffixStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSub(context)),
+                  prefixIcon: const Icon(Icons.local_fire_department_rounded, size: 14, color: Color(0xFFEA580C)),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 24, minHeight: 0),
+                  filled: true,
+                  fillColor: AppColors.inputBg(context),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEA580C), width: 1.5)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildMenuInputField({
     required String label,
     required String hint,
@@ -647,11 +857,24 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
     );
   }
 
-  Widget _buildTemplateChip(String title, String soup, String mainDish, String side, String dessert, String veg, int cal) {
+  Widget _buildTemplateChip(
+    String title,
+    String soup,
+    int soupCal,
+    String mainDish,
+    int mainCal,
+    String side,
+    int sideCal,
+    String dessert,
+    int desCal,
+    String veg,
+    int vegCal,
+    int drCal,
+  ) {
     return ActionChip(
       avatar: const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFFEA580C)),
       label: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-      onPressed: () => _applyTemplate(soup, mainDish, side, dessert, veg, cal),
+      onPressed: () => _applyTemplate(soup, soupCal, mainDish, mainCal, side, sideCal, dessert, desCal, veg, vegCal, drCal),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: AppColors.cardBg(context),
       side: BorderSide(color: AppColors.cardBorder(context)),

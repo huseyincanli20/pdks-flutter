@@ -53,14 +53,14 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
           final dateStr = DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(m.date);
           buffer.writeln('\n[Gün ${idx + 1}] $dateStr');
           if (m.isCompleted) {
-            buffer.writeln('  • Çorba: ${m.soup}');
-            buffer.writeln('  • Ana Yemek: ${m.mainDish}');
-            buffer.writeln('  • Yan Yemek: ${m.sideDish}');
-            buffer.writeln('  • Tatlı / Salata: ${m.dessertOrSalad}');
-            buffer.writeln('  • İçecek: ${m.drink}');
-            buffer.writeln('  • Kalori: ~${m.totalCalories} kcal');
+            buffer.writeln('  • Çorba: ${m.soup} (${m.soupCalories} kcal)');
+            buffer.writeln('  • Ana Yemek: ${m.mainDish} (${m.mainDishCalories} kcal)');
+            buffer.writeln('  • Yan Yemek: ${m.sideDish} (${m.sideDishCalories} kcal)');
+            buffer.writeln('  • Tatlı / Salata: ${m.dessertOrSalad} (${m.dessertCalories} kcal)');
+            buffer.writeln('  • İçecek: ${m.drink} (${m.drinkCalories} kcal)');
+            buffer.writeln('  • Toplam Enerji: ~${m.totalCalories} kcal');
             if (m.vegetarianAlternative != null && m.vegetarianAlternative!.isNotEmpty) {
-              buffer.writeln('  • Vejetaryen: ${m.vegetarianAlternative}');
+              buffer.writeln('  • Vejetaryen: ${m.vegetarianAlternative} (${m.vegetarianCalories} kcal)');
             }
             if (m.chefNote != null && m.chefNote!.isNotEmpty) {
               buffer.writeln('  • Şef Notu: ${m.chefNote}');
@@ -280,7 +280,7 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             name: menu.soup.isEmpty ? 'Belirtilmedi' : menu.soup,
             icon: Icons.soup_kitchen_outlined,
             color: const Color(0xFFF59E0B),
-            calorieHint: '160 kcal',
+            calorieHint: '${menu.soupCalories} kcal',
           ),
           const SizedBox(height: 10),
 
@@ -291,7 +291,7 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             name: menu.mainDish.isEmpty ? 'Belirtilmedi' : menu.mainDish,
             icon: Icons.restaurant_rounded,
             color: const Color(0xFFEF4444),
-            calorieHint: '380 kcal',
+            calorieHint: '${menu.mainDishCalories} kcal',
           ),
           const SizedBox(height: 10),
 
@@ -302,7 +302,7 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             name: menu.sideDish.isEmpty ? 'Belirtilmedi' : menu.sideDish,
             icon: Icons.rice_bowl_outlined,
             color: const Color(0xFF10B981),
-            calorieHint: '210 kcal',
+            calorieHint: '${menu.sideDishCalories} kcal',
           ),
           const SizedBox(height: 10),
 
@@ -313,7 +313,7 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             name: menu.dessertOrSalad.isEmpty ? 'Belirtilmedi' : menu.dessertOrSalad,
             icon: Icons.icecream_outlined,
             color: const Color(0xFFEC4899),
-            calorieHint: '140 kcal',
+            calorieHint: '${menu.dessertCalories} kcal',
           ),
           const SizedBox(height: 10),
 
@@ -324,7 +324,7 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             name: menu.drink.isEmpty ? 'Ayran / Su' : menu.drink,
             icon: Icons.local_drink_outlined,
             color: const Color(0xFF0284C7),
-            calorieHint: '70 kcal',
+            calorieHint: '${menu.drinkCalories} kcal',
           ),
 
           const SizedBox(height: 20),
@@ -364,6 +364,17 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context)),
                         ),
                       ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${menu.vegetarianCalories} kcal',
+                      style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -636,15 +647,15 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildCompactMealRow(Icons.soup_kitchen_rounded, 'Çorba', m.soup, const Color(0xFFF59E0B)),
+                    _buildCompactMealRow(Icons.soup_kitchen_rounded, 'Çorba', m.soup, m.soupCalories, const Color(0xFFF59E0B)),
                     const SizedBox(height: 8),
-                    _buildCompactMealRow(Icons.restaurant_rounded, 'Ana Yemek', m.mainDish, const Color(0xFFEF4444), isMain: true),
+                    _buildCompactMealRow(Icons.restaurant_rounded, 'Ana Yemek', m.mainDish, m.mainDishCalories, const Color(0xFFEF4444), isMain: true),
                     const SizedBox(height: 8),
-                    _buildCompactMealRow(Icons.rice_bowl_rounded, 'Yan Yemek', m.sideDish, const Color(0xFF10B981)),
+                    _buildCompactMealRow(Icons.rice_bowl_rounded, 'Yan Yemek', m.sideDish, m.sideDishCalories, const Color(0xFF10B981)),
                     const SizedBox(height: 8),
-                    _buildCompactMealRow(Icons.icecream_rounded, 'Tatlı/Salata', m.dessertOrSalad, const Color(0xFFEC4899)),
+                    _buildCompactMealRow(Icons.icecream_rounded, 'Tatlı/Salata', m.dessertOrSalad, m.dessertCalories, const Color(0xFFEC4899)),
                     const SizedBox(height: 8),
-                    _buildCompactMealRow(Icons.local_drink_rounded, 'İçecek', m.drink, const Color(0xFF0284C7)),
+                    _buildCompactMealRow(Icons.local_drink_rounded, 'İçecek', m.drink, m.drinkCalories, const Color(0xFF0284C7)),
 
                     // Vejetaryen Alternatif Varsa
                     if (m.vegetarianAlternative != null && m.vegetarianAlternative!.isNotEmpty) ...[
@@ -667,6 +678,21 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
                                   color: Color(0xFF059669),
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${m.vegetarianCalories} kcal',
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF059669),
                                 ),
                               ),
                             ),
@@ -702,7 +728,14 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
     );
   }
 
-  Widget _buildCompactMealRow(IconData icon, String label, String value, Color color, {bool isMain = false}) {
+  Widget _buildCompactMealRow(
+    IconData icon,
+    String label,
+    String value,
+    int calories,
+    Color color, {
+    bool isMain = false,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 16, color: color),
@@ -728,6 +761,25 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             ),
           ),
         ),
+        if (value.isNotEmpty && calories > 0) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: color.withOpacity(0.25)),
+            ),
+            child: Text(
+              '$calories kcal',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

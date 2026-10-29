@@ -7,6 +7,12 @@ class CafeteriaMenu {
   final String dessertOrSalad;
   final String drink;
   final int totalCalories;
+  final int soupCalories;
+  final int mainDishCalories;
+  final int sideDishCalories;
+  final int dessertCalories;
+  final int drinkCalories;
+  final int vegetarianCalories;
   final String? vegetarianAlternative;
   final String? chefNote;
   final String updatedBy;
@@ -20,12 +26,22 @@ class CafeteriaMenu {
     required this.sideDish,
     required this.dessertOrSalad,
     this.drink = 'Ayran / Su',
-    this.totalCalories = 820,
+    int? totalCalories,
+    this.soupCalories = 160,
+    this.mainDishCalories = 380,
+    this.sideDishCalories = 210,
+    this.dessertCalories = 140,
+    this.drinkCalories = 70,
+    this.vegetarianCalories = 280,
     this.vegetarianAlternative,
     this.chefNote,
     this.updatedBy = 'Hasan Usta (Mutfak Şefi)',
     DateTime? updatedAt,
-  }) : updatedAt = updatedAt ?? DateTime.now();
+  })  : totalCalories = totalCalories ?? (160 + 380 + 210 + 140 + 70),
+        updatedAt = updatedAt ?? DateTime.now();
+
+  int get calculatedTotalCalories =>
+      soupCalories + mainDishCalories + sideDishCalories + dessertCalories + drinkCalories;
 
   CafeteriaMenu copyWith({
     String? companyId,
@@ -36,6 +52,12 @@ class CafeteriaMenu {
     String? dessertOrSalad,
     String? drink,
     int? totalCalories,
+    int? soupCalories,
+    int? mainDishCalories,
+    int? sideDishCalories,
+    int? dessertCalories,
+    int? drinkCalories,
+    int? vegetarianCalories,
     String? vegetarianAlternative,
     String? chefNote,
     String? updatedBy,
@@ -50,6 +72,12 @@ class CafeteriaMenu {
       dessertOrSalad: dessertOrSalad ?? this.dessertOrSalad,
       drink: drink ?? this.drink,
       totalCalories: totalCalories ?? this.totalCalories,
+      soupCalories: soupCalories ?? this.soupCalories,
+      mainDishCalories: mainDishCalories ?? this.mainDishCalories,
+      sideDishCalories: sideDishCalories ?? this.sideDishCalories,
+      dessertCalories: dessertCalories ?? this.dessertCalories,
+      drinkCalories: drinkCalories ?? this.drinkCalories,
+      vegetarianCalories: vegetarianCalories ?? this.vegetarianCalories,
       vegetarianAlternative: vegetarianAlternative ?? this.vegetarianAlternative,
       chefNote: chefNote ?? this.chefNote,
       updatedBy: updatedBy ?? this.updatedBy,
@@ -71,6 +99,12 @@ class CafeteriaMenu {
     'dessertOrSalad': dessertOrSalad,
     'drink': drink,
     'totalCalories': totalCalories,
+    'soupCalories': soupCalories,
+    'mainDishCalories': mainDishCalories,
+    'sideDishCalories': sideDishCalories,
+    'dessertCalories': dessertCalories,
+    'drinkCalories': drinkCalories,
+    'vegetarianCalories': vegetarianCalories,
     'vegetarianAlternative': vegetarianAlternative,
     'chefNote': chefNote,
     'updatedBy': updatedBy,
@@ -85,7 +119,13 @@ class CafeteriaMenu {
     sideDish: json['sideDish'] as String? ?? '',
     dessertOrSalad: json['dessertOrSalad'] as String? ?? '',
     drink: json['drink'] as String? ?? 'Ayran / Su',
-    totalCalories: json['totalCalories'] as int? ?? 800,
+    totalCalories: json['totalCalories'] as int?,
+    soupCalories: json['soupCalories'] as int? ?? 160,
+    mainDishCalories: json['mainDishCalories'] as int? ?? 380,
+    sideDishCalories: json['sideDishCalories'] as int? ?? 210,
+    dessertCalories: json['dessertCalories'] as int? ?? 140,
+    drinkCalories: json['drinkCalories'] as int? ?? 70,
+    vegetarianCalories: json['vegetarianCalories'] as int? ?? 280,
     vegetarianAlternative: json['vegetarianAlternative'] as String?,
     chefNote: json['chefNote'] as String?,
     updatedBy: json['updatedBy'] as String? ?? 'Hasan Usta (Mutfak Şefi)',

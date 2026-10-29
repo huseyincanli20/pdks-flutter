@@ -19,14 +19,26 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
   late List<CafeteriaMenu> _editableMenus;
   int _selectedDayIndex = 0; // 0 to 13
 
-  // Form Controllers
+  // Form Controllers (Yemek İsimleri & Bireysel Kalorileri)
   late TextEditingController _soupCtrl;
+  late TextEditingController _soupCalCtrl;
+
   late TextEditingController _mainDishCtrl;
+  late TextEditingController _mainDishCalCtrl;
+
   late TextEditingController _sideDishCtrl;
+  late TextEditingController _sideDishCalCtrl;
+
   late TextEditingController _dessertCtrl;
+  late TextEditingController _dessertCalCtrl;
+
   late TextEditingController _drinkCtrl;
-  late TextEditingController _caloriesCtrl;
+  late TextEditingController _drinkCalCtrl;
+
   late TextEditingController _vegCtrl;
+  late TextEditingController _vegCalCtrl;
+
+  late TextEditingController _caloriesCtrl; // Toplam Kalori
   late TextEditingController _noteCtrl;
 
   @override
@@ -60,12 +72,24 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
     }
 
     _soupCtrl = TextEditingController();
+    _soupCalCtrl = TextEditingController();
+
     _mainDishCtrl = TextEditingController();
+    _mainDishCalCtrl = TextEditingController();
+
     _sideDishCtrl = TextEditingController();
+    _sideDishCalCtrl = TextEditingController();
+
     _dessertCtrl = TextEditingController();
+    _dessertCalCtrl = TextEditingController();
+
     _drinkCtrl = TextEditingController();
-    _caloriesCtrl = TextEditingController();
+    _drinkCalCtrl = TextEditingController();
+
     _vegCtrl = TextEditingController();
+    _vegCalCtrl = TextEditingController();
+
+    _caloriesCtrl = TextEditingController();
     _noteCtrl = TextEditingController();
 
     _loadDayIntoControllers(_selectedDayIndex);
@@ -75,39 +99,84 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
   void dispose() {
     _tabController.dispose();
     _soupCtrl.dispose();
+    _soupCalCtrl.dispose();
     _mainDishCtrl.dispose();
+    _mainDishCalCtrl.dispose();
     _sideDishCtrl.dispose();
+    _sideDishCalCtrl.dispose();
     _dessertCtrl.dispose();
+    _dessertCalCtrl.dispose();
     _drinkCtrl.dispose();
-    _caloriesCtrl.dispose();
+    _drinkCalCtrl.dispose();
     _vegCtrl.dispose();
+    _vegCalCtrl.dispose();
+    _caloriesCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  void _calculateTotalCalories() {
+    final s = int.tryParse(_soupCalCtrl.text.trim()) ?? 0;
+    final m = int.tryParse(_mainDishCalCtrl.text.trim()) ?? 0;
+    final side = int.tryParse(_sideDishCalCtrl.text.trim()) ?? 0;
+    final d = int.tryParse(_dessertCalCtrl.text.trim()) ?? 0;
+    final dr = int.tryParse(_drinkCalCtrl.text.trim()) ?? 0;
+    final total = s + m + side + d + dr;
+    if (total > 0) {
+      _caloriesCtrl.text = total.toString();
+    }
   }
 
   void _loadDayIntoControllers(int index) {
     final m = _editableMenus[index];
     _soupCtrl.text = m.soup;
+    _soupCalCtrl.text = m.soupCalories > 0 ? m.soupCalories.toString() : '160';
+
     _mainDishCtrl.text = m.mainDish;
+    _mainDishCalCtrl.text = m.mainDishCalories > 0 ? m.mainDishCalories.toString() : '380';
+
     _sideDishCtrl.text = m.sideDish;
+    _sideDishCalCtrl.text = m.sideDishCalories > 0 ? m.sideDishCalories.toString() : '210';
+
     _dessertCtrl.text = m.dessertOrSalad;
+    _dessertCalCtrl.text = m.dessertCalories > 0 ? m.dessertCalories.toString() : '190';
+
     _drinkCtrl.text = m.drink;
-    _caloriesCtrl.text = m.totalCalories > 0 ? m.totalCalories.toString() : '';
+    _drinkCalCtrl.text = m.drinkCalories > 0 ? m.drinkCalories.toString() : '80';
+
     _vegCtrl.text = m.vegetarianAlternative ?? '';
+    _vegCalCtrl.text = m.vegetarianCalories > 0 ? m.vegetarianCalories.toString() : '260';
+
+    _caloriesCtrl.text = m.totalCalories > 0 ? m.totalCalories.toString() : m.calculatedTotalCalories.toString();
     _noteCtrl.text = m.chefNote ?? '';
   }
 
   void _saveCurrentControllersToDay() {
     if (_selectedDayIndex < 0 || _selectedDayIndex >= _editableMenus.length) return;
     final current = _editableMenus[_selectedDayIndex];
+
+    final sCal = int.tryParse(_soupCalCtrl.text.trim()) ?? current.soupCalories;
+    final mCal = int.tryParse(_mainDishCalCtrl.text.trim()) ?? current.mainDishCalories;
+    final sideCal = int.tryParse(_sideDishCalCtrl.text.trim()) ?? current.sideDishCalories;
+    final desCal = int.tryParse(_dessertCalCtrl.text.trim()) ?? current.dessertCalories;
+    final drCal = int.tryParse(_drinkCalCtrl.text.trim()) ?? current.drinkCalories;
+    final vCal = int.tryParse(_vegCalCtrl.text.trim()) ?? current.vegetarianCalories;
+    final total = int.tryParse(_caloriesCtrl.text.trim()) ?? (sCal + mCal + sideCal + desCal + drCal);
+
     _editableMenus[_selectedDayIndex] = current.copyWith(
       soup: _soupCtrl.text.trim(),
+      soupCalories: sCal,
       mainDish: _mainDishCtrl.text.trim(),
+      mainDishCalories: mCal,
       sideDish: _sideDishCtrl.text.trim(),
+      sideDishCalories: sideCal,
       dessertOrSalad: _dessertCtrl.text.trim(),
+      dessertCalories: desCal,
       drink: _drinkCtrl.text.trim().isEmpty ? 'Ayran / Su' : _drinkCtrl.text.trim(),
-      totalCalories: int.tryParse(_caloriesCtrl.text.trim()) ?? (current.totalCalories > 0 ? current.totalCalories : 800),
+      drinkCalories: drCal,
+      totalCalories: total,
       vegetarianAlternative: _vegCtrl.text.trim().isEmpty ? null : _vegCtrl.text.trim(),
+      vegetarianCalories: vCal,
       chefNote: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
     );
   }
@@ -128,25 +197,42 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
 
   void _applyQuickTemplateForDay({
     required String soup,
+    required int soupCal,
     required String main,
+    required int mainCal,
     required String side,
+    required int sideCal,
     required String dessert,
+    required int desCal,
     required String veg,
-    required int cal,
+    required int vegCal,
+    required int drinkCal,
   }) {
     setState(() {
       _soupCtrl.text = soup;
+      _soupCalCtrl.text = soupCal.toString();
+
       _mainDishCtrl.text = main;
+      _mainDishCalCtrl.text = mainCal.toString();
+
       _sideDishCtrl.text = side;
+      _sideDishCalCtrl.text = sideCal.toString();
+
       _dessertCtrl.text = dessert;
+      _dessertCalCtrl.text = desCal.toString();
+
       _vegCtrl.text = veg;
-      _caloriesCtrl.text = cal.toString();
+      _vegCalCtrl.text = vegCal.toString();
+
+      _drinkCalCtrl.text = drinkCal.toString();
+      _caloriesCtrl.text = (soupCal + mainCal + sideCal + desCal + drinkCal).toString();
+
       _saveCurrentControllersToDay();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Seçilen güne "$main" menüsü yüklendi.'),
+        content: Text('Seçilen güne "$main" menüsü ve kalorileri yüklendi.'),
         duration: const Duration(milliseconds: 1500),
         behavior: SnackBarBehavior.floating,
       ),
@@ -165,8 +251,8 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
           ],
         ),
         content: const Text(
-          '14 günün tamamı zengin ve dengeli kurumsal Türk mutfağı menüleriyle otomatik olarak doldurulacaktır. '
-          'Mevcut düzenlemelerinizin üzerine yazılacaktır. Onaylıyor musunuz?',
+          '14 günün tamamı zengin yemekler ve her yemeğin ayrı ayrı kalorileriyle '
+          'otomatik olarak doldurulacaktır. Mevcut düzenlemelerinizin üzerine yazılacaktır. Onaylıyor musunuz?',
         ),
         actions: [
           TextButton(
@@ -186,7 +272,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('14 günlük hazır yemekhane menüsü yüklendi! 🍲'),
+                  content: Text('14 günlük hazır yemekhane menüsü ve kalorileri yüklendi! 🍲'),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -230,10 +316,15 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
                   return CafeteriaMenu(
                     date: monday.add(Duration(days: i)),
                     soup: '',
+                    soupCalories: 0,
                     mainDish: '',
+                    mainDishCalories: 0,
                     sideDish: '',
+                    sideDishCalories: 0,
                     dessertOrSalad: '',
+                    dessertCalories: 0,
                     drink: 'Ayran / Su',
+                    drinkCalories: 0,
                     totalCalories: 0,
                   );
                 });
@@ -256,7 +347,6 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
   void _publishTwoWeekMenus() {
     _saveCurrentControllersToDay();
 
-    // Dolu olan gün sayısını say
     final filledDaysCount = _editableMenus.where((m) => m.isCompleted).length;
 
     if (filledDaysCount == 0) {
@@ -285,10 +375,10 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
           ],
         ),
         content: Text(
-          '14 günlük yemek menüsü sisteme kaydedildi ve tüm şirket personeline '
-          'mobil bildirim gönderildi.\n\n'
+          '14 günlük yemek menüsü ve yemek bazlı kalori bilgileri sisteme kaydedildi. '
+          'Tüm şirket çalışanlarına mobil bildirim gönderildi.\n\n'
           '• Toplam Dolu Gün: $filledDaysCount / 14\n'
-          '• Bugünün menüsü otomatik olarak güncellendi.',
+          '• Her yemeğin kalori değeri personele gösterilmektedir.',
           style: const TextStyle(fontSize: 14, height: 1.4),
         ),
         actions: [
@@ -308,7 +398,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
               Navigator.pop(ctx);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()),
+                MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen(initialTabIndex: 1)),
               );
             },
           ),
@@ -321,12 +411,12 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
     _saveCurrentControllersToDay();
     final buffer = StringBuffer();
     buffer.writeln('========================================================');
-    buffer.writeln('          2 HAFTALIK KURUMSAL YEMEK MENÜSÜ ÇİZELGESİ    ');
+    buffer.writeln('     2 HAFTALIK KURUMSAL YEMEK MENÜSÜ & KALORİ ÇİZELGESİ  ');
     buffer.writeln('========================================================\n');
 
     for (int w = 0; w < 2; w++) {
       buffer.writeln('--------------------------------------------------------');
-      buffer.writeln('  ${w + 1}. HAFTA YEMEK PROGRAMI');
+      buffer.writeln('  ${w + 1}. HAFTA YEMEK VE BESİN DEĞERLERİ PROGRAMI');
       buffer.writeln('--------------------------------------------------------');
 
       for (int d = 0; d < 7; d++) {
@@ -335,14 +425,14 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
         final dateStr = DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(m.date);
         buffer.writeln('\n[Gün ${idx + 1}] $dateStr');
         if (m.isCompleted) {
-          buffer.writeln('  • Çorba: ${m.soup}');
-          buffer.writeln('  • Ana Yemek: ${m.mainDish}');
-          buffer.writeln('  • Yan Yemek: ${m.sideDish}');
-          buffer.writeln('  • Tatlı / Salata: ${m.dessertOrSalad}');
-          buffer.writeln('  • İçecek: ${m.drink}');
-          buffer.writeln('  • Enerji Değeri: ~${m.totalCalories} kcal');
+          buffer.writeln('  • Çorba: ${m.soup} (${m.soupCalories} kcal)');
+          buffer.writeln('  • Ana Yemek: ${m.mainDish} (${m.mainDishCalories} kcal)');
+          buffer.writeln('  • Yan Yemek: ${m.sideDish} (${m.sideDishCalories} kcal)');
+          buffer.writeln('  • Tatlı / Salata: ${m.dessertOrSalad} (${m.dessertCalories} kcal)');
+          buffer.writeln('  • İçecek: ${m.drink} (${m.drinkCalories} kcal)');
+          buffer.writeln('  • Günlük Toplam Enerji: ~${m.totalCalories} kcal');
           if (m.vegetarianAlternative != null && m.vegetarianAlternative!.isNotEmpty) {
-            buffer.writeln('  • Vejetaryen Alternatif: ${m.vegetarianAlternative}');
+            buffer.writeln('  • Vejetaryen Alternatif: ${m.vegetarianAlternative} (${m.vegetarianCalories} kcal)');
           }
           if (m.chefNote != null && m.chefNote!.isNotEmpty) {
             buffer.writeln('  • Not / Alerjen: ${m.chefNote}');
@@ -364,7 +454,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$fileName başarıyla hazırlandı ve indirildi.'),
+          content: Text('$fileName başarıyla indirildi.'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -385,7 +475,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('2 Haftalık Menü Yayınla', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('14 Günlük Yemek Çizelgesi Planlama', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('14 Günlük Yemek & Kalori Yönetimi', style: TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
         actions: [
@@ -400,7 +490,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
               if (val == 'template') _populateAllWithDefaultTemplate();
               if (val == 'clear') _clearAllMenus();
               if (val == 'preview') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen(initialTabIndex: 1)));
               }
             },
             itemBuilder: (ctx) => [
@@ -497,7 +587,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
 
                   const SizedBox(height: 16),
 
-                  // Menü Formu
+                  // Menü Formu (Her Yemeğin Yanında Kalori Yeri)
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -508,84 +598,141 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Çorba
-                        _buildInputField(
-                          label: 'Günün Çorbası',
-                          hint: 'Örn: Süzme Mercimek, Ezogelin, Yayla Çorbası',
-                          controller: _soupCtrl,
-                          icon: Icons.soup_kitchen_rounded,
-                          accentColor: const Color(0xFFF59E0B),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Ana Yemek
-                        _buildInputField(
-                          label: 'Ana Yemek',
-                          hint: 'Örn: Hasanpaşa Köfte, Kuru Fasulye, Fırın Somon',
-                          controller: _mainDishCtrl,
-                          icon: Icons.restaurant_rounded,
-                          accentColor: const Color(0xFFEF4444),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Yan Yemek
-                        _buildInputField(
-                          label: 'Yan Yemek / Pilav / Makarna',
-                          hint: 'Örn: Tereyağlı Pirinç Pilavı, Domatesli Makarna',
-                          controller: _sideDishCtrl,
-                          icon: Icons.rice_bowl_rounded,
-                          accentColor: const Color(0xFF10B981),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Tatlı / Meyve / Salata
-                        _buildInputField(
-                          label: 'Tatlı / Salata / Meyve',
-                          hint: 'Örn: Mevsim Salata, Fırın Sütlaç, Kazandibi',
-                          controller: _dessertCtrl,
-                          icon: Icons.icecream_rounded,
-                          accentColor: const Color(0xFFEC4899),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // İçecek & Kalori
+                        // Bilgilendirme Başlığı
                         Row(
                           children: [
-                            Expanded(
-                              flex: 3,
-                              child: _buildInputField(
-                                label: 'İçecek',
-                                hint: 'Ayran / Su, Şalgam, Komposto',
-                                controller: _drinkCtrl,
-                                icon: Icons.local_drink_rounded,
-                                accentColor: const Color(0xFF0284C7),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: _buildInputField(
-                                label: 'Kalori (kcal)',
-                                hint: '820',
-                                controller: _caloriesCtrl,
-                                icon: Icons.local_fire_department_rounded,
-                                accentColor: const Color(0xFFEA580C),
-                                isNumeric: true,
-                              ),
+                            const Icon(Icons.local_fire_department_rounded, size: 18, color: Color(0xFFEA580C)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Yemek Listesi & Kalori Değerleri',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Her yemeğin yanındaki kutucuğa porsiyon kalorisini girebilirsiniz.',
+                          style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                        ),
+                        const SizedBox(height: 16),
 
-                        // Vejetaryen Alternatif
-                        _buildInputField(
-                          label: 'Vejetaryen Alternatif (Opsiyonel)',
-                          hint: 'Örn: Zeytinyağlı Enginar, Sebze Güveç, Mantar Sote',
-                          controller: _vegCtrl,
-                          icon: Icons.eco_rounded,
-                          accentColor: const Color(0xFF10B981),
+                        // 1. Çorba + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'Günün Çorbası',
+                          hint: 'Örn: Süzme Mercimek, Ezogelin, Yayla',
+                          nameCtrl: _soupCtrl,
+                          calCtrl: _soupCalCtrl,
+                          icon: Icons.soup_kitchen_rounded,
+                          accentColor: const Color(0xFFF59E0B),
+                          defaultCal: '160',
                         ),
                         const SizedBox(height: 14),
+
+                        // 2. Ana Yemek + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'Ana Yemek',
+                          hint: 'Örn: Hasanpaşa Köfte, Kuru Fasulye, Somon',
+                          nameCtrl: _mainDishCtrl,
+                          calCtrl: _mainDishCalCtrl,
+                          icon: Icons.restaurant_rounded,
+                          accentColor: const Color(0xFFEF4444),
+                          defaultCal: '380',
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 3. Yan Yemek + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'Yan Yemek / Pilav / Makarna',
+                          hint: 'Örn: Tereyağlı Pirinç Pilavı, Makarna',
+                          nameCtrl: _sideDishCtrl,
+                          calCtrl: _sideDishCalCtrl,
+                          icon: Icons.rice_bowl_rounded,
+                          accentColor: const Color(0xFF10B981),
+                          defaultCal: '210',
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 4. Tatlı / Meyve / Salata + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'Tatlı / Salata / Meyve',
+                          hint: 'Örn: Mevsim Salata, Fırın Sütlaç, Kazandibi',
+                          nameCtrl: _dessertCtrl,
+                          calCtrl: _dessertCalCtrl,
+                          icon: Icons.icecream_rounded,
+                          accentColor: const Color(0xFFEC4899),
+                          defaultCal: '190',
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 5. İçecek + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'İçecek',
+                          hint: 'Ayran / Su, Şalgam, Komposto',
+                          nameCtrl: _drinkCtrl,
+                          calCtrl: _drinkCalCtrl,
+                          icon: Icons.local_drink_rounded,
+                          accentColor: const Color(0xFF0284C7),
+                          defaultCal: '80',
+                        ),
+                        const SizedBox(height: 14),
+
+                        // 6. Vejetaryen Alternatif + Kalori
+                        _buildMealWithCalorieRow(
+                          label: 'Vejetaryen Alternatif (Opsiyonel)',
+                          hint: 'Örn: Zeytinyağlı Enginar, Sebze Güveç',
+                          nameCtrl: _vegCtrl,
+                          calCtrl: _vegCalCtrl,
+                          icon: Icons.eco_rounded,
+                          accentColor: const Color(0xFF10B981),
+                          defaultCal: '260',
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Toplam Günlük Kalori Göstergesi / Düzenleyicisi
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEA580C).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFEA580C).withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.local_fire_department_rounded, color: Color(0xFFEA580C), size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Günlük Toplam Kalori', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                    Text('Yemeklerin toplamı otomatik hesaplanır', style: TextStyle(fontSize: 10.5, color: AppColors.textSub(context))),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                width: 100,
+                                child: TextField(
+                                  controller: _caloriesCtrl,
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (_) => _saveCurrentControllersToDay(),
+                                  style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFEA580C), fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    suffixText: 'kcal',
+                                    suffixStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                                    filled: true,
+                                    fillColor: AppColors.cardBg(context),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEA580C))),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: const Color(0xFFEA580C).withOpacity(0.4))),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEA580C), width: 1.5)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
                         // Şefin Notu / Alerjen
                         _buildInputField(
@@ -754,12 +901,12 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
                         color: isSelected ? Colors.white.withOpacity(0.3) : const Color(0xFFEA580C),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: const Text(
                         'BUGÜN',
                         style: TextStyle(
                           fontSize: 7.5,
                           fontWeight: FontWeight.w900,
-                          color: isSelected ? Colors.white : Colors.white,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -843,7 +990,7 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Güne Hızlı Şablon Uygula',
+              'Güne Hızlı Şablon & Kaloriler',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSub(context)),
             ),
             InkWell(
@@ -860,17 +1007,17 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              _buildQuickTemplateChip('🍖 Geleneksel Köfte', 'Süzme Mercimek', 'Hasanpaşa Köfte', 'Tereyağlı Pirinç Pilavı', 'Fırın Sütlaç', 'Zeytinyağlı Enginar', 820),
+              _buildQuickTemplateChip('🍖 Geleneksel Köfte', 'Süzme Mercimek', 160, 'Hasanpaşa Köfte', 380, 'Tereyağlı Pirinç Pilavı', 210, 'Fırın Sütlaç', 210, 'Zeytinyağlı Enginar', 260, 80),
               const SizedBox(width: 8),
-              _buildQuickTemplateChip('🍗 Fırın Tavuk', 'Tarhana Çorbası', 'Fırın Tavuk Baget', 'Patates Püresi', 'Mozaik Pasta', 'Mantar Sote', 780),
+              _buildQuickTemplateChip('🍗 Fırın Tavuk', 'Tarhana Çorbası', 150, 'Fırın Tavuk Baget', 360, 'Patates Püresi', 190, 'Mozaik Pasta', 210, 'Mantar Sote', 220, 90),
               const SizedBox(width: 8),
-              _buildQuickTemplateChip('🍲 Kuru Fasulye', 'Ezogelin Çorbası', 'Kuru Fasulye & Turşu', 'Pirinç Pilavı', 'Cacık & Revani', 'Barbunya Pilaki', 850),
+              _buildQuickTemplateChip('🍲 Kuru Fasulye', 'Ezogelin Çorbası', 150, 'Kuru Fasulye', 410, 'Pirinç Pilavı', 210, 'Cacık & Revani', 240, 'Barbunya Pilaki', 280, 80),
               const SizedBox(width: 8),
-              _buildQuickTemplateChip('🐟 Fırın Somon', 'Köz Patlıcan', 'Fırında Somon Balığı', 'Roka Salatası', 'İrmik Helvası', 'Karnabahar Steak', 680),
+              _buildQuickTemplateChip('🐟 Fırın Somon', 'Köz Patlıcan', 130, 'Fırında Somon Balığı', 350, 'Buharda Sebze', 120, 'İrmik Helvası', 240, 'Karnabahar Steak', 190, 35),
               const SizedBox(width: 8),
-              _buildQuickTemplateChip('🥟 Ev Mantısı', 'Yayla Çorbası', 'Kayseri Mantısı (Yoğurtlu)', 'Mevsim Salata', 'Trileçe', 'Ispanaklı Mantı', 890),
+              _buildQuickTemplateChip('🥟 Ev Mantısı', 'Yayla Çorbası', 140, 'Kayseri Mantısı (Yoğurtlu)', 440, 'Salata', 110, 'Trileçe', 230, 'Ispanaklı Mantı', 320, 80),
               const SizedBox(width: 8),
-              _buildQuickTemplateChip('🥩 Dana Rosto', 'Brokoli Çorbası', 'Dana Rosto & Sos', 'Püre & Makarna', 'Profiterol', 'Sebzeli Noodle', 810),
+              _buildQuickTemplateChip('🥩 Dana Rosto', 'Brokoli Çorbası', 130, 'Dana Rosto & Sos', 380, 'Patates Püresi', 190, 'Profiterol', 240, 'Sebzeli Noodle', 280, 90),
             ],
           ),
         ),
@@ -878,7 +1025,20 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
     );
   }
 
-  Widget _buildQuickTemplateChip(String label, String soup, String main, String side, String dessert, String veg, int cal) {
+  Widget _buildQuickTemplateChip(
+    String label,
+    String soup,
+    int soupCal,
+    String main,
+    int mainCal,
+    String side,
+    int sideCal,
+    String dessert,
+    int desCal,
+    String veg,
+    int vegCal,
+    int drinkCal,
+  ) {
     return ActionChip(
       avatar: const Icon(Icons.flash_on_rounded, size: 14, color: Color(0xFFEA580C)),
       label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -887,12 +1047,100 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onPressed: () => _applyQuickTemplateForDay(
         soup: soup,
+        soupCal: soupCal,
         main: main,
+        mainCal: mainCal,
         side: side,
+        sideCal: sideCal,
         dessert: dessert,
+        desCal: desCal,
         veg: veg,
-        cal: cal,
+        vegCal: vegCal,
+        drinkCal: drinkCal,
       ),
+    );
+  }
+
+  Widget _buildMealWithCalorieRow({
+    required String label,
+    required String hint,
+    required TextEditingController nameCtrl,
+    required TextEditingController calCtrl,
+    required IconData icon,
+    required Color accentColor,
+    required String defaultCal,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 15, color: accentColor),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+            ),
+            const Spacer(),
+            Text(
+              'Kalori Değeri',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSub(context)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            // Yemek Adı Giriş Alanı
+            Expanded(
+              flex: 7,
+              child: TextField(
+                controller: nameCtrl,
+                onChanged: (_) => _saveCurrentControllersToDay(),
+                style: TextStyle(fontSize: 13, color: AppColors.text(context)),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: TextStyle(fontSize: 11.5, color: AppColors.textSub(context)),
+                  filled: true,
+                  fillColor: AppColors.inputBg(context),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: accentColor, width: 1.5)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Kalori Değeri Giriş Alanı
+            Expanded(
+              flex: 3,
+              child: TextField(
+                controller: calCtrl,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                onChanged: (_) {
+                  _calculateTotalCalories();
+                  _saveCurrentControllersToDay();
+                },
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                decoration: InputDecoration(
+                  hintText: defaultCal,
+                  suffixText: 'kcal',
+                  suffixStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSub(context)),
+                  prefixIcon: const Icon(Icons.local_fire_department_rounded, size: 14, color: Color(0xFFEA580C)),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 26, minHeight: 0),
+                  filled: true,
+                  fillColor: AppColors.inputBg(context),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.cardBorder(context))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFEA580C), width: 1.5)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -902,7 +1150,6 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
     required TextEditingController controller,
     required IconData icon,
     required Color accentColor,
-    bool isNumeric = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -920,7 +1167,6 @@ class _TwoWeekMenuPublisherScreenState extends State<TwoWeekMenuPublisherScreen>
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
           onChanged: (_) => _saveCurrentControllersToDay(),
           style: TextStyle(fontSize: 13, color: AppColors.text(context)),
           decoration: InputDecoration(
