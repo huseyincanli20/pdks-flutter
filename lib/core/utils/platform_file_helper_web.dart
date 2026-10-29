@@ -39,19 +39,20 @@ Future<({String name, String size, String? path, String? base64Data})?> platform
   final completer = Completer<({String name, String size, String? path, String? base64Data})?>();
   final uploadInput = html.FileUploadInputElement();
   
-  // iOS Safari ve modern tarayıcılar için geniş kapsamlı dosya kabulü
-  uploadInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*';
+  // iOS Safari ve modern tarayıcılar için kabul edilen tüm belgeler
+  uploadInput.accept = '*/*';
   
-  // ÖNEMLİ (iOS Safari & WebKit): 
-  // Safari, DOM ağacında bulunmayan elemanların .click() çağrılarını güvenlik gerekçesiyle engeller.
-  // Bu nedenle geçici olarak gizli bir şekilde body'e ekliyoruz.
+  // ÖNEMLİ (iOS Safari & WebKit Düzeltmesi): 
+  // 1. Kesinlikle 'pointer-events: none' olmamalıdır (Safari tıklamayı geçersiz kılar).
+  // 2. Ekran dışı (-9999px) yerine görünmez ama DOM içinde 0,0 noktasında tutulur.
+  // 3. Ekrana banner ve modal gelmeden önce doğrudan click() sinyali gönderilir.
   uploadInput.style.position = 'fixed';
-  uploadInput.style.left = '-9999px';
-  uploadInput.style.top = '-9999px';
-  uploadInput.style.opacity = '0';
+  uploadInput.style.left = '0';
+  uploadInput.style.top = '0';
   uploadInput.style.width = '1px';
   uploadInput.style.height = '1px';
-  uploadInput.style.pointerEvents = 'none';
+  uploadInput.style.opacity = '0.01';
+  uploadInput.style.zIndex = '-9999';
 
   html.document.body?.children.add(uploadInput);
 
@@ -100,25 +101,15 @@ Future<({String name, String size, String? path, String? base64Data})?> platform
     }
   });
 
-  // iOS Safari / Tarayıcı İptal Tespiti:
-  // Dosya seçici açıldıktan sonra vazgeçilirse pencereye (window) tekrar odaklanılır.
-  void onWindowFocus(html.Event e) {
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (!completer.isCompleted) {
-        cleanup();
-        completer.complete(null);
-      }
-    });
-  }
-  html.window.addEventListener('focus', onWindowFocus);
-
   // Eşzamanlı olarak doğrudan tıklama sinyali gönder
   uploadInput.click();
 
-  try {
-    return await completer.future;
-  } finally {
-    html.window.removeEventListener('focus', onWindowFocus);
-    cleanup();
-  }
+  // 3 dakikalık güvenlik zaman aşımı (Kullanıcı telefondan dosya ararken erken sonlanmaz)
+  return completer.future.timeout(
+    const Duration(minutes: 3),
+    onTimeout: () {
+      cleanup();
+      return null;
+    },
+  );
 }

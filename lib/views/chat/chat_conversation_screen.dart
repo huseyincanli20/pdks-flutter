@@ -146,10 +146,35 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               title: Text('Telefonumdan Belge / PDF Seç', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
               subtitle: Text('Cihazınızdaki PDF, Word veya rapor dosyasını gönderin', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
               onTap: () async {
-                // iOS Safari uyumluluğu için dosya seçiciyi modal kapanmadan ÖNCE hemen tetikle
+                // 1. iOS Safari uyumluluğu için dosya seçiciyi anında eşzamanlı tetikle
                 final pickFuture = PlatformFileHelper.pickDocumentFile();
                 Navigator.pop(ctx);
+
+                // 2. Kullanıcıya hemen görsel geri bildirim ver
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 4),
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text('📂 Telefon dosya seçicisi açılıyor... Lütfen dosyanızı seçin.'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
+                // 3. Dosyayı bekle
                 final file = await pickFuture;
+                if (!mounted) return;
+
                 if (file != null) {
                   _handleSend(
                     customText: '📄 ${file.name}',
@@ -157,6 +182,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     attachmentName: file.name,
                     attachmentSize: file.size,
                   );
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: const Color(0xFF10B981),
+                      content: Text('✅ ${file.name} başarıyla gönderildi.'),
+                    ),
+                  );
+                } else {
+                  // Seçilmediğinde hazır belgeler listesini aç
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  _showPredefinedFormsDialog(context);
                 }
               },
             ),
@@ -268,6 +305,44 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 );
               },
             ),
+            _buildFormOption(
+              title: 'Puantaj & Fazla Mesai Çizelgesi (PDF)',
+              size: '640 KB',
+              onTap: () {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 Aylık Puantaj ve Fazla Mesai Çizelgesi ektedir.',
+                  type: MessageType.document,
+                  attachmentName: 'Puantaj_Mesai_Cizelgesi.pdf',
+                  attachmentSize: '640 KB',
+                );
+              },
+            ),
+            _buildFormOption(
+              title: 'Şirket Görevlendirme Belgesi (PDF)',
+              size: '340 KB',
+              onTap: () {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 Kurumsal Şirket Görevlendirme Belgesi.',
+                  type: MessageType.document,
+                  attachmentName: 'Gorevlendirme_Belgesi.pdf',
+                  attachmentSize: '340 KB',
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.edit_note_rounded, color: Color(0xFF2563EB), size: 26),
+              title: Text('Özel Dosya / Belge Adı Yaz', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+              subtitle: Text('İstediğiniz dosya adıyla hemen ekleyin', style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showCustomDocumentNameDialog(context);
+              },
+            ),
           ],
         ),
       ),
@@ -282,6 +357,72 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       subtitle: Text(size, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13),
       onTap: onTap,
+    );
+  }
+
+  void _showCustomDocumentNameDialog(BuildContext context) {
+    final textController = TextEditingController(text: 'Rapor_${DateTime.now().year}.pdf');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Belge / PDF Adı Girin', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sohbete eklemek istediğiniz dosya veya PDF adını belirtin:', style: TextStyle(fontSize: 12, color: AppColors.textSub(context))),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              autofocus: true,
+              style: TextStyle(color: AppColors.text(context), fontSize: 14),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.description_rounded, color: Color(0xFF2563EB)),
+                hintText: 'Örn: Sozlesme.pdf',
+                filled: true,
+                fillColor: AppColors.cardBorder(context).withOpacity(0.1),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.send_rounded, size: 16),
+            label: const Text('Sohbete Ekle'),
+            onPressed: () {
+              final fileName = textController.text.trim();
+              if (fileName.isNotEmpty) {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 $fileName',
+                  type: MessageType.document,
+                  attachmentName: fileName,
+                  attachmentSize: '750 KB',
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: const Color(0xFF10B981),
+                    content: Text('✅ $fileName başarıyla sohbete eklendi.'),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 
