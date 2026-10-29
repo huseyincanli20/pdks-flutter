@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/leave_request.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class LeaveRequestScreen extends StatefulWidget {
   const LeaveRequestScreen({super.key});
@@ -84,8 +86,21 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+              const AdminEditModeBar(
+                pageId: 'leave_request',
+                pageTitle: 'İzin Talebi Sayfası',
+                editableSections: [
+                  PageSectionItem(id: 'leave_balance_card', title: 'İzin Bakiyesi Kartı'),
+                ],
+              ),
+
               // Bakiye Kartı
-              Container(
+              AdminEditableSection(
+                pageId: 'leave_request',
+                sectionId: 'leave_balance_card',
+                sectionTitle: 'İzin Bakiyesi Kartı',
+                child: Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.cardBg(context),
@@ -123,6 +138,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                     ),
                   ],
                 ),
+              ),
               ),
 
               const SizedBox(height: 24),

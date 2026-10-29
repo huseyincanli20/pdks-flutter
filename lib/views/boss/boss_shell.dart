@@ -8,6 +8,8 @@ import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
 import '../payroll/payroll_management_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class BossShell extends StatefulWidget {
   const BossShell({super.key});
@@ -95,7 +97,18 @@ class _BossShellState extends State<BossShell> {
           ),
         ],
       ),
-      body: tabs[_currentIndex],
+      body: Column(
+        children: [
+          AdminEditModeBar(
+            pageId: 'boss_shell',
+            pageTitle: 'Patron & CEO Paneli',
+            editableSections: [
+              PageSectionItem(id: 'boss_tab_$_currentIndex', title: '${_tabTitles[_currentIndex]} Görünümü'),
+            ],
+          ),
+          Expanded(child: tabs[_currentIndex]),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),

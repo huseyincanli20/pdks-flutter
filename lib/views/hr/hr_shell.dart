@@ -9,6 +9,8 @@ import '../web_admin/shifts_tab.dart';
 import '../web_admin/leaves_management_tab.dart';
 import '../web_admin/reports_puantaj_tab.dart';
 import '../notifications/notifications_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class HrShell extends StatefulWidget {
   const HrShell({super.key});
@@ -97,7 +99,18 @@ class _HrShellState extends State<HrShell> {
           ),
         ],
       ),
-      body: _tabs[_currentIndex],
+      body: Column(
+        children: [
+          AdminEditModeBar(
+            pageId: 'hr_shell',
+            pageTitle: 'İnsan Kaynakları Paneli',
+            editableSections: [
+              PageSectionItem(id: 'hr_tab_$_currentIndex', title: '${_titles[_currentIndex]} Sekmesi'),
+            ],
+          ),
+          Expanded(child: _tabs[_currentIndex]),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),

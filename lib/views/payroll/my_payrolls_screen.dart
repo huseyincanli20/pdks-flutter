@@ -5,6 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../models/payroll_slip.dart';
 import '../../state/pdks_state.dart';
 import 'payroll_detail_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class MyPayrollsScreen extends StatelessWidget {
   const MyPayrollsScreen({super.key});
@@ -62,9 +64,22 @@ class MyPayrollsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+                  const AdminEditModeBar(
+                    pageId: 'my_payrolls',
+                    pageTitle: 'Bordrolarım Ekranı',
+                    editableSections: [
+                      PageSectionItem(id: 'latest_payroll_card', title: 'En Son Bordro Vurgu Kartı'),
+                    ],
+                  ),
+
                   // Son Bordro Kartı (Büyük Vurgulu)
                   if (latest != null) ...[
-                    Container(
+                    AdminEditableSection(
+                      pageId: 'my_payrolls',
+                      sectionId: 'latest_payroll_card',
+                      sectionTitle: 'En Son Bordro Vurgu Kartı',
+                      child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
@@ -164,6 +179,7 @@ class MyPayrollsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
                     ),
                     const SizedBox(height: 16),
                   ],

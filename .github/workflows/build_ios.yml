@@ -6,19 +6,20 @@ on:
   workflow_dispatch:
     inputs:
       runner:
-        description: 'macOS Runner Sunucusu'
+        description: 'macOS Runner Sunucusu (arm64 / x86_64)'
         required: true
-        default: 'macos-14'
+        default: 'macos-latest'
         type: choice
         options:
-          - 'macos-14'
-          - 'macos-15'
           - 'macos-latest'
+          - 'macos-15'
+          - 'macos-14'
+          - 'macos-13'
 
 jobs:
   build-ios:
-    name: Build iOS IPA on Cloud macOS (${{ github.event.inputs.runner || 'macos-14' }})
-    runs-on: ${{ github.event.inputs.runner || 'macos-14' }}
+    name: Build iOS IPA on Cloud macOS (${{ github.event.inputs.runner || 'macos-latest' }})
+    runs-on: ${{ github.event.inputs.runner || 'macos-latest' }}
     timeout-minutes: 60
 
     steps:

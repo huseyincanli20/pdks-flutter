@@ -8,6 +8,7 @@ import '../models/app_notification.dart';
 import '../models/cafeteria_menu.dart';
 import '../models/company.dart';
 import '../models/payroll_slip.dart';
+import '../models/page_customization.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/theme/app_theme_type.dart';
@@ -58,6 +59,53 @@ class PdksState extends ChangeNotifier {
 
   // 2 Haftalık Yemekhane Menüsü (14 Günlük Çizelge)
   late List<CafeteriaMenu> _twoWeekMenus = buildDefaultTwoWeekMenu();
+
+  // Admin Sayfa Düzenleme Modu (Yalnızca Admin rolünde aktiftir)
+  bool _isAdminEditMode = false;
+  final Map<String, PageCustomization> _pageCustomizations = {};
+
+  bool get isAdminEditMode => _isAdminEditMode && _isLoggedIn && _currentUser.role == UserRole.admin;
+
+  void setAdminEditMode(bool active) {
+    if (_currentUser.role != UserRole.admin) return;
+    _isAdminEditMode = active;
+    notifyListeners();
+  }
+
+  void toggleAdminEditMode() {
+    if (_currentUser.role != UserRole.admin) return;
+    _isAdminEditMode = !_isAdminEditMode;
+    notifyListeners();
+  }
+
+  PageCustomization getPageCustomization(String pageId) {
+    return _pageCustomizations[pageId] ?? PageCustomization(pageId: pageId);
+  }
+
+  void updatePageCustomization(PageCustomization customization) {
+    if (_currentUser.role != UserRole.admin) return;
+    _pageCustomizations[customization.pageId] = customization;
+    notifyListeners();
+  }
+
+  void togglePageSection(String pageId, String sectionId) {
+    if (_currentUser.role != UserRole.admin) return;
+    final current = getPageCustomization(pageId);
+    final hidden = Set<String>.from(current.hiddenSectionIds);
+    if (hidden.contains(sectionId)) {
+      hidden.remove(sectionId);
+    } else {
+      hidden.add(sectionId);
+    }
+    _pageCustomizations[pageId] = current.copyWith(hiddenSectionIds: hidden);
+    notifyListeners();
+  }
+
+  void resetPageCustomization(String pageId) {
+    if (_currentUser.role != UserRole.admin) return;
+    _pageCustomizations.remove(pageId);
+    notifyListeners();
+  }
 
   // Sistem Rolleri ve Patron/Admin tarafından eklenen roller
   final List<AppRoleItem> _roles = [
@@ -1277,6 +1325,7 @@ class PdksState extends ChangeNotifier {
   void logout() {
     _isLoggedIn = false;
     _isCheckedIn = false;
+    _isAdminEditMode = false;
     _workTimer?.cancel();
     notifyListeners();
   }

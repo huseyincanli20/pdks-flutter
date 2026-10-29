@@ -223,6 +223,93 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
+            // Sadece Admin Rolüne Özel: Sayfa Düzenleme Modu Ana Şalteri
+            if (user.role == UserRole.admin) ...[
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: pdks.isAdminEditMode
+                      ? const LinearGradient(
+                          colors: [Color(0xFF9333EA), Color(0xFF7E22CE)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: pdks.isAdminEditMode ? null : AppColors.cardBg(context),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: pdks.isAdminEditMode ? const Color(0xFFC084FC) : Colors.purple.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (pdks.isAdminEditMode ? const Color(0xFF9333EA) : Colors.black).withOpacity(0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: pdks.isAdminEditMode ? Colors.white.withOpacity(0.2) : Colors.purple.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.dashboard_customize_rounded,
+                        color: pdks.isAdminEditMode ? Colors.white : const Color(0xFF9333EA),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sayfa Düzenleme Modu',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: pdks.isAdminEditMode ? Colors.white : AppColors.text(context),
+                            ),
+                          ),
+                          Text(
+                            pdks.isAdminEditMode ? 'Canlı düzenleme aktif' : 'Sayfalarda düzenlemeyi aç',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: pdks.isAdminEditMode ? Colors.white70 : AppColors.textSub(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: pdks.isAdminEditMode,
+                      activeColor: Colors.white,
+                      activeTrackColor: const Color(0xFF10B981),
+                      onChanged: (val) {
+                        pdks.setAdminEditMode(val);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: val ? const Color(0xFF9333EA) : Colors.grey.shade800,
+                            content: Text(val
+                                ? 'Admin Düzenleme Modu Açıldı. Sayfaları canlı özelleştirebilirsiniz.'
+                                : 'Düzenleme Modu Kapatıldı.'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
               child: Align(

@@ -8,6 +8,8 @@ import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import 'cafeteria_shell.dart';
 import 'two_week_menu_publisher_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class CafeteriaMenuViewScreen extends StatefulWidget {
   final int initialTabIndex; // 0: Günün Menüsü, 1: 14 Günlük Menü Çizelgesi
@@ -189,8 +191,22 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'cafeteria_menu',
+            pageTitle: 'Yemekhane Menüsü',
+            editableSections: [
+              PageSectionItem(id: 'today_header', title: 'Günün Menüsü Başlık Kartı'),
+              PageSectionItem(id: 'food_list', title: 'Öğle Yemeği Lezzetleri Listesi'),
+            ],
+          ),
+
           // Üst Tarih ve Şef Başlığı Banner'ı
-          Container(
+          AdminEditableSection(
+            pageId: 'cafeteria_menu',
+            sectionId: 'today_header',
+            sectionTitle: 'Günün Menüsü Başlık Kartı',
+            child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
@@ -264,14 +280,22 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
               ],
             ),
           ),
+          ),
 
           const SizedBox(height: 24),
 
-          Text(
-            'Bugünün Lezzetleri',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(context)),
-          ),
-          const SizedBox(height: 12),
+          AdminEditableSection(
+            pageId: 'cafeteria_menu',
+            sectionId: 'food_list',
+            sectionTitle: 'Öğle Yemeği Lezzetleri Listesi',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bugünün Lezzetleri',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(context)),
+                ),
+                const SizedBox(height: 12),
 
           // 1. Çorba
           _buildMenuItemCard(
@@ -431,6 +455,9 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
                 _buildTimeInfo('Öğle Servisi', '12:00 - 14:00', Icons.schedule_rounded),
                 Container(width: 1, height: 36, color: AppColors.cardBorder(context)),
                 _buildTimeInfo('Akşam Servisi', '18:00 - 19:30', Icons.dinner_dining_rounded),
+              ],
+            ),
+          ),
               ],
             ),
           ),

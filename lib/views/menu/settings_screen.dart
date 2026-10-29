@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme_type.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -282,19 +284,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MediaQuery.of(context).padding.bottom + 24,
         ),
         children: [
-          _buildSectionHeader('GÖRÜNÜM VE TEMA TERCİHİ'),
-          _buildCardGroup(context, [
-            _buildActionItem(
-              context,
-              title: 'Görünüm Teması',
-              subtitle: 'Aydınlık, Koyu, Lacivert, Zümrüt, Mor & Kehribar (7 Tema)',
-              icon: Icons.palette_outlined,
-              iconColor: pdks.currentTheme.primaryColor,
-              trailingText: pdks.themeModeName,
-              trailingBadgeColor: pdks.currentTheme.primaryColor,
-              onTap: () => _showThemePickerModal(context),
+          // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'settings',
+            pageTitle: 'Ayarlar Sayfası',
+            editableSections: [
+              PageSectionItem(id: 'theme_settings', title: 'Tema & Görünüm Tercihi'),
+            ],
+          ),
+
+          AdminEditableSection(
+            pageId: 'settings',
+            sectionId: 'theme_settings',
+            sectionTitle: 'Tema & Görünüm Tercihi',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('GÖRÜNÜM VE TEMA TERCİHİ'),
+                _buildCardGroup(context, [
+                  _buildActionItem(
+                    context,
+                    title: 'Görünüm Teması',
+                    subtitle: 'Aydınlık, Koyu, Lacivert, Zümrüt, Mor & Kehribar (7 Tema)',
+                    icon: Icons.palette_outlined,
+                    iconColor: pdks.currentTheme.primaryColor,
+                    trailingText: pdks.themeModeName,
+                    trailingBadgeColor: pdks.currentTheme.primaryColor,
+                    onTap: () => _showThemePickerModal(context),
+                  ),
+                ]),
+              ],
             ),
-          ]),
+          ),
 
           const SizedBox(height: 20),
           _buildSectionHeader('BİLDİRİM VE HATIRLATICILAR'),

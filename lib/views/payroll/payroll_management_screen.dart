@@ -6,6 +6,8 @@ import '../../core/utils/platform_file_helper.dart';
 import '../../models/payroll_slip.dart';
 import '../../state/pdks_state.dart';
 import 'payroll_detail_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class PayrollManagementScreen extends StatefulWidget {
   const PayrollManagementScreen({super.key});
@@ -130,16 +132,42 @@ class _PayrollManagementScreenState extends State<PayrollManagementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'payroll_management',
+              pageTitle: 'Bordro & Maaş Yönetimi',
+              editableSections: [
+                PageSectionItem(id: 'period_selector', title: 'Dönem Seçici Kartı'),
+                PageSectionItem(id: 'kpi_cards', title: 'Finansal KPI Özet Kartları'),
+                PageSectionItem(id: 'actions_bar', title: 'Hızlı Bordro Butonları'),
+              ],
+            ),
+
             // Üst Dönem Seçici ve Şirket Rozeti
-            _buildPeriodSelector(context),
+            AdminEditableSection(
+              pageId: 'payroll_management',
+              sectionId: 'period_selector',
+              sectionTitle: 'Dönem Seçici Kartı',
+              child: _buildPeriodSelector(context),
+            ),
             const SizedBox(height: 14),
 
             // Finansal KPI Kartları (Brüt, Net, Kesintiler, Şirket Maliyeti)
-            _buildFinancialSummaryCards(context, totalGross, totalNet, totalDeductions, totalEmployerCost, currency),
+            AdminEditableSection(
+              pageId: 'payroll_management',
+              sectionId: 'kpi_cards',
+              sectionTitle: 'Finansal KPI Özet Kartları',
+              child: _buildFinancialSummaryCards(context, totalGross, totalNet, totalDeductions, totalEmployerCost, currency),
+            ),
             const SizedBox(height: 14),
 
             // Hızlı İşlem Butonları (Hesapla, Onayla, Öde)
-            _buildActionButtons(context, pdks),
+            AdminEditableSection(
+              pageId: 'payroll_management',
+              sectionId: 'actions_bar',
+              sectionTitle: 'Hızlı Bordro Butonları',
+              child: _buildActionButtons(context, pdks),
+            ),
             const SizedBox(height: 16),
 
             // Arama & Departman Filtre Çubuğu

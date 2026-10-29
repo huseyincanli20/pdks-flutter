@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class CompanyManagementScreen extends StatefulWidget {
   const CompanyManagementScreen({super.key});
@@ -312,8 +314,21 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'company_management',
+              pageTitle: 'Şirket Yönetimi',
+              editableSections: [
+                PageSectionItem(id: 'active_company_banner', title: 'Aktif Şirket Bannerı'),
+              ],
+            ),
+
             // Aktif Şirket Bannerı
-            Container(
+            AdminEditableSection(
+              pageId: 'company_management',
+              sectionId: 'active_company_banner',
+              sectionTitle: 'Aktif Şirket Bannerı',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -423,6 +438,7 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
                   ),
                 ],
               ),
+            ),
             ),
 
             const SizedBox(height: 24),

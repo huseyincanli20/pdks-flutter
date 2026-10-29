@@ -5,6 +5,8 @@ import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -119,7 +121,18 @@ class _AdminShellState extends State<AdminShell> {
           ),
         ],
       ),
-      body: tabs[_currentIndex],
+      body: Column(
+        children: [
+          AdminEditModeBar(
+            pageId: 'admin_shell',
+            pageTitle: 'Admin Yönetim Paneli',
+            editableSections: [
+              PageSectionItem(id: 'tab_$_currentIndex', title: '${titles[_currentIndex]} Sekme İçeriği'),
+            ],
+          ),
+          Expanded(child: tabs[_currentIndex]),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),

@@ -19,6 +19,8 @@ import '../menu/contacts_screen.dart';
 import '../menu/settings_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../../core/utils/marquee_text.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class MobileHomeScreen extends StatefulWidget {
   const MobileHomeScreen({super.key});
@@ -202,6 +204,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }
 
   String _getAppBarTitle(Employee user, PdksState pdks) {
+    if (_currentIndex == 0) {
+      final custom = pdks.getPageCustomization('mobile_home').customTitle;
+      if (custom != null && custom.trim().isNotEmpty) {
+        return custom;
+      }
+    }
     switch (_currentIndex) {
       case 0:
         return 'Merhaba, ${user.fullName}';
@@ -217,6 +225,12 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }
 
   String _getAppBarSubtitle(Employee user, PdksState pdks) {
+    if (_currentIndex == 0) {
+      final custom = pdks.getPageCustomization('mobile_home').customSubtitle;
+      if (custom != null && custom.trim().isNotEmpty) {
+        return custom;
+      }
+    }
     switch (_currentIndex) {
       case 0:
         return '${user.department} • ${pdks.activeCompany.name}';
@@ -355,210 +369,246 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Çalışma Durumu ve Canlı Süre Kartı
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isCheckedIn
-                    ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                    : [const Color(0xFF64748B), const Color(0xFF475569)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: (isCheckedIn ? const Color(0xFF10B981) : Colors.black).withOpacity(0.25),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isCheckedIn ? 'İŞ YERİNDESİNİZ' : 'MESAİ DIŞI',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      DateFormat('d MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now()),
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'BUGÜNKÜ ÇALIŞMA SÜRESİ',
-                  style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDuration(pdks.workedToday),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 44,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 20),
+          // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'mobile_home',
+            pageTitle: 'Personel Ana Sayfa',
+            editableSections: [
+              PageSectionItem(id: 'work_status_card', title: 'Mesai Durumu & Sayaç Kartı'),
+              PageSectionItem(id: 'quick_actions', title: 'Hızlı İşlemler Kartları'),
+              PageSectionItem(id: 'recent_records', title: 'Son Hareketler Listesi'),
+            ],
+          ),
 
-                // İşlem Butonları (Check In / Out, QR, Wi-Fi)
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: isCheckedIn ? AppColors.danger : AppColors.success,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        icon: Icon(isCheckedIn ? Icons.logout_rounded : Icons.login_rounded, size: 20),
-                        label: Text(
-                          isCheckedIn ? 'MESAİDEN ÇIK (GPS)' : 'MESAİYE GİR (GPS)',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        onPressed: () => _handleGpsCheck(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
-                        tooltip: 'Turnike QR Okut',
-                        onPressed: () => _openQrScanner(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.wifi_rounded, color: Colors.white),
-                        tooltip: 'Şirket Wi-Fi Giriş',
-                        onPressed: () => _handleWifiCheck(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
-                      ),
-                    ),
-                  ],
+          // 1. Çalışma Durumu ve Canlı Süre Kartı
+          AdminEditableSection(
+            pageId: 'mobile_home',
+            sectionId: 'work_status_card',
+            sectionTitle: 'Mesai Durumu & Sayaç Kartı',
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isCheckedIn
+                      ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                      : [const Color(0xFF64748B), const Color(0xFF475569)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isCheckedIn ? const Color(0xFF10B981) : Colors.black).withOpacity(0.25),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isCheckedIn ? 'İŞ YERİNDESİNİZ' : 'MESAİ DIŞI',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        DateFormat('d MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now()),
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'BUGÜNKÜ ÇALIŞMA SÜRESİ',
+                    style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDuration(pdks.workedToday),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 44,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // İşlem Butonları (Check In / Out, QR, Wi-Fi)
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: isCheckedIn ? AppColors.danger : AppColors.success,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          icon: Icon(isCheckedIn ? Icons.logout_rounded : Icons.login_rounded, size: 20),
+                          label: Text(
+                            isCheckedIn ? 'MESAİDEN ÇIK (GPS)' : 'MESAİYE GİR (GPS)',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          onPressed: () => _handleGpsCheck(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+                          tooltip: 'Turnike QR Okut',
+                          onPressed: () => _openQrScanner(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.wifi_rounded, color: Colors.white),
+                          tooltip: 'Şirket Wi-Fi Giriş',
+                          onPressed: () => _handleWifiCheck(isCheckedIn ? AttendanceType.checkOut : AttendanceType.checkIn),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(height: 24),
 
           // 2. Hızlı İşlemler
-          Text(
-            'Hızlı İşlemler',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickActionCard(
-                  icon: Icons.beach_access_rounded,
-                  color: Colors.amber.shade700,
-                  title: 'İzin Talebi',
-                  subtitle: 'Kalan: ${user.remainingLeaveDays} Gün',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                  },
+          AdminEditableSection(
+            pageId: 'mobile_home',
+            sectionId: 'quick_actions',
+            sectionTitle: 'Hızlı İşlemler Kartları',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hızlı İşlemler',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildQuickActionCard(
-                  icon: Icons.history_rounded,
-                  color: Colors.blue.shade600,
-                  title: 'Giriş/Çıkışlar',
-                  subtitle: '${pdks.records.length} Kayıt',
-                  onTap: () => setState(() => _currentIndex = 1),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        icon: Icons.beach_access_rounded,
+                        color: Colors.amber.shade700,
+                        title: 'İzin Talebi',
+                        subtitle: 'Kalan: ${user.remainingLeaveDays} Gün',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        icon: Icons.history_rounded,
+                        color: Colors.blue.shade600,
+                        title: 'Giriş/Çıkışlar',
+                        subtitle: '${pdks.records.length} Kayıt',
+                        onTap: () => setState(() => _currentIndex = 1),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        icon: Icons.more_time_rounded,
+                        color: Colors.purple.shade600,
+                        title: 'Fazla Mesai',
+                        subtitle: 'Talep Bildir',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildQuickActionCard(
-                  icon: Icons.more_time_rounded,
-                  color: Colors.purple.shade600,
-                  title: 'Fazla Mesai',
-                  subtitle: 'Talep Bildir',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
-                    );
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 24),
 
           // 3. Son Hareketler Listesi
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Son Turnike & Konum Hareketleri',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
-              ),
-              TextButton(
-                onPressed: () => setState(() => _currentIndex = 1),
-                child: const Text('Tümünü Gör'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+          AdminEditableSection(
+            pageId: 'mobile_home',
+            sectionId: 'recent_records',
+            sectionTitle: 'Son Hareketler Listesi',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Son Turnike & Konum Hareketleri',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _currentIndex = 1),
+                      child: const Text('Tümünü Gör'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-          if (pdks.records.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text('Henüz bir hareket kaydınız bulunmuyor.', style: TextStyle(color: AppColors.textSub(context))),
-              ),
-            )
-          else
-            ...pdks.records.take(4).map((record) => _buildRecordTile(record)),
+                if (pdks.records.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text('Henüz bir hareket kaydınız bulunmuyor.', style: TextStyle(color: AppColors.textSub(context))),
+                    ),
+                  )
+                else
+                  ...pdks.records.take(4).map((record) => _buildRecordTile(record)),
+              ],
+            ),
+          ),
         ],
       ),
     );

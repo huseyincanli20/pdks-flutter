@@ -8,6 +8,8 @@ import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
 import 'two_week_menu_publisher_screen.dart';
 import 'cafeteria_menu_view_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
+import '../../models/page_customization.dart';
 
 class CafeteriaShell extends StatefulWidget {
   const CafeteriaShell({super.key});
@@ -287,8 +289,22 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'cafeteria_shell',
+              pageTitle: 'Mutfak Şefi & Yemekhane Yönetimi',
+              editableSections: [
+                PageSectionItem(id: 'counter_card', title: 'Yemekhane Sayaç Kartı'),
+                PageSectionItem(id: 'two_week_banner', title: '2 Haftalık Çizelge Bannerı'),
+              ],
+            ),
+
             // Canlı Yemekhane Sayaç Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'cafeteria_shell',
+              sectionId: 'counter_card',
+              sectionTitle: 'Yemekhane Sayaç Kartı',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -350,11 +366,16 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                 ],
               ),
             ),
+            ),
 
             const SizedBox(height: 20),
 
             // 2 Haftalık Menü Yayınlama Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'cafeteria_shell',
+              sectionId: 'two_week_banner',
+              sectionTitle: '2 Haftalık Çizelge Bannerı',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -455,6 +476,7 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                   ),
                 ],
               ),
+            ),
             ),
 
             const SizedBox(height: 24),
