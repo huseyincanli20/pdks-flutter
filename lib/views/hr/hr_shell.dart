@@ -9,6 +9,7 @@ import '../web_admin/shifts_tab.dart';
 import '../web_admin/leaves_management_tab.dart';
 import '../web_admin/reports_puantaj_tab.dart';
 import '../notifications/notifications_screen.dart';
+import '../chat/chat_list_screen.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
 
@@ -55,6 +56,34 @@ class _HrShellState extends State<HrShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.chat_bubble_outline_rounded, color: AppColors.text(context)),
+                if (context.watch<PdksState>().unreadChatCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(color: AppColors.primaryOf(context), shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          context.watch<PdksState>().unreadChatCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Şirket İçi Mesajlar',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+            },
+          ),
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,

@@ -8,6 +8,7 @@ import '../menu/business_card_screen.dart';
 import '../menu/favorites_screen.dart';
 import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
+import '../chat/chat_list_screen.dart';
 import 'dashboard_tab.dart';
 import 'employees_tab.dart';
 import 'shifts_tab.dart';
@@ -160,7 +161,36 @@ class _AdminShellState extends State<AdminShell> {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 14),
+                          IconButton(
+                            icon: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Icon(Icons.chat_bubble_outline_rounded, color: AppColors.text(context)),
+                                if (context.watch<PdksState>().unreadChatCount > 0)
+                                  Positioned(
+                                    right: -2,
+                                    top: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(color: AppColors.primaryOf(context), shape: BoxShape.circle),
+                                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                      child: Center(
+                                        child: Text(
+                                          context.watch<PdksState>().unreadChatCount.toString(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            tooltip: 'Şirket İçi Mesajlar',
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+                            },
+                          ),
+                          const SizedBox(width: 10),
                           PopupMenuButton<String>(
                             tooltip: 'Hesap & Menü',
                             offset: const Offset(0, 50),
@@ -179,6 +209,9 @@ class _AdminShellState extends State<AdminShell> {
                               switch (val) {
                                 case 'profile':
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                                  break;
+                                case 'messages':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
                                   break;
                                 case 'contacts':
                                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
@@ -204,6 +237,10 @@ class _AdminShellState extends State<AdminShell> {
                               const PopupMenuItem(
                                 value: 'profile',
                                 child: Row(children: [Icon(Icons.person_outline, size: 20), SizedBox(width: 12), Text('Profil')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'messages',
+                                child: Row(children: [Icon(Icons.chat_bubble_outline_rounded, size: 20), SizedBox(width: 12), Text('Mesajlaşma')]),
                               ),
                               const PopupMenuItem(
                                 value: 'contacts',

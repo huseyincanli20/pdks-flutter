@@ -9,6 +9,7 @@ import '../models/cafeteria_menu.dart';
 import '../models/company.dart';
 import '../models/payroll_slip.dart';
 import '../models/page_customization.dart';
+import '../models/chat_message.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/theme/app_theme_type.dart';
@@ -439,6 +440,165 @@ class PdksState extends ChangeNotifier {
   void addNotification(AppNotification notif) {
     _notifications.insert(0, notif);
     notifyListeners();
+  }
+
+  // ==========================================
+  // ŞİRKET İÇİ MESAJLAŞMA & ANLIK SOHBET SİSTEMİ
+  // ==========================================
+  final List<ChatChannel> _systemChatChannels = [
+    const ChatChannel(
+      id: 'company_general',
+      title: 'Genel Şirket Kanalı',
+      subtitle: 'Tüm departmanlar ve çalışma arkadaşları',
+      icon: Icons.corporate_fare_rounded,
+      iconColor: Color(0xFF2563EB),
+    ),
+    const ChatChannel(
+      id: 'hr_support',
+      title: 'İK & Personel Destek',
+      subtitle: 'İnsan kaynakları soru, talep ve izin danışma',
+      icon: Icons.support_agent_rounded,
+      iconColor: Color(0xFF0284C7),
+    ),
+    const ChatChannel(
+      id: 'management_announcements',
+      title: 'Yönetim & Duyurular',
+      subtitle: 'Şirket yönetimi resmi duyuru ve bilgi akışı',
+      icon: Icons.campaign_rounded,
+      iconColor: Color(0xFFD97706),
+    ),
+  ];
+
+  final List<ChatMessage> _chatMessages = [
+    ChatMessage(
+      id: 'msg_init_1',
+      senderId: 2, // Zeynep Kaya (İK Direktörü)
+      senderName: 'Zeynep Kaya',
+      senderRole: UserRole.hr,
+      channelId: 'company_general',
+      text: 'Herkese iyi çalışmalar dileriz! Şirket içi PDKS anlık mesajlaşma kanallarımız aktif edilmiştir. 🚀',
+      timestamp: DateTime.now().subtract(const Duration(hours: 3, minutes: 20)),
+      isRead: true,
+    ),
+    ChatMessage(
+      id: 'msg_init_2',
+      senderId: 3, // Mehmet Demir (CEO)
+      senderName: 'Mehmet Demir',
+      senderRole: UserRole.boss,
+      channelId: 'company_general',
+      text: 'Yeni mesajlaşma altyapımız tüm ekibimize hayırlı olsun. Verimli çalışmalar dilerim.',
+      timestamp: DateTime.now().subtract(const Duration(hours: 2, minutes: 45)),
+      isRead: true,
+    ),
+    ChatMessage(
+      id: 'msg_init_3',
+      senderId: 1, // Ahmet Yılmaz (Personel)
+      senderName: 'Ahmet Yılmaz',
+      senderRole: UserRole.employee,
+      channelId: 'company_general',
+      text: 'Harika bir yenilik olmuş, teşekkürler!',
+      timestamp: DateTime.now().subtract(const Duration(hours: 1, minutes: 15)),
+      isRead: true,
+    ),
+    ChatMessage(
+      id: 'msg_init_hr_1',
+      senderId: 2, // Zeynep Kaya (İK)
+      senderName: 'Zeynep Kaya (İK)',
+      senderRole: UserRole.hr,
+      channelId: 'hr_support',
+      text: 'Merhaba, İnsan Kaynakları Destek Hattına hoş geldiniz. İzin, mesai, kıyafet bedenleri veya diğer kurumsal konulardaki sorularınızı buradan doğrudan bize iletebilirsiniz.',
+      timestamp: DateTime.now().subtract(const Duration(hours: 4)),
+      isRead: true,
+    ),
+  ];
+
+  List<ChatChannel> get systemChatChannels => List.unmodifiable(_systemChatChannels);
+  List<ChatMessage> get chatMessages => List.unmodifiable(_chatMessages);
+
+  String getDirectChannelId(int userA, int userB) {
+    return userA < userB ? 'dm_${userA}_$userB' : 'dm_${userB}_$userA';
+  }
+
+  List<ChatMessage> getMessagesForChannel(String channelId) {
+    return _chatMessages.where((m) => m.channelId == channelId).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  }
+
+  ChatMessage? getLastMessageForChannel(String channelId) {
+    final msgs = getMessagesForChannel(channelId);
+    return msgs.isNotEmpty ? msgs.last : null;
+  }
+
+  int getUnreadCountForChannel(String channelId) {
+    return _chatMessages
+        .where((m) => m.channelId == channelId && !m.isRead && m.senderId != _currentUser.id)
+        .length;
+  }
+
+  int get unreadChatCount {
+    return _chatMessages
+        .where((m) => !m.isRead && m.senderId != _currentUser.id)
+        .length;
+  }
+
+  void markChannelAsRead(String channelId) {
+    bool changed = false;
+    for (int i = 0; i < _chatMessages.length; i++) {
+      if (_chatMessages[i].channelId == channelId && !_chatMessages[i].isRead && _chatMessages[i].senderId != _currentUser.id) {
+        _chatMessages[i] = _chatMessages[i].copyWith(isRead: true);
+        changed = true;
+      }
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
+
+  void sendMessage({
+    required String channelId,
+    required String text,
+    int? receiverId,
+    MessageType type = MessageType.text,
+    String? attachmentName,
+    String? attachmentSize,
+  }) {
+    if (text.trim().isEmpty && attachmentName == null) return;
+
+    final newMsg = ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      receiverId: receiverId,
+      channelId: channelId,
+      text: text.trim(),
+      timestamp: DateTime.now(),
+      isRead: false,
+      type: type,
+      attachmentName: attachmentName,
+      attachmentSize: attachmentSize,
+    );
+
+    _chatMessages.add(newMsg);
+    notifyListeners();
+
+    // İK Destek kanalına yazıldığında otomatik destek yanıt simülasyonu
+    if (channelId == 'hr_support' && _currentUser.role != UserRole.hr) {
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        final replyMsg = ChatMessage(
+          id: 'msg_hr_auto_${DateTime.now().millisecondsSinceEpoch}',
+          senderId: 2, // Zeynep Kaya (İK Direktörü)
+          senderName: 'Zeynep Kaya (İK Destek)',
+          senderRole: UserRole.hr,
+          channelId: 'hr_support',
+          text: 'Sayın ${_currentUser.fullName}, mesajınız İnsan Kaynakları birimimize ulaştı. Talebiniz incelenerek en kısa sürede dönüş sağlanacaktır. ✅',
+          timestamp: DateTime.now(),
+          isRead: false,
+        );
+        _chatMessages.add(replyMsg);
+        notifyListeners();
+      });
+    }
   }
 
   // Yemekhane Menüsü Getters ve Metotları

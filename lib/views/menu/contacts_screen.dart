@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
+import '../chat/chat_conversation_screen.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
@@ -240,7 +241,32 @@ class _ContactsScreenState extends State<ContactsScreen> {
           IconButton.filledTonal(
             style: IconButton.styleFrom(
               backgroundColor: isDark ? const Color(0xFF1E3A8A).withOpacity(0.4) : const Color(0xFFEFF6FF),
-              foregroundColor: AppColors.primaryLight,
+              foregroundColor: AppColors.primaryOf(context),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+            tooltip: 'Mesaj Gönder',
+            onPressed: () {
+              final pdks = context.read<PdksState>();
+              final chId = pdks.getDirectChannelId(pdks.currentUser.id, emp.id);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatConversationScreen(
+                    channelId: chId,
+                    title: emp.fullName,
+                    subtitle: '${emp.department} • ${emp.title}',
+                    directUser: emp,
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            style: IconButton.styleFrom(
+              backgroundColor: isDark ? const Color(0xFF10B981).withOpacity(0.18) : const Color(0xFFECFDF5),
+              foregroundColor: const Color(0xFF10B981),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.phone_rounded, size: 18),

@@ -13,6 +13,7 @@ import '../notifications/notifications_screen.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
+import '../chat/chat_list_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -355,6 +356,17 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerTile(
                     context,
+                    icon: Icons.chat_bubble_outline_rounded,
+                    color: const Color(0xFF0284C7),
+                    title: 'Mesajlaşma',
+                    subtitle: pdks.unreadChatCount > 0
+                        ? '${pdks.unreadChatCount} yeni mesaj'
+                        : 'Şirket içi kanallar & 1-e-1 sohbet',
+                    destination: const ChatListScreen(),
+                    badgeCount: pdks.unreadChatCount,
+                  ),
+                  _buildDrawerTile(
+                    context,
                     icon: Icons.people_alt_outlined,
                     color: const Color(0xFF4F46E5),
                     title: 'Kişiler',
@@ -463,6 +475,7 @@ class AppDrawer extends StatelessWidget {
     required String title,
     required String subtitle,
     required Widget destination,
+    int? badgeCount,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -510,6 +523,19 @@ class AppDrawer extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (badgeCount != null && badgeCount > 0)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryOf(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$badgeCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
               ],
             ),
