@@ -7,6 +7,7 @@ import 'state/pdks_state.dart';
 import 'views/mobile/mobile_home_screen.dart';
 import 'views/web_admin/admin_shell.dart';
 import 'views/kiosk/kiosk_screen.dart';
+import 'views/auth/auth_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +37,11 @@ class PdksApp extends StatelessWidget {
         Locale('tr', 'TR'),
         Locale('en', 'US'),
       ],
-      home: const MainAdaptiveRoot(),
+      home: Consumer<PdksState>(
+        builder: (context, state, _) {
+          return state.isLoggedIn ? const MainAdaptiveRoot() : const AuthScreen();
+        },
+      ),
     );
   }
 }

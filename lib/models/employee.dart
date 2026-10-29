@@ -4,6 +4,7 @@ class Employee {
   final int id;
   final String fullName;
   final String email;
+  final String phone;
   final String department;
   final String title;
   final String pinCode;
@@ -17,6 +18,7 @@ class Employee {
     required this.id,
     required this.fullName,
     required this.email,
+    this.phone = '+90 555 000 00 00',
     required this.department,
     required this.title,
     required this.pinCode,
@@ -34,6 +36,7 @@ class Employee {
       id: json['id'] ?? 0,
       fullName: json['fullName'] ?? '',
       email: json['email'] ?? '',
+      phone: json['phone'] ?? '+90 555 000 00 00',
       department: json['department'] ?? 'Genel',
       title: json['title'] ?? 'Çalışan',
       pinCode: json['pinCode'] ?? '1234',
@@ -50,6 +53,7 @@ class Employee {
       'id': id,
       'fullName': fullName,
       'email': email,
+      'phone': phone,
       'department': department,
       'title': title,
       'pinCode': pinCode,

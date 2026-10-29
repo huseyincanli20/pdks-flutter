@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../state/pdks_state.dart';
+import '../menu/profile_screen.dart';
+import '../menu/contacts_screen.dart';
+import '../menu/business_card_screen.dart';
+import '../menu/favorites_screen.dart';
+import '../menu/settings_screen.dart';
+import '../menu/about_screen.dart';
 import 'dashboard_tab.dart';
 import 'employees_tab.dart';
 import 'shifts_tab.dart';
@@ -150,10 +158,76 @@ class _AdminShellState extends State<AdminShell> {
                             ),
                           ),
                           const SizedBox(width: 20),
-                          const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppColors.primaryLight,
-                            child: Text('İK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          PopupMenuButton<String>(
+                            tooltip: 'Hesap & Menü',
+                            offset: const Offset(0, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppColors.primary,
+                              child: Text(
+                                context.watch<PdksState>().currentUser.fullName.isNotEmpty
+                                    ? context.watch<PdksState>().currentUser.fullName.substring(0, 2).toUpperCase()
+                                    : 'P',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                            onSelected: (val) {
+                              switch (val) {
+                                case 'profile':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                                  break;
+                                case 'contacts':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+                                  break;
+                                case 'business_card':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
+                                  break;
+                                case 'favorites':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+                                  break;
+                                case 'settings':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                                  break;
+                                case 'about':
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                                  break;
+                                case 'logout':
+                                  context.read<PdksState>().logout();
+                                  break;
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'profile',
+                                child: Row(children: [Icon(Icons.person_outline, size: 20), SizedBox(width: 12), Text('Profil')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'contacts',
+                                child: Row(children: [Icon(Icons.people_alt_outlined, size: 20), SizedBox(width: 12), Text('Kişiler')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'business_card',
+                                child: Row(children: [Icon(Icons.badge_outlined, size: 20), SizedBox(width: 12), Text('Kartvizit')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'favorites',
+                                child: Row(children: [Icon(Icons.star_border, size: 20), SizedBox(width: 12), Text('Sık Kullanılanlar')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'settings',
+                                child: Row(children: [Icon(Icons.settings_outlined, size: 20), SizedBox(width: 12), Text('Ayarlar')]),
+                              ),
+                              const PopupMenuItem(
+                                value: 'about',
+                                child: Row(children: [Icon(Icons.info_outline, size: 20), SizedBox(width: 12), Text('Hakkımda')]),
+                              ),
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(
+                                value: 'logout',
+                                child: Row(children: [Icon(Icons.logout, size: 20, color: AppColors.danger), SizedBox(width: 12), Text('Oturumu Kapat', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold))]),
+                              ),
+                            ],
                           ),
                         ],
                       ),

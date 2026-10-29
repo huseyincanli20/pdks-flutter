@@ -12,7 +12,7 @@ class PdksState extends ChangeNotifier {
 
   // Aktif Giriş Yapan Kullanıcı
   late Employee _currentUser;
-  final bool _isLoggedIn = true;
+  bool _isLoggedIn = true;
 
   // Personelin anlık durumu: true = İçeride (Checked in), false = Dışarıda
   bool _isCheckedIn = false;
@@ -40,7 +40,7 @@ class PdksState extends ChangeNotifier {
 
   // İK Dashboard Sayaçları
   int get totalEmployeesCount => _employees.length;
-  int get presentEmployeesCount => _employees.where((e) => e.isActive).length - 2; // Örnek simülasyon
+  int get presentEmployeesCount => _employees.where((e) => e.isActive).length - 2;
   int get onLeaveEmployeesCount => _leaves.where((l) => l.status == LeaveStatus.approved).length;
   int get lateEmployeesCount => 2;
 
@@ -50,8 +50,9 @@ class PdksState extends ChangeNotifier {
   }
 
   void _startTimer() {
+    _workTimer?.cancel();
     _workTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_isCheckedIn) {
+      if (_isCheckedIn && _isLoggedIn) {
         _workedToday += const Duration(seconds: 1);
         notifyListeners();
       }
@@ -63,6 +64,7 @@ class PdksState extends ChangeNotifier {
       id: 1,
       fullName: 'Ahmet Yılmaz',
       email: 'ahmet.yilmaz@sirket.com',
+      phone: '+90 532 111 22 33',
       department: 'Yazılım & Ar-Ge',
       title: 'Kıdemli Mobil Geliştirici',
       pinCode: '1234',
@@ -77,6 +79,7 @@ class PdksState extends ChangeNotifier {
         id: 2,
         fullName: 'Zeynep Kaya',
         email: 'zeynep.kaya@sirket.com',
+        phone: '+90 533 222 33 44',
         department: 'İnsan Kaynakları',
         title: 'İK Direktörü',
         pinCode: '5678',
@@ -88,6 +91,7 @@ class PdksState extends ChangeNotifier {
         id: 3,
         fullName: 'Mehmet Demir',
         email: 'mehmet.demir@sirket.com',
+        phone: '+90 535 333 44 55',
         department: 'Satış & Pazarlama',
         title: 'Bölge Satış Müdürü',
         pinCode: '9988',
@@ -99,6 +103,7 @@ class PdksState extends ChangeNotifier {
         id: 4,
         fullName: 'Elif Şahin',
         email: 'elif.sahin@sirket.com',
+        phone: '+90 542 444 55 66',
         department: 'Mali İşler',
         title: 'Muhasebe Uzmanı',
         pinCode: '1122',
@@ -110,6 +115,7 @@ class PdksState extends ChangeNotifier {
         id: 5,
         fullName: 'Caner Özkan',
         email: 'caner.ozkan@sirket.com',
+        phone: '+90 555 555 66 77',
         department: 'Operasyon',
         title: 'Saha Süpervizörü',
         pinCode: '3344',
@@ -218,7 +224,104 @@ class PdksState extends ChangeNotifier {
     _lastCheckInTime = now.subtract(const Duration(hours: 4, minutes: 25));
   }
 
-  // Kullanıcı Rolünü Değiştir (Personel vs İK Yöneticisi simülasyonu)
+  // Kullanıcı Girişi
+  bool login(String email, String pin) {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPin = pin.trim();
+
+    final found = _employees.where(
+      (e) => e.email.toLowerCase() == cleanEmail && e.pinCode == cleanPin,
+    );
+
+    if (found.isNotEmpty) {
+      _currentUser = found.first;
+      _isLoggedIn = true;
+      _startTimer();
+      notifyListeners();
+      return true;
+    }
+
+    // Demo kolaylığı: Eğer eşleşmezse ve pin 1234 ise ilk kullanıcı ile aç
+    if (cleanPin == '1234' || cleanEmail.contains('admin')) {
+      _currentUser = cleanEmail.contains('admin')
+          ? _employees.firstWhere((e) => e.role == UserRole.hrAdmin)
+          : _employees.first;
+      _isLoggedIn = true;
+      _startTimer();
+      notifyListeners();
+      return true;
+    }
+
+    return false;
+  }
+
+  // Yeni Personel Kaydı
+  bool register({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String department,
+    required String title,
+    required String pin,
+  }) {
+    final newId = _employees.length + 1;
+    final newEmployee = Employee(
+      id: newId,
+      fullName: fullName,
+      email: email,
+      phone: phone,
+      department: department.isEmpty ? 'Genel' : department,
+      title: title.isEmpty ? 'Uzman' : title,
+      pinCode: pin,
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 0,
+      isActive: true,
+    );
+
+    _employees.add(newEmployee);
+    _currentUser = newEmployee;
+    _isLoggedIn = true;
+    _isCheckedIn = false;
+    _workedToday = Duration.zero;
+    _startTimer();
+    notifyListeners();
+    return true;
+  }
+
+  // Oturumu Kapat
+  void logout() {
+    _isLoggedIn = false;
+    _isCheckedIn = false;
+    _workTimer?.cancel();
+    notifyListeners();
+  }
+
+  // Profil Güncelle
+  void updateProfile({required String fullName, required String phone, required String department, required String title}) {
+    final index = _employees.indexWhere((e) => e.id == _currentUser.id);
+    final updated = Employee(
+      id: _currentUser.id,
+      fullName: fullName,
+      email: _currentUser.email,
+      phone: phone,
+      department: department,
+      title: title,
+      pinCode: _currentUser.pinCode,
+      role: _currentUser.role,
+      annualLeaveAllowance: _currentUser.annualLeaveAllowance,
+      usedLeaveDays: _currentUser.usedLeaveDays,
+      isActive: _currentUser.isActive,
+    );
+
+    _currentUser = updated;
+    if (index != -1) {
+      _employees[index] = updated;
+    }
+    notifyListeners();
+  }
+
+  // Kullanıcı Rolünü Değiştir (Demo)
   void switchUserRole(UserRole role) {
     if (role == UserRole.hrAdmin) {
       _currentUser = _employees.firstWhere((e) => e.role == UserRole.hrAdmin);
@@ -317,7 +420,6 @@ class PdksState extends ChangeNotifier {
         createdAt: old.createdAt,
       );
 
-      // Yıllık izin onaylandıysa personelin kalan izin bakiyesini güncelle
       if (newStatus == LeaveStatus.approved && old.type == LeaveType.annual) {
         final empIndex = _employees.indexWhere((e) => e.id == old.employeeId);
         if (empIndex != -1) {
@@ -326,6 +428,7 @@ class PdksState extends ChangeNotifier {
             id: emp.id,
             fullName: emp.fullName,
             email: emp.email,
+            phone: emp.phone,
             department: emp.department,
             title: emp.title,
             pinCode: emp.pinCode,

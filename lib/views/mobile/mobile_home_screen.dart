@@ -10,6 +10,7 @@ import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import 'qr_scanner_screen.dart';
 import 'leave_request_screen.dart';
+import '../common/app_drawer.dart';
 
 class MobileHomeScreen extends StatefulWidget {
   const MobileHomeScreen({super.key});
@@ -160,6 +161,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
     final isCheckedIn = pdks.isCheckedIn;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
