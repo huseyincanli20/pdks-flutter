@@ -110,14 +110,7 @@ class AppNotification {
       );
     } catch (_) {}
 
-    IconData parsedIcon = Icons.notifications_rounded;
-    if (json['iconCode'] != null) {
-      parsedIcon = IconData(
-        json['iconCode'] as int,
-        fontFamily: json['iconFontFamily'] as String? ?? 'MaterialIcons',
-        fontPackage: json['iconFontPackage'] as String?,
-      );
-    }
+    final IconData parsedIcon = _resolveNotificationIcon(json['iconCode']);
 
     Color parsedColor = const Color(0xFF2563EB);
     if (json['colorValue'] != null) {
@@ -141,5 +134,30 @@ class AppNotification {
       emailSubject: json['emailSubject'],
       emailBody: json['emailBody'],
     );
+  }
+
+  static IconData _resolveNotificationIcon(dynamic code) {
+    if (code == null) return Icons.notifications_rounded;
+    final int val = code is int ? code : (int.tryParse(code.toString()) ?? 0);
+    switch (val) {
+      case 0xf00b3:
+        return Icons.person_add_alt_1_rounded;
+      case 0xe699:
+        return Icons.verified_user_rounded;
+      case 0xe156:
+        return Icons.beach_access_rounded;
+      case 0xe19a:
+        return Icons.chat_bubble_rounded;
+      case 0xe5fe:
+        return Icons.support_agent_rounded;
+      case 0xe3e6:
+        return Icons.login_rounded;
+      case 0xe3e7:
+        return Icons.logout_rounded;
+      case 0xe506:
+        return Icons.receipt_long_rounded;
+      default:
+        return Icons.notifications_rounded;
+    }
   }
 }

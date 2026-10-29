@@ -155,13 +155,7 @@ class ChatChannel {
   }
 
   factory ChatChannel.fromJson(Map<String, dynamic> json) {
-    IconData parsedIcon = Icons.groups_rounded;
-    if (json['iconCode'] != null) {
-      parsedIcon = IconData(
-        json['iconCode'] as int,
-        fontFamily: json['iconFontFamily'] as String? ?? 'MaterialIcons',
-      );
-    }
+    final IconData parsedIcon = _resolveChannelIcon(json['iconCode']);
 
     Color parsedColor = const Color(0xFF2563EB);
     if (json['iconColorValue'] != null) {
@@ -185,5 +179,26 @@ class ChatChannel {
       iconColor: parsedColor,
       participantIds: participants,
     );
+  }
+
+  static IconData _resolveChannelIcon(dynamic code) {
+    if (code == null) return Icons.groups_rounded;
+    final int val = code is int ? code : (int.tryParse(code.toString()) ?? 0);
+    switch (val) {
+      case 0xe2eb:
+        return Icons.group_rounded;
+      case 0xe2ea:
+        return Icons.groups_rounded;
+      case 0xe153:
+        return Icons.campaign_rounded;
+      case 0xe5fe:
+        return Icons.support_agent_rounded;
+      case 0xe19a:
+        return Icons.chat_bubble_rounded;
+      case 0xe253:
+        return Icons.forum_rounded;
+      default:
+        return Icons.groups_rounded;
+    }
   }
 }

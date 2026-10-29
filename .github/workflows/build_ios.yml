@@ -38,7 +38,7 @@ jobs:
 
       - name: Build iOS Application (Release)
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --no-tree-shake-icons
 
       - name: Package IPA
         run: |
