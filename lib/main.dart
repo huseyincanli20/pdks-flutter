@@ -10,6 +10,7 @@ import 'views/mobile/mobile_home_screen.dart';
 import 'views/hr/hr_shell.dart';
 import 'views/boss/boss_shell.dart';
 import 'views/admin/admin_shell.dart';
+import 'views/cafeteria/cafeteria_shell.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +53,7 @@ class PdksApp extends StatelessWidget {
             return const AuthScreen();
           }
 
-          // 4 TİP MOD: YALNIZCA GİRİŞ BİLGİLERİNE (ROLE) GÖRE GÖRÜLEBİLİR:
+          // 5 TİP MOD: YALNIZCA GİRİŞ BİLGİLERİNE (ROLE) GÖRE GÖRÜLEBİLİR:
           switch (state.currentUser.role) {
             case UserRole.employee:
               return const MobileHomeScreen(); // 1. PERSONEL MODU
@@ -62,6 +63,8 @@ class PdksApp extends StatelessWidget {
               return const BossShell();        // 3. PATRON (YÖNETİM & CEO) MODU
             case UserRole.admin:
               return const AdminShell();       // 4. ADMİN (SİSTEM YÖNETİCİSİ) MODU
+            case UserRole.cafeteria:
+              return const CafeteriaShell();   // 5. YEMEKHANE PERSONELİ MODU
           }
         },
       ),

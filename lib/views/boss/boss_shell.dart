@@ -6,6 +6,7 @@ import '../../models/attendance_record.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
+import '../notifications/notifications_screen.dart';
 
 class BossShell extends StatefulWidget {
   const BossShell({super.key});
@@ -48,6 +49,34 @@ class _BossShellState extends State<BossShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.notifications_none_rounded, color: AppColors.text(context)),
+                if (pdks.unreadNotificationsCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          pdks.unreadNotificationsCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Bildirimler',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
+          ),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

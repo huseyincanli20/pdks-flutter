@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum UserRole { employee, hr, boss, admin }
+enum UserRole { employee, hr, boss, admin, cafeteria }
 
 extension UserRoleExtension on UserRole {
   String get label {
@@ -13,6 +13,8 @@ extension UserRoleExtension on UserRole {
         return 'Patron (Yönetim)';
       case UserRole.admin:
         return 'Sistem Yöneticisi (Admin)';
+      case UserRole.cafeteria:
+        return 'Yemekhane Personeli';
     }
   }
 
@@ -26,6 +28,8 @@ extension UserRoleExtension on UserRole {
         return 'Patron';
       case UserRole.admin:
         return 'Admin';
+      case UserRole.cafeteria:
+        return 'Yemekhane';
     }
   }
 }
@@ -130,6 +134,7 @@ class Employee {
     if (r == 'hr' || r == 'hradmin') parsedRole = UserRole.hr;
     if (r == 'boss' || r == 'patron' || r == 'ceo') parsedRole = UserRole.boss;
     if (r == 'admin') parsedRole = UserRole.admin;
+    if (r == 'cafeteria' || r == 'yemekhane') parsedRole = UserRole.cafeteria;
 
     return Employee(
       id: json['id'] ?? 0,

@@ -111,6 +111,22 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        selectedColor: AppColors.primary,
+        disabledColor: const Color(0xFFE2E8F0),
+        labelStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
+        secondaryLabelStyle: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: AppColors.textPrimary),
+        bodyMedium: TextStyle(color: AppColors.textPrimary),
+        bodySmall: TextStyle(color: AppColors.textSecondary),
+        titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: AppColors.textSecondary),
+      ),
     );
   }
 
@@ -265,6 +281,22 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: surfaceColor,
+        selectedColor: primaryColor,
+        disabledColor: surfaceColor.withOpacity(0.5),
+        labelStyle: const TextStyle(color: AppColors.darkTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
+        secondaryLabelStyle: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+        side: BorderSide(color: borderColor),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: AppColors.darkTextPrimary),
+        bodyMedium: TextStyle(color: AppColors.darkTextPrimary),
+        bodySmall: TextStyle(color: AppColors.darkTextSecondary),
+        titleMedium: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: AppColors.darkTextSecondary),
       ),
     );
   }

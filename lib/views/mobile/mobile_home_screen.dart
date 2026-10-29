@@ -10,6 +10,8 @@ import '../../state/pdks_state.dart';
 import 'qr_scanner_screen.dart';
 import 'leave_request_screen.dart';
 import '../common/app_drawer.dart';
+import '../notifications/notifications_screen.dart';
+import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../../core/utils/marquee_text.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -182,8 +184,32 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
             onPressed: () => pdks.toggleTheme(),
           ),
           IconButton(
-            icon: Icon(Icons.notifications_none, color: AppColors.text(context)),
-            onPressed: () {},
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.notifications_none_rounded, color: AppColors.text(context)),
+                if (pdks.unreadNotificationsCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          pdks.unreadNotificationsCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Bildirimler',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
           ),
         ],
       ),
@@ -383,6 +409,82 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Günün Yemekhane Menüsü Kartı (Hızlı Erişim)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardBg(context),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFEA580C).withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEA580C).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(Icons.restaurant_rounded, color: Color(0xFFEA580C), size: 24),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Günün Yemekhane Menüsü',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEA580C).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '~${pdks.todayMenu.totalCalories} kcal',
+                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${pdks.todayMenu.soup} • ${pdks.todayMenu.mainDish} • ${pdks.todayMenu.sideDish}',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSub(context)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFFEA580C)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 24),

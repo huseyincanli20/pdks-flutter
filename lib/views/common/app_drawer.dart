@@ -9,6 +9,8 @@ import '../menu/business_card_screen.dart';
 import '../menu/favorites_screen.dart';
 import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../cafeteria/cafeteria_menu_view_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -122,22 +124,32 @@ class AppDrawer extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: roleColor, width: 2),
-                          gradient: LinearGradient(
-                            colors: [roleColor.withOpacity(0.3), roleColor],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          image: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(user.avatarUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                          gradient: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                              ? LinearGradient(
+                                  colors: [roleColor.withOpacity(0.3), roleColor],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
                         ),
-                        child: Center(
-                          child: Text(
-                            user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
+                        child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                            ? Center(
+                                child: Text(
+                                  user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -244,6 +256,22 @@ class AppDrawer extends StatelessWidget {
                     title: 'Kişiler',
                     subtitle: 'Şirket rehberi & mesai arkadaşları',
                     destination: const ContactsScreen(),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.notifications_none_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    title: 'Bildirimler',
+                    subtitle: pdks.unreadNotificationsCount > 0 ? '${pdks.unreadNotificationsCount} yeni bildirim' : 'Duyurular & onaylar',
+                    destination: const NotificationsScreen(),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.restaurant_rounded,
+                    color: const Color(0xFFEA580C),
+                    title: 'Yemekhane Menüsü',
+                    subtitle: 'Günün öğle yemeği & besin değerleri',
+                    destination: const CafeteriaMenuViewScreen(),
                   ),
                   _buildDrawerTile(
                     context,

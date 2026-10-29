@@ -265,11 +265,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
         const SizedBox(height: 18),
         const Center(
-          child: Text('Hızlı Rol Girişleri (4 Farklı Mod):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+          child: Text('Hızlı Rol Girişleri (5 Farklı Mod):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
         ),
         const SizedBox(height: 10),
 
-        // 4 Rol Butonu
+        // 5 Rol Butonu
         Row(
           children: [
             Expanded(
@@ -316,6 +316,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: _buildRoleButton(
+            label: 'Yemekhane Şefi (Mutfak & Menü)',
+            icon: Icons.restaurant_menu_rounded,
+            color: const Color(0xFFEA580C),
+            email: 'yemekhane@sirket.com',
+            pin: '5678',
+          ),
         ),
       ],
     );

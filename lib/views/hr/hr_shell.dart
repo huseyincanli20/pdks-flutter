@@ -8,6 +8,7 @@ import '../web_admin/employees_tab.dart';
 import '../web_admin/shifts_tab.dart';
 import '../web_admin/leaves_management_tab.dart';
 import '../web_admin/reports_puantaj_tab.dart';
+import '../notifications/notifications_screen.dart';
 
 class HrShell extends StatefulWidget {
   const HrShell({super.key});
@@ -51,6 +52,34 @@ class _HrShellState extends State<HrShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.notifications_none_rounded, color: AppColors.text(context)),
+                if (context.watch<PdksState>().unreadNotificationsCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          context.watch<PdksState>().unreadNotificationsCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Bildirimler',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
+          ),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

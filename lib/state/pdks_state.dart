@@ -4,6 +4,8 @@ import '../models/employee.dart';
 import '../models/attendance_record.dart';
 import '../models/leave_request.dart';
 import '../models/shift_schedule.dart';
+import '../models/app_notification.dart';
+import '../models/cafeteria_menu.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/theme/app_theme_type.dart';
@@ -27,6 +29,74 @@ class PdksState extends ChangeNotifier {
   List<AttendanceRecord> _records = [];
   List<LeaveRequest> _leaves = [];
   List<ShiftSchedule> _shifts = [];
+
+  // Bildirimler
+  List<AppNotification> _notifications = [
+    AppNotification(
+      id: 'notif_1',
+      title: 'Günün Yemekhane Menüsü Hazır 🍽️',
+      message: 'Öğle Menüsü: Süzme Mercimek Çorbası, Hasanpaşa Köfte, Tereyağlı Pirinç Pilavı, Mevsim Salata & Kazandibi (~820 kcal).',
+      timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
+      isRead: false,
+      type: NotificationType.cafeteria,
+      icon: Icons.restaurant_rounded,
+      color: const Color(0xFFEA580C),
+    ),
+    AppNotification(
+      id: 'notif_2',
+      title: 'Mesai Girişi Başarılı ⏰',
+      message: 'Ofis Wi-Fi (Sirket_Personel) üzerinden saat 08:26\'da mesai başlangıcınız kaydedildi.',
+      timestamp: DateTime.now().subtract(const Duration(hours: 4, minutes: 20)),
+      isRead: false,
+      type: NotificationType.attendance,
+      icon: Icons.login_rounded,
+      color: const Color(0xFF10B981),
+    ),
+    AppNotification(
+      id: 'notif_3',
+      title: 'İzin Talebi Onaylandı 🌴',
+      message: 'İnsan Kaynakları Direktörlüğü 3 günlük mazeret izni talebinizi onayladı.',
+      timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      isRead: true,
+      type: NotificationType.leave,
+      icon: Icons.beach_access_rounded,
+      color: const Color(0xFF0284C7),
+    ),
+    AppNotification(
+      id: 'notif_4',
+      title: '29 Ekim Cumhuriyet Bayramı Duyurusu 🇹🇷',
+      message: 'Değerli çalışma arkadaşlarımız, 29 Ekim Cumhuriyet Bayramı sebebiyle yarın şirketimiz tam gün resmi tatildir.',
+      timestamp: DateTime.now().subtract(const Duration(days: 2)),
+      isRead: true,
+      type: NotificationType.announcement,
+      icon: Icons.campaign_rounded,
+      color: const Color(0xFFEF4444),
+    ),
+    AppNotification(
+      id: 'notif_5',
+      title: 'Ekim 2026 Puantaj Raporu Hazır 📊',
+      message: 'Bu aya ait 176 saatlik normal çalışma ve onaylanan fazla mesai kayıtlarınız puantaj çizelgesine işlendi.',
+      timestamp: DateTime.now().subtract(const Duration(days: 3)),
+      isRead: true,
+      type: NotificationType.system,
+      icon: Icons.assessment_outlined,
+      color: const Color(0xFF8B5CF6),
+    ),
+  ];
+
+  // Günün Yemekhane Menüsü
+  CafeteriaMenu _todayMenu = CafeteriaMenu(
+    date: DateTime.now(),
+    soup: 'Süzme Mercimek Çorbası',
+    mainDish: 'Hasanpaşa Köfte',
+    sideDish: 'Tereyağlı Pirinç Pilavı',
+    dessertOrSalad: 'Mevsim Salata & Kazandibi',
+    drink: 'Ayran / Su',
+    totalCalories: 820,
+    vegetarianAlternative: 'Zeytinyağlı Enginar & Fırın Sebze',
+    chefNote: 'Glüten ve laktoz içerir. Menümüz taze ve organik malzemelerle hazırlanmıştır.',
+    updatedBy: 'Hasan Usta (Mutfak Şefi)',
+  );
 
   // Sistem Rolleri ve Patron/Admin tarafından eklenen roller
   final List<AppRoleItem> _roles = [
@@ -67,6 +137,16 @@ class PdksState extends ChangeNotifier {
       baseRole: UserRole.admin,
       color: Color(0xFF9333EA),
       icon: Icons.admin_panel_settings_outlined,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+    ),
+    const AppRoleItem(
+      id: 'role_cafeteria',
+      name: 'Yemekhane Personeli',
+      description: 'Yemekhane menüsü düzenleme, yayınlama ve porsiyon takibi yetkileri',
+      baseRole: UserRole.cafeteria,
+      color: Color(0xFFEA580C),
+      icon: Icons.restaurant_menu_rounded,
       isSystemRole: true,
       createdBy: 'Sistem',
     ),
@@ -132,6 +212,68 @@ class PdksState extends ChangeNotifier {
   List<AttendanceRecord> get records => _records;
   List<LeaveRequest> get leaves => _leaves;
   List<ShiftSchedule> get shifts => _shifts;
+
+  // Bildirim Getters ve Metotları
+  List<AppNotification> get notifications => List.unmodifiable(_notifications);
+  int get unreadNotificationsCount => _notifications.where((n) => !n.isRead).length;
+
+  void markNotificationAsRead(String id) {
+    final idx = _notifications.indexWhere((n) => n.id == id);
+    if (idx != -1 && !_notifications[idx].isRead) {
+      _notifications[idx] = _notifications[idx].copyWith(isRead: true);
+      notifyListeners();
+    }
+  }
+
+  void markAllNotificationsAsRead() {
+    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+    notifyListeners();
+  }
+
+  void clearAllNotifications() {
+    _notifications.clear();
+    notifyListeners();
+  }
+
+  void addNotification(AppNotification notif) {
+    _notifications.insert(0, notif);
+    notifyListeners();
+  }
+
+  // Yemekhane Menüsü Getters ve Metotları
+  CafeteriaMenu get todayMenu => _todayMenu;
+
+  void updateTodayMenu(CafeteriaMenu menu) {
+    _todayMenu = menu;
+    // Otomatik olarak tüm personele bildirim gönder
+    addNotification(AppNotification(
+      id: 'menu_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Günün Yemekhane Menüsü Güncellendi 🍽️',
+      message: '${menu.soup}, ${menu.mainDish}, ${menu.sideDish}, ${menu.dessertOrSalad} (~${menu.totalCalories} kcal)',
+      timestamp: DateTime.now(),
+      isRead: false,
+      type: NotificationType.cafeteria,
+      icon: Icons.restaurant_rounded,
+      color: const Color(0xFFEA580C),
+    ));
+    notifyListeners();
+  }
+
+  // Resim / Avatar Güncelleme Metotları
+  void updateEmployeeAvatar(int employeeId, String avatarUrl) {
+    final idx = _employees.indexWhere((e) => e.id == employeeId);
+    if (idx != -1) {
+      _employees[idx] = _employees[idx].copyWith(avatarUrl: avatarUrl);
+      if (_currentUser.id == employeeId) {
+        _currentUser = _employees[idx];
+      }
+      notifyListeners();
+    }
+  }
+
+  void updateCurrentUserAvatar(String avatarUrl) {
+    updateEmployeeAvatar(_currentUser.id, avatarUrl);
+  }
 
   List<AppRoleItem> get roles => List.unmodifiable(_roles);
   List<AppRoleItem> get customRoles => _roles.where((r) => !r.isSystemRole).toList();
@@ -245,8 +387,22 @@ class PdksState extends ChangeNotifier {
       usedLeaveDays: 2,
     );
 
+    final yemekhane = Employee(
+      id: 7,
+      fullName: 'Hasan Usta',
+      email: 'yemekhane@sirket.com',
+      phone: '+90 533 777 88 99',
+      department: 'Yemekhane & Sosyal Tesisler',
+      title: 'Mutfak Şefi',
+      pinCode: '5678',
+      role: UserRole.cafeteria,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 1,
+      avatarUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
+    );
+
     _currentUser = personel; // Varsayılan personel
-    _employees = [personel, ik, patron, admin, diger1, diger2];
+    _employees = [personel, ik, patron, admin, diger1, diger2, yemekhane];
 
     final now = DateTime.now();
     _records = [
@@ -375,6 +531,8 @@ class PdksState extends ChangeNotifier {
       matched = _employees.firstWhere((e) => e.role == UserRole.boss);
     } else if (cleanEmail == 'admin@sirket.com' || cleanEmail == 'admin') {
       matched = _employees.firstWhere((e) => e.role == UserRole.admin);
+    } else if (cleanEmail == 'yemekhane@sirket.com' || cleanEmail == 'yemekhane') {
+      matched = _employees.firstWhere((e) => e.role == UserRole.cafeteria);
     }
 
     if (matched != null) {

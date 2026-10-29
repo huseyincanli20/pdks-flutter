@@ -65,13 +65,20 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<PdksState>().currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         title: const Text('İzin Talebi Oluştur'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -79,23 +86,38 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
             children: [
               // Bakiye Kartı
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryLight.withOpacity(0.3)),
+                  color: AppColors.cardBg(context),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cardBorder(context)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.beach_access, color: AppColors.primary, size: 32),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryOf(context).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.beach_access_rounded, color: AppColors.primaryOf(context), size: 28),
+                    ),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Kalan Yıllık İzin Hakkınız', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Text('Kalan Yıllık İzin Hakkınız', style: TextStyle(color: AppColors.textSub(context), fontSize: 13)),
+                        const SizedBox(height: 2),
                         Text(
                           '${user.remainingLeaveDays} Gün',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.primaryDark),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppColors.primaryOf(context)),
                         ),
                       ],
                     ),
@@ -104,12 +126,12 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               ),
 
               const SizedBox(height: 24),
-              const Text('İzin Türü', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
+              Text('İzin Türü', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context))),
+              const SizedBox(height: 10),
 
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 children: LeaveType.values.map((type) {
                   final isSelected = _selectedType == type;
                   String label = '';
@@ -130,10 +152,15 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   return ChoiceChip(
                     label: Text(label),
                     selected: isSelected,
-                    selectedColor: AppColors.primary,
+                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    selectedColor: AppColors.primaryOf(context),
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primaryOf(context) : AppColors.cardBorder(context),
+                      width: isSelected ? 1.5 : 1,
+                    ),
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : AppColors.text(context),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
                     onSelected: (val) {
                       if (val) setState(() => _selectedType = type);
@@ -143,41 +170,41 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               ),
 
               const SizedBox(height: 24),
-              const Text('Tarih Aralığı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
+              Text('Tarih Aralığı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context))),
+              const SizedBox(height: 10),
 
               InkWell(
                 onTap: _pickDateRange,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    color: AppColors.cardBg(context),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder(context)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
+                          Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primaryOf(context)),
                           const SizedBox(width: 12),
                           Text(
                             '${DateFormat('dd.MM.yyyy').format(_startDate)} - ${DateFormat('dd.MM.yyyy').format(_endDate)}',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.text(context)),
                           ),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: AppColors.primaryOf(context).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           '$_calculatedDays Gün',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 12),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryOf(context), fontSize: 12),
                         ),
                       ),
                     ],
@@ -186,14 +213,16 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               ),
 
               const SizedBox(height: 24),
-              const Text('Talep Açıklaması / Not', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
+              Text('Talep Açıklaması / Not', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.text(context))),
+              const SizedBox(height: 10),
 
               TextFormField(
                 controller: _reasonController,
                 maxLines: 4,
-                decoration: const InputDecoration(
+                style: TextStyle(color: AppColors.text(context)),
+                decoration: InputDecoration(
                   hintText: 'İzin alma gerekçenizi ve acil durumda ulaşılabilecek bilgiyi yazınız...',
+                  hintStyle: TextStyle(color: AppColors.textSub(context)),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -208,10 +237,16 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryOf(context),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                   icon: _isSubmitting
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.send),
-                  label: const Text('İzin Talebini Onaya Gönder'),
+                      : const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('İzin Talebini Onaya Gönder', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   onPressed: _isSubmitting ? null : _submit,
                 ),
               ),

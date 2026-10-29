@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
+import '../notifications/notifications_screen.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -72,6 +73,34 @@ class _AdminShellState extends State<AdminShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.notifications_none_rounded, color: AppColors.text(context)),
+                if (pdks.unreadNotificationsCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Center(
+                        child: Text(
+                          pdks.unreadNotificationsCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            tooltip: 'Bildirimler',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
+          ),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
