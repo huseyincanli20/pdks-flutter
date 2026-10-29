@@ -995,6 +995,7 @@ class EmployeesTab extends StatelessWidget {
     final employees = pdks.employees;
     final pendingEmployees = pdks.pendingEmployees;
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -1043,9 +1044,14 @@ class EmployeesTab extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Text(
+                                Text(
                                   'İK ONAYI BEKLEYEN KAYITLAR',
-                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFFB45309), letterSpacing: 0.5),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                    color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
@@ -1061,9 +1067,9 @@ class EmployeesTab extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const Text(
+                            Text(
                               'Yeni kayıt olan adayların departman ve unvanını atayarak onaylayın.',
-                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E)),
                             ),
                           ],
                         ),
@@ -1092,7 +1098,7 @@ class EmployeesTab extends StatelessWidget {
                           backgroundColor: const Color(0xFFF59E0B).withOpacity(0.15),
                           child: Text(
                             pending.fullName.isNotEmpty ? pending.fullName.substring(0, 2).toUpperCase() : 'P',
-                            style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold),
+                            style: TextStyle(color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706), fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1100,21 +1106,25 @@ class EmployeesTab extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(pending.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                              Text(pending.fullName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.text(context))),
                               Text(
                                 '${pending.email} • ${pending.phone}',
-                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
                               ),
                               const SizedBox(height: 2),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.15),
+                                  color: Colors.amber.withOpacity(isDark ? 0.22 : 0.15),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '⏳ İK Onayı Bekliyor',
-                                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                  ),
                                 ),
                               ),
                             ],

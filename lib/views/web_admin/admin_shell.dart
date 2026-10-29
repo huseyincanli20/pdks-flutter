@@ -130,13 +130,16 @@ class _AdminShellState extends State<AdminShell> {
                 Container(
                   height: 70,
                   padding: const EdgeInsets.symmetric(horizontal: 32),
-                  color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg(context),
+                    border: Border(bottom: BorderSide(color: AppColors.cardBorder(context))),
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         _titles[_selectedIndex],
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                       ),
                       Row(
                         children: [

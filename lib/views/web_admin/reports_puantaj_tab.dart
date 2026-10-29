@@ -158,6 +158,7 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
   Widget build(BuildContext context) {
     final employees = context.watch<PdksState>().employees;
     final isMobile = MediaQuery.of(context).size.width < 768;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -290,13 +291,13 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
                     child: DataTable(
                       headingRowColor: WidgetStateProperty.all(AppColors.subtle(context)),
                       columnSpacing: 24,
-                      columns: const [
-                        DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Normal (Saat)', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Fazla Mesai', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Kalan İzin', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Onay Durumu', style: TextStyle(fontWeight: FontWeight.bold))),
+                      columns: [
+                        DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
+                        DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
+                        DataColumn(label: Text('Normal (Saat)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
+                        DataColumn(label: Text('Fazla Mesai', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
+                        DataColumn(label: Text('Kalan İzin', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
+                        DataColumn(label: Text('Onay Durumu', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context)))),
                       ],
                       rows: employees.map((emp) {
                         return DataRow(
@@ -306,31 +307,40 @@ class _ReportsPuantajTabState extends State<ReportsPuantajTab> {
                                 children: [
                                   CircleAvatar(
                                     radius: 12,
-                                    backgroundColor: AppColors.primaryLight.withOpacity(0.2),
+                                    backgroundColor: AppColors.primaryOf(context).withOpacity(0.2),
                                     child: Text(
                                       emp.fullName.isNotEmpty ? emp.fullName.substring(0, 1) : 'P',
-                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? const Color(0xFF60A5FA) : AppColors.primaryDark,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text(emp.fullName, style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.text(context))),
                                 ],
                               ),
                             ),
-                            DataCell(Text(emp.department)),
-                            const DataCell(Text('0 Sa.')),
-                            const DataCell(Text('-')),
-                            DataCell(Text('${emp.remainingLeaveDays} Gün')),
+                            DataCell(Text(emp.department, style: TextStyle(color: AppColors.text(context)))),
+                            DataCell(Text('0 Sa.', style: TextStyle(color: AppColors.text(context)))),
+                            DataCell(Text('-', style: TextStyle(color: AppColors.textSub(context)))),
+                            DataCell(Text('${emp.remainingLeaveDays} Gün', style: TextStyle(color: AppColors.text(context), fontWeight: FontWeight.w600))),
                             DataCell(
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.textSecondary.withOpacity(0.12),
+                                  color: const Color(0xFFF59E0B).withOpacity(isDark ? 0.22 : 0.14),
                                   borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.5)),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Bekliyor',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),

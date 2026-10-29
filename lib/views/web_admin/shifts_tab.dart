@@ -26,7 +26,11 @@ class ShiftsTab extends StatelessWidget {
             children: [
               Text(
                 'Vardiya & Çalışma Saatleri',
-                style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.text(context),
+                ),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -49,9 +53,16 @@ class ShiftsTab extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.cardBg(context),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.cardBorder(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,16 +70,27 @@ class ShiftsTab extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(shift.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            shift.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                              color: AppColors.text(context),
+                            ),
+                          ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primaryOf(context).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${shift.assignedEmployeeCount} Personel',
-                              style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: AppColors.primaryOf(context),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -76,18 +98,25 @@ class ShiftsTab extends StatelessWidget {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 24, color: AppColors.primary),
+                          Icon(Icons.access_time_filled_rounded, size: 24, color: AppColors.primaryOf(context)),
                           const SizedBox(width: 10),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '${shift.startTime} - ${shift.endTime}',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.text(context),
+                                ),
                               ),
                               Text(
                                 'Mola: ${shift.breakMinutes} dk',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                style: TextStyle(
+                                  color: AppColors.textSub(context),
+                                  fontSize: 11.5,
+                                ),
                               ),
                             ],
                           ),
@@ -99,12 +128,20 @@ class ShiftsTab extends StatelessWidget {
                         runSpacing: 4,
                         children: shift.activeDays
                             .map((day) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: AppColors.background,
+                                    color: AppColors.subtle(context),
                                     borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppColors.cardBorder(context)),
                                   ),
-                                  child: Text(day, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                                  child: Text(
+                                    day,
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.text(context),
+                                    ),
+                                  ),
                                 ))
                             .toList(),
                       ),

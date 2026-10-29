@@ -31,16 +31,18 @@ class DashboardTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildKpiCard(
+                        context,
                         title: 'Toplam Personel',
                         value: pdks.totalEmployeesCount.toString(),
                         icon: Icons.people,
-                        color: AppColors.primary,
+                        color: AppColors.primaryOf(context),
                         subtitle: 'Tüm aktif çalışanlar',
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildKpiCard(
+                        context,
                         title: 'Anlık Ofiste',
                         value: pdks.presentEmployeesCount.toString(),
                         icon: Icons.check_circle,
@@ -55,6 +57,7 @@ class DashboardTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildKpiCard(
+                        context,
                         title: 'İzinli / Raporlu',
                         value: pdks.onLeaveEmployeesCount.toString(),
                         icon: Icons.beach_access,
@@ -65,6 +68,7 @@ class DashboardTab extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildKpiCard(
+                        context,
                         title: 'Geç Kalan',
                         value: pdks.lateEmployeesCount.toString(),
                         icon: Icons.timer_off,
@@ -81,16 +85,18 @@ class DashboardTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildKpiCard(
+                    context,
                     title: 'Toplam Personel',
                     value: pdks.totalEmployeesCount.toString(),
                     icon: Icons.people,
-                    color: AppColors.primary,
+                    color: AppColors.primaryOf(context),
                     subtitle: 'Tüm aktif çalışanlar',
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildKpiCard(
+                    context,
                     title: 'Anlık Ofiste / İçeride',
                     value: pdks.presentEmployeesCount.toString(),
                     icon: Icons.check_circle,
@@ -101,6 +107,7 @@ class DashboardTab extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildKpiCard(
+                    context,
                     title: 'İzinli / Raporlu',
                     value: pdks.onLeaveEmployeesCount.toString(),
                     icon: Icons.beach_access,
@@ -111,6 +118,7 @@ class DashboardTab extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildKpiCard(
+                    context,
                     title: 'Geç Kalanlar',
                     value: pdks.lateEmployeesCount.toString(),
                     icon: Icons.timer_off,
@@ -127,18 +135,18 @@ class DashboardTab extends StatelessWidget {
           if (isMobile)
             Column(
               children: [
-                _buildLiveMovementCard(pdks),
+                _buildLiveMovementCard(context, pdks),
                 const SizedBox(height: 20),
-                _buildDepartmentCard(),
+                _buildDepartmentCard(context),
               ],
             )
           else
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 3, child: _buildLiveMovementCard(pdks)),
+                Expanded(flex: 3, child: _buildLiveMovementCard(context, pdks)),
                 const SizedBox(width: 24),
-                Expanded(flex: 2, child: _buildDepartmentCard()),
+                Expanded(flex: 2, child: _buildDepartmentCard(context)),
               ],
             ),
         ],
@@ -146,7 +154,8 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  Widget _buildKpiCard({
+  Widget _buildKpiCard(
+    BuildContext context, {
     required String title,
     required String value,
     required IconData icon,
@@ -156,12 +165,12 @@ class DashboardTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -175,7 +184,7 @@ class DashboardTab extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: AppColors.textSub(context), fontSize: 12, fontWeight: FontWeight.w600),
               ),
               Container(
                 padding: const EdgeInsets.all(7),
@@ -190,12 +199,12 @@ class DashboardTab extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.text(context)),
           ),
           const SizedBox(height: 3),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 10, color: AppColors.textSub(context)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -204,13 +213,13 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLiveMovementCard(PdksState pdks) {
+  Widget _buildLiveMovementCard(BuildContext context, PdksState pdks) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,9 +227,9 @@ class DashboardTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Canlı Turnike & GPS Akışı',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -246,23 +255,24 @@ class DashboardTab extends StatelessWidget {
               headingRowHeight: 38,
               dataRowMinHeight: 46,
               dataRowMaxHeight: 46,
-              columns: const [
-                DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text('İşlem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text('Saat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text('Yöntem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                DataColumn(label: Text('Not', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              headingRowColor: WidgetStateProperty.all(AppColors.subtle(context)),
+              columns: [
+                DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
+                DataColumn(label: Text('İşlem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
+                DataColumn(label: Text('Saat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
+                DataColumn(label: Text('Yöntem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
+                DataColumn(label: Text('Not', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
               ],
               rows: pdks.records.map((r) {
                 final isCheckIn = r.type == AttendanceType.checkIn;
                 return DataRow(
                   cells: [
-                    DataCell(Text(r.employeeName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                    DataCell(Text(r.employeeName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.text(context)))),
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                          color: (isCheckIn ? AppColors.success : AppColors.danger).withOpacity(0.1),
+                          color: (isCheckIn ? AppColors.success : AppColors.danger).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -275,9 +285,9 @@ class DashboardTab extends StatelessWidget {
                         ),
                       ),
                     ),
-                    DataCell(Text(DateFormat('HH:mm').format(r.timestamp), style: const TextStyle(fontSize: 12))),
-                    DataCell(Text(r.methodLabel, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))),
-                    DataCell(Text(r.note ?? 'Doğrulandı', style: const TextStyle(fontSize: 11, color: AppColors.textMuted))),
+                    DataCell(Text(DateFormat('HH:mm').format(r.timestamp), style: TextStyle(fontSize: 12, color: AppColors.text(context)))),
+                    DataCell(Text(r.methodLabel, style: TextStyle(fontSize: 11, color: AppColors.textSub(context)))),
+                    DataCell(Text(r.note ?? 'Doğrulandı', style: TextStyle(fontSize: 11, color: AppColors.textSub(context)))),
                   ],
                 );
               }).toList(),
@@ -288,42 +298,42 @@ class DashboardTab extends StatelessWidget {
     );
   }
 
-  Widget _buildDepartmentCard() {
+  Widget _buildDepartmentCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.cardBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Departman Katılım Oranları', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          Text('Departman Katılım Oranları', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context))),
           const SizedBox(height: 18),
-          _buildDepartmentProgress('Yazılım & Ar-Ge', 0.90, '5/6 Personel'),
+          _buildDepartmentProgress(context, 'Yazılım & Ar-Ge', 0.90, '5/6 Personel'),
           const SizedBox(height: 14),
-          _buildDepartmentProgress('İnsan Kaynakları', 1.0, '2/2 Personel'),
+          _buildDepartmentProgress(context, 'İnsan Kaynakları', 1.0, '2/2 Personel'),
           const SizedBox(height: 14),
-          _buildDepartmentProgress('Satış & Pazarlama', 0.75, '3/4 Personel'),
+          _buildDepartmentProgress(context, 'Satış & Pazarlama', 0.75, '3/4 Personel'),
           const SizedBox(height: 14),
-          _buildDepartmentProgress('Mali İşler & Muhasebe', 1.0, '3/3 Personel'),
+          _buildDepartmentProgress(context, 'Mali İşler & Muhasebe', 1.0, '3/3 Personel'),
           const SizedBox(height: 14),
-          _buildDepartmentProgress('Operasyon & Saha', 0.90, '9/10 Personel'),
+          _buildDepartmentProgress(context, 'Operasyon & Saha', 0.90, '9/10 Personel'),
         ],
       ),
     );
   }
 
-  Widget _buildDepartmentProgress(String name, double percent, String count) {
+  Widget _buildDepartmentProgress(BuildContext context, String name, double percent, String count) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-            Text(count, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            Text(name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.text(context))),
+            Text(count, style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
           ],
         ),
         const SizedBox(height: 6),
@@ -331,8 +341,8 @@ class DashboardTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: percent,
-            backgroundColor: AppColors.divider,
-            valueColor: AlwaysStoppedAnimation<Color>(percent >= 0.9 ? AppColors.success : (percent >= 0.7 ? AppColors.primary : AppColors.warning)),
+            backgroundColor: AppColors.subtle(context),
+            valueColor: AlwaysStoppedAnimation<Color>(percent >= 0.9 ? AppColors.success : (percent >= 0.7 ? AppColors.primaryOf(context) : AppColors.warning)),
             minHeight: 6,
           ),
         ),

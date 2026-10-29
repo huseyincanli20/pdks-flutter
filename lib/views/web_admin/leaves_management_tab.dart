@@ -26,7 +26,11 @@ class LeavesManagementTab extends StatelessWidget {
         children: [
           Text(
             'İzin Talepleri & Onay Süreci (${leaves.length})',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text(context),
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -45,9 +49,16 @@ class LeavesManagementTab extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.cardBg(context),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.cardBorder(context)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +68,7 @@ class LeavesManagementTab extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.12),
+                              color: statusColor.withOpacity(0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.beach_access, color: statusColor, size: 20),
@@ -72,25 +83,37 @@ class LeavesManagementTab extends StatelessWidget {
                                     Flexible(
                                       child: Text(
                                         leave.employeeName,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13.5,
+                                          color: AppColors.text(context),
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: AppColors.background,
+                                        color: AppColors.subtle(context),
                                         borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: AppColors.cardBorder(context)),
                                       ),
-                                      child: Text(leave.typeLabel, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                                      child: Text(
+                                        leave.typeLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.text(context),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${DateFormat('dd.MM.yyyy').format(leave.startDate)} - ${DateFormat('dd.MM.yyyy').format(leave.endDate)} (${leave.totalDays} Gün)',
-                                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                  style: TextStyle(color: AppColors.textSub(context), fontSize: 11.5),
                                 ),
                               ],
                             ),
@@ -98,12 +121,13 @@ class LeavesManagementTab extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.12),
+                              color: statusColor.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: statusColor.withOpacity(0.35)),
                             ),
                             child: Text(
                               leave.statusLabel,
-                              style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: statusColor, fontSize: 10.5, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -113,12 +137,13 @@ class LeavesManagementTab extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.subtle(context),
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.cardBorder(context)),
                         ),
                         child: Text(
                           '"${leave.reason}"',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontStyle: FontStyle.italic),
+                          style: TextStyle(fontSize: 12, color: AppColors.text(context), fontStyle: FontStyle.italic),
                         ),
                       ),
                       if (isPending) ...[
