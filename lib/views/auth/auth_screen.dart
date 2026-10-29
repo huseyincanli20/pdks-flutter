@@ -14,12 +14,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   late TabController _tabController;
 
   // Login Controllers
-  final _loginEmailController = TextEditingController(text: 'personel@sirket.com');
-  final _loginPinController = TextEditingController(text: '1234');
+  final _loginEmailController = TextEditingController();
+  final _loginPinController = TextEditingController();
   bool _loginObscure = true;
 
   // Register Controllers
-  final _regCompanyCodeController = TextEditingController(text: 'ACME');
+  final _regCompanyCodeController = TextEditingController();
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPhoneController = TextEditingController();
@@ -144,7 +144,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       companyCode: companyCode,
       fullName: name,
       email: email,
-      phone: phone.isEmpty ? '+90 555 000 00 00' : phone,
+      phone: phone,
       pin: pin,
     );
 
@@ -395,7 +395,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           controller: _loginEmailController,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            hintText: 'ornek@sirket.com',
+            hintText: 'E-posta adresiniz',
             prefixIcon: const Icon(Icons.email_outlined, size: 20),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
@@ -413,7 +413,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           keyboardType: TextInputType.number,
           maxLength: 6,
           decoration: InputDecoration(
-            hintText: 'PIN Kodu (Örn: 1234)',
+            hintText: 'PIN Kodunuz',
             counterText: '',
             prefixIcon: const Icon(Icons.lock_outline, size: 20),
             filled: true,
@@ -443,7 +443,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         const SizedBox(height: 18),
         const Center(
           child: Text(
-            'Hızlı Demo Rol Girişleri:',
+            'Hızlı Rol Seçimi (Test Girişi):',
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
           ),
         ),
@@ -562,16 +562,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             'Şirket Kodu *',
             _regCompanyCodeController,
             Icons.apartment_rounded,
-            hint: 'Örn: ACME, NOVA, OZDEMIR',
+            hint: 'Şirket Kodu',
             textCapitalization: TextCapitalization.characters,
             helperText: 'Yetkilinizden aldığınız firma kodunu giriniz.',
           ),
           const SizedBox(height: 8),
-          _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ahmet Yılmaz'),
+          _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ad Soyad'),
           const SizedBox(height: 8),
-          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'ahmet@sirket.com', keyboardType: TextInputType.emailAddress),
+          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress),
           const SizedBox(height: 8),
-          _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '+90 532 000 00 00', keyboardType: TextInputType.phone),
+          _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '05XX XXX XX XX', keyboardType: TextInputType.phone),
           const SizedBox(height: 10),
 
           // İK Onay Bilgilendirme Kutusu
@@ -605,7 +605,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             keyboardType: TextInputType.number,
             maxLength: 6,
             decoration: InputDecoration(
-              hintText: '4 Haneli PIN (örn: 1234)',
+              hintText: '4 Haneli PIN Kodu',
               counterText: '',
               prefixIcon: const Icon(Icons.lock_outline, size: 18),
               filled: true,
