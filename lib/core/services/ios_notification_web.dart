@@ -3,7 +3,7 @@ import 'dart:html' as html;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
 
-/// Web ortamında tarayıcı/iOS PWA bildirimleri ve ses efekti
+/// Web ortamında tarayıcı / iOS Safari / macOS Apple Bildirim Merkezine bildirim ilet
 Future<void> platformTriggerWebNotification({
   required String title,
   required String body,
@@ -21,7 +21,7 @@ Future<void> platformTriggerWebNotification({
       }
     }
 
-    // Telefon titreşim motoru tetikleme (iOS Safari / Android)
+    // Telefon titreşim motoru tetikleme (iOS Safari / Android haptic)
     try {
       js.context.callMethod('eval', [
         'if (window.navigator && window.navigator.vibrate) { window.navigator.vibrate([100, 60, 140]); }'
@@ -30,6 +30,27 @@ Future<void> platformTriggerWebNotification({
   } catch (_) {
     // Tarayıcı güvenlik veya izin istisnalarını sessizce yut
   }
+}
+
+/// Kullanıcı etkileşimi ile Apple Bildirim Merkezi izin penceresini aç
+Future<bool> platformRequestNotificationPermission() async {
+  try {
+    if (html.Notification.supported) {
+      final perm = await html.Notification.requestPermission();
+      return perm == 'granted';
+    }
+  } catch (_) {}
+  return false;
+}
+
+/// Mevcut bildirim izin durumu ('granted', 'denied', 'default', 'unsupported')
+String platformGetNotificationPermissionStatus() {
+  try {
+    if (html.Notification.supported) {
+      return html.Notification.permission ?? 'default';
+    }
+  } catch (_) {}
+  return 'unsupported';
 }
 
 /// Web Audio API ile saf Apple Tri-Tone / Glass bildirim sesi sentezleme

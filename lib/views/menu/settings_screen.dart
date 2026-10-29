@@ -7,6 +7,7 @@ import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
 import '../../models/employee.dart';
 import '../common/firebase_config_dialog.dart';
+import '../../core/services/ios_notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -350,6 +351,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconColor: const Color(0xFF10B981),
               value: _notifyLeaves,
               onChanged: (val) => setState(() => _notifyLeaves = val),
+            ),
+            Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
+            _buildActionItem(
+              context,
+              title: 'Apple Bildirim Merkezi (iOS / Mac)',
+              subtitle: 'Kilit Ekranı, Bildirim Merkezi ve Apple Watch ile senkronize',
+              icon: Icons.apple_rounded,
+              iconColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
+              trailingText: 'Test Bildirimi',
+              trailingBadgeColor: const Color(0xFF10B981),
+              onTap: () async {
+                final granted = await IosNotificationService.requestAppleNotificationPermission();
+                IosNotificationService.sendAppleTestNotification();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: const Color(0xFF10B981),
+                      content: Text(
+                        granted
+                            ? '🍎 Apple Bildirim Merkezine test bildirimi gönderildi!'
+                            : '🍎 Bildirim tetiklendi. Kilit ekranı ve bildirim merkezinde görüntülenecektir.',
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
           ]),
 

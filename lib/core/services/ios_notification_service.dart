@@ -21,7 +21,7 @@ class IosNotificationService {
     // 1. Apple Klasik Bildirim Sesi (Tri-Tone / Glass)
     helper.platformPlayIosChime();
 
-    // 2. Tarayıcı / iOS Safari Kilit Ekranı Push Bildirimi
+    // 2. Apple Yerel Bildirim Merkezi & Kilit Ekranı (UNUserNotificationCenter / Web Push)
     helper.platformTriggerWebNotification(title: title, body: body);
 
     // 3. Ekranda iOS Floating Push Banner Göster
@@ -31,6 +31,26 @@ class IosNotificationService {
       icon: icon ?? Icons.notifications_active_rounded,
       iconColor: iconColor ?? const Color(0xFF2563EB),
       onTap: onTap,
+    );
+  }
+
+  /// Apple Yerel Bildirim İznini İste (Kullanıcı Tıklaması ile)
+  static Future<bool> requestAppleNotificationPermission() async {
+    return await helper.platformRequestNotificationPermission();
+  }
+
+  /// Apple Bildirim İzin Durumu
+  static String getPermissionStatus() {
+    return helper.platformGetNotificationPermissionStatus();
+  }
+
+  /// Apple Bildirim Merkezine Test Bildirimi Gönder
+  static void sendAppleTestNotification() {
+    showIosNotification(
+      title: '🍎 Apple Bildirim Merkezi',
+      body: 'PDKS bildirimleri Apple Bildirim Merkezinde ve Kilit Ekranında başarıyla gösterilmektedir.',
+      icon: Icons.apple_rounded,
+      iconColor: const Color(0xFF10B981),
     );
   }
 
