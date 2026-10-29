@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
-import '../company/company_management_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -21,6 +19,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   bool _loginObscure = true;
 
   // Register Controllers
+  final _regCompanyCodeController = TextEditingController(text: 'ACME');
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPhoneController = TextEditingController();
@@ -40,6 +39,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _tabController.dispose();
     _loginEmailController.dispose();
     _loginPinController.dispose();
+    _regCompanyCodeController.dispose();
     _regNameController.dispose();
     _regEmailController.dispose();
     _regPhoneController.dispose();
@@ -69,6 +69,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   }
 
   void _handleRegister() {
+    final companyCode = _regCompanyCodeController.text.trim().toUpperCase();
     final name = _regNameController.text.trim();
     final email = _regEmailController.text.trim();
     final phone = _regPhoneController.text.trim();
@@ -76,14 +77,18 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final title = _regTitleController.text.trim();
     final pin = _regPinController.text.trim();
 
-    if (name.isEmpty || email.isEmpty || pin.isEmpty) {
+    if (companyCode.isEmpty || name.isEmpty || email.isEmpty || pin.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(backgroundColor: AppColors.danger, content: Text('Lütfen Ad Soyad, E-posta ve PIN alanlarını doldurun.')),
+        const SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Lütfen Şirket Kodu, Ad Soyad, E-posta ve PIN alanlarını doldurun.'),
+        ),
       );
       return;
     }
 
-    context.read<PdksState>().register(
+    final result = context.read<PdksState>().register(
+      companyCode: companyCode,
       fullName: name,
       email: email,
       phone: phone.isEmpty ? '+90 555 000 00 00' : phone,
@@ -91,148 +96,17 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       title: title.isEmpty ? 'Personel' : title,
       pin: pin,
     );
-  }
 
-  void _showCompanyPicker(BuildContext context) {
-    final pdks = context.read<PdksState>();
-    final companies = pdks.companies;
-    final active = pdks.activeCompany;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: result.success ? AppColors.success : AppColors.danger,
+        content: Text(result.message),
       ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Şirket Seçimi (Çoklu Firma)',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.add_business_rounded, size: 18),
-                    label: const Text('Yeni Şirket'),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CompanyManagementScreen()));
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Giriş yapmak istediğiniz kurumsal şirketi belirleyin:',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-              ),
-              const SizedBox(height: 14),
-
-              ...companies.map((c) {
-                final isSelected = c.id == active.id;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                      width: isSelected ? 1.8 : 1,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.apartment_rounded,
-                        color: isSelected ? Colors.white : const Color(0xFF64748B),
-                        size: 20,
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            c.code,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            c.name,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Text(
-                      '${c.sector} • ${c.address}',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF2563EB), size: 22)
-                        : null,
-                    onTap: () {
-                      pdks.switchCompany(c.id);
-                      // Şirketin ilk kullanıcısını forma doldur
-                      final compEmps = pdks.employees;
-                      if (compEmps.isNotEmpty) {
-                        setState(() {
-                          _loginEmailController.text = compEmps.first.email;
-                          _loginPinController.text = compEmps.first.pinCode;
-                        });
-                      }
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                );
-              }),
-            ],
-          ),
-        );
-      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final pdks = context.watch<PdksState>();
-    final activeCompany = pdks.activeCompany;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1D),
       body: SafeArea(
@@ -274,72 +148,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     'Çoklu Şirket & Personel Devam Takip Sistemi',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Aktif Şirket Seçici Rozeti (Multi-Company Selector)
-                  InkWell(
-                    onTap: () => _showCompanyPicker(context),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.18)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF3B82F6),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              activeCompany.code,
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  activeCompany.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  activeCompany.sector,
-                                  style: const TextStyle(color: Colors.white60, fontSize: 11),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Değiştir', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                                SizedBox(width: 2),
-                                Icon(Icons.arrow_drop_down, color: Colors.white, size: 16),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Form Kartı (Glass & Card style)
                   Container(
@@ -391,11 +200,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: SizedBox(
-                            height: 470,
+                            height: 490,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
-                                _buildLoginTab(pdks),
+                                _buildLoginTab(),
                                 _buildRegisterTab(),
                               ],
                             ),
@@ -413,15 +222,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildLoginTab(PdksState pdks) {
-    // Aktif şirkete ait personelleri bul
-    final compEmps = pdks.employees;
-    final personel = compEmps.firstWhere((e) => e.role == UserRole.employee, orElse: () => compEmps.first);
-    final ik = compEmps.firstWhere((e) => e.role == UserRole.hr, orElse: () => compEmps.first);
-    final patron = compEmps.firstWhere((e) => e.role == UserRole.boss, orElse: () => compEmps.first);
-    final admin = compEmps.firstWhere((e) => e.role == UserRole.admin, orElse: () => compEmps.first);
-    final cafeteria = compEmps.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => compEmps.first);
-
+  Widget _buildLoginTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -476,35 +277,35 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
         ),
 
-        const SizedBox(height: 16),
-        Center(
+        const SizedBox(height: 18),
+        const Center(
           child: Text(
-            '${pdks.activeCompany.code} Hızlı Rol Girişleri:',
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+            'Hızlı Demo Rol Girişleri:',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted),
           ),
         ),
         const SizedBox(height: 8),
 
-        // 5 Rol Butonu
+        // Hızlı Demo Rol Butonları
         Row(
           children: [
             Expanded(
               child: _buildRoleButton(
-                label: 'Personel (${personel.fullName.split(' ').first})',
+                label: 'Personel',
                 icon: Icons.person_outline,
                 color: AppColors.primary,
-                email: personel.email,
-                pin: personel.pinCode,
+                email: 'personel@sirket.com',
+                pin: '1234',
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildRoleButton(
-                label: 'İK (${ik.fullName.split(' ').first})',
+                label: 'İK Paneli',
                 icon: Icons.people_outline,
                 color: Colors.indigo,
-                email: ik.email,
-                pin: ik.pinCode,
+                email: 'ik@sirket.com',
+                pin: '2345',
               ),
             ),
           ],
@@ -514,21 +315,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           children: [
             Expanded(
               child: _buildRoleButton(
-                label: 'Patron (${patron.fullName.split(' ').first})',
+                label: 'Patron (CEO)',
                 icon: Icons.workspace_premium_outlined,
                 color: Colors.amber.shade800,
-                email: patron.email,
-                pin: patron.pinCode,
+                email: 'patron@sirket.com',
+                pin: '3456',
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildRoleButton(
-                label: 'Admin (${admin.fullName.split(' ').first})',
+                label: 'Süper Admin',
                 icon: Icons.admin_panel_settings_outlined,
                 color: Colors.purple,
-                email: admin.email,
-                pin: admin.pinCode,
+                email: 'admin@sirket.com',
+                pin: '4567',
               ),
             ),
           ],
@@ -537,11 +338,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         SizedBox(
           width: double.infinity,
           child: _buildRoleButton(
-            label: 'Yemekhane (${cafeteria.fullName.split(' ').first})',
+            label: 'Yemekhane Şefi (Mutfak & Menü)',
             icon: Icons.restaurant_menu_rounded,
             color: const Color(0xFFEA580C),
-            email: cafeteria.email,
-            pin: cafeteria.pinCode,
+            email: 'yemekhane@sirket.com',
+            pin: '5678',
           ),
         ),
       ],
@@ -592,9 +393,19 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInput('Ad Soyad', _regNameController, Icons.person_outline, hint: 'Ahmet Yılmaz'),
+          // Şirket Kodu (Kayıt olurken şirketi belirler)
+          _buildInput(
+            'Şirket Kodu *',
+            _regCompanyCodeController,
+            Icons.apartment_rounded,
+            hint: 'Örn: ACME, NOVA, OZDEMIR',
+            textCapitalization: TextCapitalization.characters,
+            helperText: 'Yetkilinizden aldığınız firma kodunu giriniz.',
+          ),
           const SizedBox(height: 8),
-          _buildInput('Kurumsal E-Posta', _regEmailController, Icons.email_outlined, hint: 'ahmet@sirket.com', keyboardType: TextInputType.emailAddress),
+          _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ahmet Yılmaz'),
+          const SizedBox(height: 8),
+          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'ahmet@sirket.com', keyboardType: TextInputType.emailAddress),
           const SizedBox(height: 8),
           _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '+90 532 000 00 00', keyboardType: TextInputType.phone),
           const SizedBox(height: 8),
@@ -602,7 +413,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           _buildInput('Unvan', _regTitleController, Icons.badge_outlined, hint: 'Mobil Geliştirici'),
           const SizedBox(height: 8),
-          const Text('PIN Kodu Belirleyin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          const Text('PIN Kodu Belirleyin *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           const SizedBox(height: 4),
           TextField(
             controller: _regPinController,
@@ -624,16 +435,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: _handleRegister,
-              child: const Text('Kayıt Ol ve Giriş Yap', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              child: const Text('Şirkete Kayıt Ol ve Giriş Yap', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -641,7 +452,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildInput(String label, TextEditingController controller, IconData icon, {String? hint, TextInputType? keyboardType}) {
+  Widget _buildInput(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    String? hint,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    String? helperText,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -650,8 +469,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          textCapitalization: textCapitalization,
           decoration: InputDecoration(
             hintText: hint,
+            helperText: helperText,
+            helperStyle: const TextStyle(fontSize: 10, color: AppColors.textMuted),
             prefixIcon: Icon(icon, size: 18),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),

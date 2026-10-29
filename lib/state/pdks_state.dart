@@ -923,8 +923,9 @@ class PdksState extends ChangeNotifier {
     return false;
   }
 
-  // Yeni Personel Kaydı
-  bool register({
+  // Yeni Personel Kaydı - Şirket Kodu ile Şirket Belirleme
+  ({bool success, String message}) register({
+    required String companyCode,
     required String fullName,
     required String email,
     required String phone,
@@ -932,10 +933,21 @@ class PdksState extends ChangeNotifier {
     required String title,
     required String pin,
   }) {
+    final cleanCode = companyCode.trim().toUpperCase();
+    final idx = _companies.indexWhere((c) => c.code.toUpperCase() == cleanCode);
+    if (idx == -1) {
+      final availableCodes = _companies.map((c) => c.code).join(', ');
+      return (
+        success: false,
+        message: 'Belirtilen "$cleanCode" koduna ait şirket bulunamadı. Mevcut şirket kodları: $availableCodes',
+      );
+    }
+
+    final targetCompany = _companies[idx];
     final newId = _employees.length + 1;
     final newEmployee = Employee(
       id: newId,
-      companyId: _activeCompanyId,
+      companyId: targetCompany.id,
       fullName: fullName,
       email: email,
       phone: phone,
@@ -950,12 +962,16 @@ class PdksState extends ChangeNotifier {
 
     _employees.add(newEmployee);
     _currentUser = newEmployee;
+    _activeCompanyId = targetCompany.id;
     _isLoggedIn = true;
     _isCheckedIn = false;
     _workedToday = Duration.zero;
     _startTimer();
     notifyListeners();
-    return true;
+    return (
+      success: true,
+      message: '"${targetCompany.name}" şirketine kaydınız başarıyla yapıldı.',
+    );
   }
 
   // Oturumu Kapat
