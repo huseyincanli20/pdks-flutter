@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/app_notification.dart';
+import 'email_preview_dialog.dart';
 
-/// Telefona gelen Push & SMS Bildirimini görselleştiren mobil bildirim kartı
+/// Telefona ve E-Postaya gelen Bildirim/Mail iletimini görselleştiren mobil bildirim kartı
 class PhonePushNotificationBanner {
   static void show(
     BuildContext context, {
@@ -64,7 +65,7 @@ class PhonePushNotificationBanner {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'PDKS MOBİL SİSTEM BİLDİRİMİ',
+                                  'PDKS MOBİL & E-POSTA BİLDİRİMİ',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -73,7 +74,7 @@ class PhonePushNotificationBanner {
                                   ),
                                 ),
                                 Text(
-                                  'Şimdi • Kayıtlı Telefona Gönderildi',
+                                  'Şimdi • Kayıtlı E-Posta ve Telefona Gönderildi',
                                   style: TextStyle(color: Colors.white60, fontSize: 10),
                                 ),
                               ],
@@ -108,30 +109,60 @@ class PhonePushNotificationBanner {
                       ),
                       const SizedBox(height: 12),
 
-                      // Alıcı Telefon Rozeti
-                      if (notification.targetPhone != null && notification.targetPhone!.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.smartphone_rounded, color: Color(0xFF38BDF8), size: 14),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Alıcı Cihaz: ${notification.targetPhone}',
-                                style: const TextStyle(
-                                  color: Color(0xFF38BDF8),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      // Alıcı Telefon & E-Posta Rozetleri
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          if (notification.targetPhone != null && notification.targetPhone!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ],
-                          ),
-                        ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.smartphone_rounded, color: Color(0xFF38BDF8), size: 14),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Alıcı Tel: ${notification.targetPhone}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF38BDF8),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (notification.targetEmail != null && notification.targetEmail!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.mail_rounded, color: Color(0xFF93C5FD), size: 14),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Alıcı E-Posta: ${notification.targetEmail}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF93C5FD),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                       const SizedBox(height: 10),
 
                       // Bildirim Başlığı ve Mesajı
@@ -154,25 +185,55 @@ class PhonePushNotificationBanner {
                       ),
                       const SizedBox(height: 14),
 
-                      // Teslimat Kanalları & Buton
-                      Row(
+                      // Teslimat Kanalları & Aksiyon Butonları
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          _buildChannelPill(Icons.cell_tower_rounded, 'Push Notification (Cihaz Ekranı)', const Color(0xFF10B981)),
-                          const SizedBox(width: 8),
-                          _buildChannelPill(Icons.sms_outlined, 'SMS Servisi', const Color(0xFF60A5FA)),
-                          const Spacer(),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.white.withOpacity(0.12),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              if (onOpenLogin != null) onOpenLogin();
-                            },
-                            child: const Text('Kapat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildChannelPill(Icons.cell_tower_rounded, 'Push Bildirim', const Color(0xFF10B981)),
+                              const SizedBox(width: 6),
+                              _buildChannelPill(Icons.sms_outlined, 'SMS', const Color(0xFF60A5FA)),
+                              const SizedBox(width: 6),
+                              _buildChannelPill(Icons.mail_outline_rounded, 'E-Posta (SMTP)', const Color(0xFFA78BFA)),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (notification.isEmailSent)
+                                TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2563EB).withOpacity(0.3),
+                                    foregroundColor: const Color(0xFFBFDBFE),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  icon: const Icon(Icons.mark_email_read_rounded, size: 14),
+                                  label: const Text('E-Postayı Gör ›', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  onPressed: () {
+                                    EmailPreviewDialog.show(context, notification: notification);
+                                  },
+                                ),
+                              const SizedBox(width: 6),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.white.withOpacity(0.12),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  if (onOpenLogin != null) onOpenLogin();
+                                },
+                                child: const Text('Kapat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
                           ),
                         ],
                       ),

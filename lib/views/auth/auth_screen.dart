@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../state/pdks_state.dart';
+import '../common/email_preview_dialog.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -374,17 +375,34 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '📱 Telefona Bildirim İletildi (${pdks.lastDispatchedPhoneNotification!.targetPhone})',
+                          '📱 SMS & 📧 E-Posta İletildi (${pdks.lastDispatchedPhoneNotification!.targetEmail ?? pdks.lastDispatchedPhoneNotification!.targetPhone})',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          'İK başvurunuzu onayladı! Belirlediğiniz PIN kodu ile giriş yapabilirsiniz.',
+                          'İK başvurunuzu onayladı! Onay e-postası ve şifreniz ile hemen giriş yapabilirsiniz.',
                           style: TextStyle(fontSize: 10.5, color: Color(0xFF047857)),
                         ),
                       ],
                     ),
                   ),
+                  if (pdks.lastDispatchedPhoneNotification!.isEmailSent)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: const Color(0xFF065F46),
+                      ),
+                      onPressed: () {
+                        EmailPreviewDialog.show(
+                          context,
+                          notification: pdks.lastDispatchedPhoneNotification!,
+                          companyName: pdks.activeCompany.name,
+                        );
+                      },
+                      child: const Text('Maili Aç ›', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
                 ],
               ),
             ),

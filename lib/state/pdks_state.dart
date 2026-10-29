@@ -1427,7 +1427,7 @@ class PdksState extends ChangeNotifier {
 
     final compName = _companies.firstWhere((c) => c.id == updated.companyId, orElse: () => activeCompany).name;
 
-    // Personele Kayıt Olduğu Telefona Gönderilen Özel Bildirim (Push Notification & SMS)
+    // Personele Kayıt Olduğu E-Posta ve Telefona Gönderilen Özel Bildirim (E-Posta + Push Notification + SMS)
     final phoneNotification = AppNotification(
       id: 'phone_notif_${DateTime.now().millisecondsSinceEpoch}',
       title: '🎉 Tebrikler, Kaydınız Onaylandı!',
@@ -1440,6 +1440,19 @@ class PdksState extends ChangeNotifier {
       targetEmail: updated.email,
       isPushSent: true,
       isSmsSent: true,
+      isEmailSent: true,
+      emailSubject: '🎉 Tebrikler, $compName Personel Kaydınız Onaylandı!',
+      emailBody: 'Sayın ${updated.fullName},\n\n'
+          '$compName bünyesinde gerçekleştirdiğiniz personel kaydınız İnsan Kaynakları (İK) tarafından incelenmiş ve başarıyla onaylanmıştır.\n\n'
+          '📋 GÖREV VE HESAP BİLGİLERİNİZ:\n'
+          '• Departman: ${updated.department}\n'
+          '• Unvan / Görev: ${updated.title}\n'
+          '• Kayıtlı E-Posta: ${updated.email}\n'
+          '• Kayıtlı Telefon: ${updated.phone}\n'
+          '• Hesap Durumu: Aktif Personel\n\n'
+          'Kayıt sırasında belirlediğiniz PIN kodu ve kurumsal e-posta adresiniz ile PDKS mobil uygulamasına ve web paneline hemen giriş yapabilirsiniz.\n\n'
+          'Aramıza hoş geldiniz, iyi çalışmalar dileriz.\n\n'
+          '$compName İnsan Kaynakları Departmanı',
       isRead: false,
     );
 
@@ -1449,7 +1462,7 @@ class PdksState extends ChangeNotifier {
     notifyListeners();
     return (
       success: true,
-      message: '${updated.fullName} personeli onaylandı ve ${updated.phone} numaralı telefona bildirim/SMS iletildi.',
+      message: '${updated.fullName} personeli onaylandı. Kayıtlı e-posta (${updated.email}) ve telefonuna onay bildirimi iletildi.',
       dispatchedNotification: phoneNotification,
     );
   }

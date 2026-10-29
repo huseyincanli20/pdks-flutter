@@ -6,6 +6,7 @@ import '../../models/app_notification.dart';
 import '../../state/pdks_state.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../mobile/leave_request_screen.dart';
+import '../common/email_preview_dialog.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -249,28 +250,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         height: 1.35,
                       ),
                     ),
-                    if (item.targetPhone != null) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF10B981)),
-                            const SizedBox(width: 4),
-                            Text(
-                              'SMS & Push Gönderildi: ${item.targetPhone}',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (item.targetPhone != null && item.targetPhone!.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF10B981)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'SMS & Push: ${item.targetPhone}',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (item.targetEmail != null && item.targetEmail!.isNotEmpty)
+                          InkWell(
+                            onTap: item.isEmailSent
+                                ? () => EmailPreviewDialog.show(context, notification: item, companyName: pdks.activeCompany.name)
+                                : null,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2563EB).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.mark_email_read_rounded, size: 12, color: Color(0xFF2563EB)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'E-Posta Gönderildi: ${item.targetEmail}',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                                  ),
+                                  if (item.isEmailSent) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.open_in_new_rounded, size: 10, color: Color(0xFF1D4ED8)),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

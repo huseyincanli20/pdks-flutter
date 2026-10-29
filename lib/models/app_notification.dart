@@ -21,6 +21,9 @@ class AppNotification {
   final String? targetEmail;
   final bool isPushSent;
   final bool isSmsSent;
+  final bool isEmailSent;
+  final String? emailSubject;
+  final String? emailBody;
 
   const AppNotification({
     required this.id,
@@ -35,6 +38,9 @@ class AppNotification {
     this.targetEmail,
     this.isPushSent = false,
     this.isSmsSent = false,
+    this.isEmailSent = false,
+    this.emailSubject,
+    this.emailBody,
   });
 
   AppNotification copyWith({
@@ -50,6 +56,9 @@ class AppNotification {
     String? targetEmail,
     bool? isPushSent,
     bool? isSmsSent,
+    bool? isEmailSent,
+    String? emailSubject,
+    String? emailBody,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -64,6 +73,9 @@ class AppNotification {
       targetEmail: targetEmail ?? this.targetEmail,
       isPushSent: isPushSent ?? this.isPushSent,
       isSmsSent: isSmsSent ?? this.isSmsSent,
+      isEmailSent: isEmailSent ?? this.isEmailSent,
+      emailSubject: emailSubject ?? this.emailSubject,
+      emailBody: emailBody ?? this.emailBody,
     );
   }
 }
