@@ -20,12 +20,14 @@ class FirebaseService {
   static const String _prefKeyFirebaseProject = 'pdks_firebase_project_id';
   static const String _prefKeyFirebaseApiKey = 'pdks_firebase_api_key';
   static const String _prefKeyFirebaseEnabled = 'pdks_firebase_enabled';
+  static const String _prefKeyFirebaseActiveUrl = 'pdks_firebase_active_url';
 
   // Varsayılan / Yapılandırılabilir Firebase Proje Bilgileri
-  String _projectId = 'pdks-kurumsal-cloud';
+  String _projectId = 'benim-pdks-app';
   String _apiKey = '';
   bool _isEnabled = true;
   bool _isConnected = false;
+  String _activeDbUrl = 'https://benim-pdks-app-default-rtdb.europe-west1.firebasedatabase.app';
 
   final http.Client _client = http.Client();
 
@@ -35,16 +37,30 @@ class FirebaseService {
   bool get isEnabled => _isEnabled;
   bool get isConnected => _isConnected;
 
-  String get realtimeDbUrl => 'https://$_projectId-default-rtdb.firebaseio.com';
+  String get realtimeDbUrl {
+    if (_activeDbUrl.isNotEmpty) return _activeDbUrl;
+    if (_projectId.startsWith('http://') || _projectId.startsWith('https://')) {
+      return _projectId.replaceAll(RegExp(r'/$'), '');
+    }
+    if (_projectId == 'benim-pdks-app') {
+      return 'https://benim-pdks-app-default-rtdb.europe-west1.firebasedatabase.app';
+    }
+    return 'https://$_projectId-default-rtdb.firebaseio.com';
+  }
+
   String get firestoreUrl => 'https://firestore.googleapis.com/v1/projects/$_projectId/databases/(default)/documents';
 
   /// Firebase Yapılandırmasını Yükle
   Future<void> init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _projectId = prefs.getString(_prefKeyFirebaseProject) ?? 'pdks-kurumsal-cloud';
+      _projectId = prefs.getString(_prefKeyFirebaseProject) ?? 'benim-pdks-app';
       _apiKey = prefs.getString(_prefKeyFirebaseApiKey) ?? '';
       _isEnabled = prefs.getBool(_prefKeyFirebaseEnabled) ?? true;
+      _activeDbUrl = prefs.getString(_prefKeyFirebaseActiveUrl) ??
+          (_projectId == 'benim-pdks-app'
+              ? 'https://benim-pdks-app-default-rtdb.europe-west1.firebasedatabase.app'
+              : 'https://$_projectId-default-rtdb.firebaseio.com');
 
       // Bağlantıyı Canlı Test Et
       await testConnection();
@@ -62,6 +78,11 @@ class FirebaseService {
     _projectId = projectId.trim();
     _apiKey = (apiKey ?? '').trim();
     _isEnabled = isEnabled;
+    _activeDbUrl = _projectId == 'benim-pdks-app'
+        ? 'https://benim-pdks-app-default-rtdb.europe-west1.firebasedatabase.app'
+        : (_projectId.startsWith('http')
+            ? _projectId.replaceAll(RegExp(r'/$'), '')
+            : 'https://$_projectId-default-rtdb.firebaseio.com');
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -94,47 +115,54 @@ class FirebaseService {
       );
     }
 
-    try {
-      final uri = Uri.parse('$realtimeDbUrl/.json?shallow=true');
-      final response = await _client.get(uri).timeout(const Duration(seconds: 4));
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        _isConnected = true;
-        return (
-          isConnected: true,
-          message: '🟢 Canlı Bağlantı BAŞARILI: Firebase veritabanı aktif ve okuma/yazmaya hazır.',
-          statusCode: response.statusCode,
-        );
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        _isConnected = true;
-        return (
-          isConnected: true,
-          message: '🟡 Proje Mevcut, ancak Güvenlik Kuralları Kilitli (HTTP ${response.statusCode}). Firebase konsolundan Realtime Database Rules sekmesinde read/write kurallarını kontrol ediniz.',
-          statusCode: response.statusCode,
-        );
-      } else if (response.statusCode == 404) {
-        _isConnected = false;
-        return (
-          isConnected: false,
-          message: '🔴 Veritabanı Bulunamadı (HTTP 404): "$_projectId" kimliğine sahip bir veritabanı Google Firebase sunucularında henüz oluşturulmamış. console.firebase.google.com üzerinden projenizi açıp Realtime Database oluşturunuz.',
-          statusCode: 404,
-        );
-      } else {
-        _isConnected = false;
-        return (
-          isConnected: false,
-          message: '⚠️ Firebase sunucu yanıtı: HTTP ${response.statusCode}',
-          statusCode: response.statusCode,
-        );
-      }
-    } catch (e) {
-      _isConnected = false;
-      return (
-        isConnected: false,
-        message: '⚠️ Bağlantı zaman aşımı veya DNS hatası: $e',
-        statusCode: 500,
-      );
+    final candidateUrls = <String>[];
+    if (_projectId.startsWith('http://') || _projectId.startsWith('https://')) {
+      candidateUrls.add(_projectId.replaceAll(RegExp(r'/$'), ''));
+    } else {
+      if (_activeDbUrl.isNotEmpty) candidateUrls.add(_activeDbUrl);
+      candidateUrls.add('https://$_projectId-default-rtdb.europe-west1.firebasedatabase.app');
+      candidateUrls.add('https://$_projectId-default-rtdb.firebaseio.com');
+      candidateUrls.add('https://$_projectId.firebaseio.com');
     }
+
+    final uniqueCandidates = candidateUrls.toSet().toList();
+
+    for (final cand in uniqueCandidates) {
+      try {
+        final uri = Uri.parse('$cand/.json?shallow=true');
+        final response = await _client.get(uri).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          _activeDbUrl = cand;
+          _isConnected = true;
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_prefKeyFirebaseActiveUrl, _activeDbUrl);
+          } catch (_) {}
+
+          return (
+            isConnected: true,
+            message: '🟢 Canlı Bağlantı BAŞARILI: "$_projectId" Firebase veritabanı aktif ve okuma/yazmaya hazır! (Sunucu: $cand)',
+            statusCode: response.statusCode,
+          );
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
+          _activeDbUrl = cand;
+          _isConnected = true;
+          return (
+            isConnected: true,
+            message: '🟡 Proje Bulundu, ancak Güvenlik Kuralları Kilitli (HTTP ${response.statusCode}). Firebase konsolundan Realtime Database Rules sekmesinde read/write kurallarını açınız.',
+            statusCode: response.statusCode,
+          );
+        }
+      } catch (_) {}
+    }
+
+    _isConnected = false;
+    return (
+      isConnected: false,
+      message: '🔴 Veritabanı Bulunamadı (HTTP 404): "$_projectId" adına sahip bir veritabanı Google Firebase sunucularında henüz aktif değil.',
+      statusCode: 404,
+    );
   }
 
   /// Firebase Canlı Bağlantı Testi (Ping)

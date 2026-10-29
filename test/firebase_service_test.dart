@@ -24,7 +24,7 @@ void main() {
 
     test('Firebase Service varsayılan ayarları ve URL yapılandırması doğru olmalı', () {
       expect(firebase.projectId, isNotEmpty);
-      expect(firebase.realtimeDbUrl, contains('firebaseio.com'));
+      expect(firebase.realtimeDbUrl, contains('firebase'));
       expect(firebase.firestoreUrl, contains('firestore.googleapis.com'));
       expect(firebase.isEnabled, isTrue);
     });
