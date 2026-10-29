@@ -433,6 +433,9 @@ class PdksState extends ChangeNotifier {
     notifyListeners();
   }
 
+  AppNotification? _lastDispatchedPhoneNotification;
+  AppNotification? get lastDispatchedPhoneNotification => _lastDispatchedPhoneNotification;
+
   void addNotification(AppNotification notif) {
     _notifications.insert(0, notif);
     notifyListeners();
@@ -1392,8 +1395,8 @@ class PdksState extends ChangeNotifier {
     );
   }
 
-  /// İK Tarafından Personel Kaydı Onaylama ve Departman/Unvan Atama
-  ({bool success, String message}) approveEmployeeRegistration({
+  /// İK Tarafından Personel Kaydı Onaylama ve Departman/Unvan Atama + Telefona Bildirim Gönderme
+  ({bool success, String message, AppNotification? dispatchedNotification}) approveEmployeeRegistration({
     required int employeeId,
     required String department,
     required String title,
@@ -1403,12 +1406,12 @@ class PdksState extends ChangeNotifier {
     if (_currentUser.role != UserRole.hr &&
         _currentUser.role != UserRole.boss &&
         _currentUser.role != UserRole.admin) {
-      return (success: false, message: 'Bu onay işlemini yalnızca İK veya Yönetim yetkilileri yapabilir.');
+      return (success: false, message: 'Bu onay işlemini yalnızca İK veya Yönetim yetkilileri yapabilir.', dispatchedNotification: null);
     }
 
     final index = _employees.indexWhere((e) => e.id == employeeId);
     if (index == -1) {
-      return (success: false, message: 'Personel kaydı bulunamadı.');
+      return (success: false, message: 'Personel kaydı bulunamadı.', dispatchedNotification: null);
     }
 
     final existing = _employees[index];
@@ -1422,24 +1425,32 @@ class PdksState extends ChangeNotifier {
 
     _employees[index] = updated;
 
-    _notifications.insert(
-      0,
-      AppNotification(
-        id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
-        title: 'Personel Kaydı Onaylandı ✅',
-        message: '${updated.fullName} personeli İK tarafından onaylandı ve "${updated.department}" departmanına (${updated.title}) atandı.',
-        timestamp: DateTime.now(),
-        type: NotificationType.system,
-        icon: Icons.check_circle_rounded,
-        color: const Color(0xFF10B981),
-        isRead: false,
-      ),
+    final compName = _companies.firstWhere((c) => c.id == updated.companyId, orElse: () => activeCompany).name;
+
+    // Personele Kayıt Olduğu Telefona Gönderilen Özel Bildirim (Push Notification & SMS)
+    final phoneNotification = AppNotification(
+      id: 'phone_notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🎉 Tebrikler, Kaydınız Onaylandı!',
+      message: 'Sayın ${updated.fullName}, "$compName" şirketindeki personel kaydınız İnsan Kaynakları tarafından onaylanmıştır. Departmanınız "${updated.department}" (${updated.title}) olarak atanmıştır. Belirlediğiniz PIN kodu ile PDKS uygulamasına hemen giriş yapabilirsiniz.',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.verified_user_rounded,
+      color: const Color(0xFF10B981),
+      targetPhone: updated.phone,
+      targetEmail: updated.email,
+      isPushSent: true,
+      isSmsSent: true,
+      isRead: false,
     );
+
+    _notifications.insert(0, phoneNotification);
+    _lastDispatchedPhoneNotification = phoneNotification;
 
     notifyListeners();
     return (
       success: true,
-      message: '${updated.fullName} personeli başarıyla onaylandı ve ${updated.department} departmanına (${updated.title}) atandı.',
+      message: '${updated.fullName} personeli onaylandı ve ${updated.phone} numaralı telefona bildirim/SMS iletildi.',
+      dispatchedNotification: phoneNotification,
     );
   }
 

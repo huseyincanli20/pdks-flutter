@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
+import '../common/phone_push_notification_banner.dart';
 
 class EmployeesTab extends StatelessWidget {
   const EmployeesTab({super.key});
@@ -387,9 +388,25 @@ class EmployeesTab extends StatelessWidget {
                           SnackBar(
                             backgroundColor: result.success ? AppColors.success : AppColors.danger,
                             behavior: SnackBarBehavior.floating,
-                            content: Text(result.message),
+                            content: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(result.message)),
+                              ],
+                            ),
                           ),
                         );
+                        if (result.success && result.dispatchedNotification != null) {
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (context.mounted) {
+                              PhonePushNotificationBanner.show(
+                                context,
+                                notification: result.dispatchedNotification!,
+                              );
+                            }
+                          });
+                        }
                       },
                     ),
                   ),

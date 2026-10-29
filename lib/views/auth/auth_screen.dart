@@ -222,6 +222,8 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final pdks = context.watch<PdksState>();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1D),
       body: SafeArea(
@@ -315,11 +317,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: SizedBox(
-                            height: 490,
+                            height: 520,
                             child: TabBarView(
                               controller: _tabController,
                               children: [
-                                _buildLoginTab(),
+                                _buildLoginTab(pdks),
                                 _buildRegisterTab(),
                               ],
                             ),
@@ -337,10 +339,56 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildLoginTab() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+  Widget _buildLoginTab(PdksState pdks) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Onay Bildirimi Geldi Banner'ı (Kayıtlı Telefona Push & SMS İletildiğinde)
+          if (pdks.lastDispatchedPhoneNotification != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFF10B981).withOpacity(0.15), const Color(0xFF059669).withOpacity(0.08)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.notifications_active_rounded, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '📱 Telefona Bildirim İletildi (${pdks.lastDispatchedPhoneNotification!.targetPhone})',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'İK başvurunuzu onayladı! Belirlediğiniz PIN kodu ile giriş yapabilirsiniz.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF047857)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         const Text('E-Posta Adresi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
         const SizedBox(height: 5),
         TextField(
@@ -461,6 +509,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           ),
         ),
       ],
+    ),
     );
   }
 

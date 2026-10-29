@@ -17,6 +17,10 @@ class AppNotification {
   final NotificationType type;
   final IconData icon;
   final Color color;
+  final String? targetPhone;
+  final String? targetEmail;
+  final bool isPushSent;
+  final bool isSmsSent;
 
   const AppNotification({
     required this.id,
@@ -27,6 +31,10 @@ class AppNotification {
     required this.type,
     required this.icon,
     required this.color,
+    this.targetPhone,
+    this.targetEmail,
+    this.isPushSent = false,
+    this.isSmsSent = false,
   });
 
   AppNotification copyWith({
@@ -38,6 +46,10 @@ class AppNotification {
     NotificationType? type,
     IconData? icon,
     Color? color,
+    String? targetPhone,
+    String? targetEmail,
+    bool? isPushSent,
+    bool? isSmsSent,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -48,6 +60,10 @@ class AppNotification {
       type: type ?? this.type,
       icon: icon ?? this.icon,
       color: color ?? this.color,
+      targetPhone: targetPhone ?? this.targetPhone,
+      targetEmail: targetEmail ?? this.targetEmail,
+      isPushSent: isPushSent ?? this.isPushSent,
+      isSmsSent: isSmsSent ?? this.isSmsSent,
     );
   }
 }
