@@ -973,8 +973,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           _buildProfileTile(
             icon: Icons.restaurant_rounded,
             color: const Color(0xFFEA580C),
-            title: 'Günün Yemekhane Menüsü',
-            subtitle: 'Öğle yemeği listesi ve kalori bilgisi',
+            title: 'Yemekhane Menüsü',
+            subtitle: 'Günün menüsü & 2 haftalık yemek programı',
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
             },

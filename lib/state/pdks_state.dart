@@ -50,6 +50,9 @@ class PdksState extends ChangeNotifier {
     updatedBy: 'Hasan Usta (Mutfak Şefi)',
   );
 
+  // 2 Haftalık Yemekhane Menüsü (14 Günlük Çizelge)
+  late List<CafeteriaMenu> _twoWeekMenus = buildDefaultTwoWeekMenu();
+
   // Sistem Rolleri ve Patron/Admin tarafından eklenen roller
   final List<AppRoleItem> _roles = [
     const AppRoleItem(
@@ -378,6 +381,7 @@ class PdksState extends ChangeNotifier {
 
   // Yemekhane Menüsü Getters ve Metotları
   CafeteriaMenu get todayMenu => _todayMenu;
+  List<CafeteriaMenu> get twoWeekMenus => _twoWeekMenus;
 
   void updateTodayMenu(CafeteriaMenu menu) {
     _todayMenu = menu;
@@ -393,6 +397,236 @@ class PdksState extends ChangeNotifier {
       color: const Color(0xFFEA580C),
     ));
     notifyListeners();
+  }
+
+  void setTwoWeekMenus(List<CafeteriaMenu> menus, {bool publishNotification = true}) {
+    _twoWeekMenus = List.from(menus);
+
+    // Eğer bugünün tarihine denk gelen gün varsa günün menüsünü de senkronize et
+    final now = DateTime.now();
+    for (final m in _twoWeekMenus) {
+      if (m.isSameDay(now) && m.isCompleted) {
+        _todayMenu = m;
+        break;
+      }
+    }
+
+    if (publishNotification) {
+      addNotification(AppNotification(
+        id: 'twoweek_menu_${DateTime.now().millisecondsSinceEpoch}',
+        title: '📢 2 Haftalık Yemek Menüsü Yayınlandı! 🍽️',
+        message: 'Önümüzdeki 14 günlük kurumsal yemekhane menüsü yayında! Kalori ve vejetaryen seçeneklerini hemen inceleyebilirsiniz.',
+        timestamp: DateTime.now(),
+        isRead: false,
+        type: NotificationType.cafeteria,
+        icon: Icons.calendar_month_rounded,
+        color: const Color(0xFFEA580C),
+      ));
+    }
+    notifyListeners();
+  }
+
+  void updateTwoWeekDay(int index, CafeteriaMenu menu) {
+    if (index >= 0 && index < _twoWeekMenus.length) {
+      _twoWeekMenus[index] = menu;
+      if (menu.isSameDay(DateTime.now())) {
+        _todayMenu = menu;
+      }
+      notifyListeners();
+    }
+  }
+
+  void resetTwoWeekMenuToTemplate() {
+    _twoWeekMenus = buildDefaultTwoWeekMenu();
+    notifyListeners();
+  }
+
+  void clearTwoWeekMenu() {
+    final now = DateTime.now();
+    final monday = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    _twoWeekMenus = List.generate(14, (i) {
+      return CafeteriaMenu(
+        date: monday.add(Duration(days: i)),
+        soup: '',
+        mainDish: '',
+        sideDish: '',
+        dessertOrSalad: '',
+        drink: 'Ayran / Su',
+        totalCalories: 0,
+        updatedBy: currentUser.fullName,
+      );
+    });
+    notifyListeners();
+  }
+
+  static List<CafeteriaMenu> buildDefaultTwoWeekMenu({DateTime? startMonday}) {
+    final now = DateTime.now();
+    final monday = startMonday ?? DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+
+    final items = [
+      // 1. Hafta (Gün 1 - Gün 7)
+      {
+        'soup': 'Süzme Mercimek Çorbası',
+        'main': 'Hasanpaşa Köfte',
+        'side': 'Tereyağlı Pirinç Pilavı',
+        'dessert': 'Mevsim Salata & Kazandibi',
+        'drink': 'Ayran / Su',
+        'cal': 820,
+        'veg': 'Zeytinyağlı Enginar & Fırın Sebze',
+        'note': 'Haftanın ilk günü enerjik başlangıç! Glüten ve süt içerir.',
+      },
+      {
+        'soup': 'Yayla Çorbası',
+        'main': 'Orman Kebabı',
+        'side': 'Şehriyeli Bulgur Pilavı',
+        'dessert': 'Kemalpaşa Tatlısı',
+        'drink': 'Şalgam Suyu / Su',
+        'cal': 780,
+        'veg': 'Mantar Sote & Yoğurtlu Kabak',
+        'note': 'Kebabımız taze kuzu eti ve dağ kekiğiyle hazırlanmıştır.',
+      },
+      {
+        'soup': 'Ezogelin Çorbası',
+        'main': 'Geleneksel Kuru Fasulye',
+        'side': 'Tereyağlı Pirinç Pilavı',
+        'dessert': 'Karışık Turşu & Cacık',
+        'drink': 'Ayran / Su',
+        'cal': 850,
+        'veg': 'Zeytinyağlı Barbunya Pilaki',
+        'note': 'İspir kuru fasulyesi tereyağlı güveçte pişirilmiştir.',
+      },
+      {
+        'soup': 'Tarhana Çorbası',
+        'main': 'Fırında Soslu Tavuk Baget',
+        'side': 'Elma Dilim Baharatlı Patates',
+        'dessert': 'Mozaik Pasta',
+        'drink': 'Ev Yapımı Limonata',
+        'cal': 790,
+        'veg': 'Fırın Sebze Dizmesi & Humus',
+        'note': 'Tavuklarımız yerli üretimdir. Afiyet olsun.',
+      },
+      {
+        'soup': 'Domates Çorbası (Kaşarlı)',
+        'main': 'İzmir Köfte',
+        'side': 'Fesleğenli Burgu Makarna',
+        'dessert': 'Fırın Sütlaç',
+        'drink': 'Ayran / Su',
+        'cal': 830,
+        'veg': 'Ispanak Graten & Fırın Mantar',
+        'note': 'Cuma gününe özel fırın sütlaç ikramımızdır.',
+      },
+      {
+        'soup': 'Kremalı Mantar Çorbası',
+        'main': 'Çıtır Piliç Şinitzel',
+        'side': 'Kremalı Patates Püresi',
+        'dessert': 'Supangle & Muz',
+        'drink': 'Meyve Suyu / Su',
+        'cal': 750,
+        'veg': 'Falafel Dürüm & Tahin Sos',
+        'note': 'Hafta sonu mesai personeli için hafif ve lezzetli menü.',
+      },
+      {
+        'soup': 'Tavuk Suyu Şehriye Çorbası',
+        'main': 'Kıymalı Biber Dolması',
+        'side': 'Süzme Yoğurt',
+        'dessert': 'Haşhaşlı Revani Tatlısı',
+        'drink': 'Ayran / Su',
+        'cal': 710,
+        'veg': 'Zeytinyağlı Biber Dolması',
+        'note': 'Pazar nöbeti menüsü.',
+      },
+
+      // 2. Hafta (Gün 8 - Gün 14)
+      {
+        'soup': 'Düğün Çorbası',
+        'main': 'Kuzu Çoban Kavurma',
+        'side': 'Meyhane Pilavı (Bulgurlu)',
+        'dessert': 'Karamelli Trileçe',
+        'drink': 'Ayran / Su',
+        'cal': 870,
+        'veg': 'Zeytinyağlı Taze Fasulye',
+        'note': '2. hafta başlangıç menüsü. Bol etli geleneksel kavurma.',
+      },
+      {
+        'soup': 'Köz Patlıcan Çorbası',
+        'main': 'Fırında Soslu Somon Fileto',
+        'side': 'Buharda Sebze & Roka Salatası',
+        'dessert': 'Fıstıklı İrmik Helvası',
+        'drink': 'Şalgam Suyu / Su',
+        'cal': 680,
+        'veg': 'Fırında Karnabahar Steak',
+        'note': 'Haftalık Omega-3 balık günü. Sağlıklı ve hafif!',
+      },
+      {
+        'soup': 'Süzme Kırmızı Mercimek',
+        'main': 'Ev Yapımı Kayseri Mantısı',
+        'side': 'Sarımsaklı Yoğurt & Tereyağlı Sos',
+        'dessert': 'Vişneli Etimek Tatlısı',
+        'drink': 'Kola / Gazoz / Su',
+        'cal': 890,
+        'veg': 'Ispanaklı Peynirli Mantı',
+        'note': 'Geleneksel el açması mantı günü.',
+      },
+      {
+        'soup': 'Mevsim Sebze Çorbası',
+        'main': 'Dana Rosto & Mantar Sos',
+        'side': 'Tereyağlı Patates Püresi',
+        'dessert': 'Çikolata Soslu Profiterol',
+        'drink': 'Nane Limonata',
+        'cal': 810,
+        'veg': 'Sebzeli Noodle & Çin Böreği',
+        'note': 'Özel şef soslu fırın dana rosto.',
+      },
+      {
+        'soup': 'Kremalı Brokoli Çorbası',
+        'main': 'Güveçte Etli Türlü',
+        'side': 'Arpa Şehriyeli Pirinç Pilavı',
+        'dessert': 'Gaziantep Baklava & Havuç Dilimi',
+        'drink': 'Ayran / Su',
+        'cal': 860,
+        'veg': 'Zeytinyağlı Kereviz & Havuç',
+        'note': 'Cuma gününe özel baklava ziyafeti.',
+      },
+      {
+        'soup': 'Ezogelin Çorbası',
+        'main': 'Çıtır Tavuk Tenders & Dip Sos',
+        'side': 'Baharatlı Fırın Patates',
+        'dessert': 'Çikolatalı Puding & Bisküvi',
+        'drink': 'Soğuk Çay / Su',
+        'cal': 760,
+        'veg': 'Fırın Sebzeli Çıtır Börek',
+        'note': 'Hafta sonu lezzetleri.',
+      },
+      {
+        'soup': 'Mercimek Çorbası',
+        'main': 'Karnıyarık',
+        'side': 'Şehriyeli Pirinç Pilavı',
+        'dessert': 'Cacık & Mevsim Meyvesi',
+        'drink': 'Ayran / Su',
+        'cal': 800,
+        'veg': 'İmam Bayıldı (Zeytinyağlı)',
+        'note': 'Klasik Türk mutfağı pazar kapanış menüsü.',
+      },
+    ];
+
+    final list = <CafeteriaMenu>[];
+    for (int i = 0; i < 14; i++) {
+      final item = items[i];
+      final dayDate = monday.add(Duration(days: i));
+      list.add(CafeteriaMenu(
+        date: dayDate,
+        soup: item['soup'] as String,
+        mainDish: item['main'] as String,
+        sideDish: item['side'] as String,
+        dessertOrSalad: item['dessert'] as String,
+        drink: item['drink'] as String,
+        totalCalories: item['cal'] as int,
+        vegetarianAlternative: item['veg'] as String?,
+        chefNote: item['note'] as String?,
+        updatedBy: 'Hasan Usta (Mutfak Şefi)',
+      ));
+    }
+    return list;
   }
 
   // Bordro ve Maaş Yönetimi Metotları

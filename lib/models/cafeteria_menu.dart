@@ -56,4 +56,39 @@ class CafeteriaMenu {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  bool get isCompleted => soup.trim().isNotEmpty && mainDish.trim().isNotEmpty;
+
+  bool isSameDay(DateTime other) =>
+      date.year == other.year && date.month == other.month && date.day == other.day;
+
+  Map<String, dynamic> toJson() => {
+    'companyId': companyId,
+    'date': date.toIso8601String(),
+    'soup': soup,
+    'mainDish': mainDish,
+    'sideDish': sideDish,
+    'dessertOrSalad': dessertOrSalad,
+    'drink': drink,
+    'totalCalories': totalCalories,
+    'vegetarianAlternative': vegetarianAlternative,
+    'chefNote': chefNote,
+    'updatedBy': updatedBy,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory CafeteriaMenu.fromJson(Map<String, dynamic> json) => CafeteriaMenu(
+    companyId: json['companyId'] as String? ?? 'cmp_acme',
+    date: DateTime.parse(json['date'] as String),
+    soup: json['soup'] as String? ?? '',
+    mainDish: json['mainDish'] as String? ?? '',
+    sideDish: json['sideDish'] as String? ?? '',
+    dessertOrSalad: json['dessertOrSalad'] as String? ?? '',
+    drink: json['drink'] as String? ?? 'Ayran / Su',
+    totalCalories: json['totalCalories'] as int? ?? 800,
+    vegetarianAlternative: json['vegetarianAlternative'] as String?,
+    chefNote: json['chefNote'] as String?,
+    updatedBy: json['updatedBy'] as String? ?? 'Hasan Usta (Mutfak Şefi)',
+    updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
+  );
 }

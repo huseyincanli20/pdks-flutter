@@ -6,6 +6,8 @@ import '../../models/cafeteria_menu.dart';
 import '../../state/pdks_state.dart';
 import '../common/app_drawer.dart';
 import '../notifications/notifications_screen.dart';
+import 'two_week_menu_publisher_screen.dart';
+import 'cafeteria_menu_view_screen.dart';
 
 class CafeteriaShell extends StatefulWidget {
   const CafeteriaShell({super.key});
@@ -114,6 +116,16 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_calendar_rounded),
+            tooltip: '2 Haftalık Menü Yayınla',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TwoWeekMenuPublisherScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_none_rounded),
@@ -218,6 +230,112 @@ class _CafeteriaShellState extends State<CafeteriaShell> {
                           SizedBox(height: 4),
                           Text('52 Porsiyon', style: TextStyle(color: Color(0xFF10B981), fontSize: 22, fontWeight: FontWeight.bold)),
                         ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 2 Haftalık Menü Yayınlama Kartı
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEA580C), Color(0xFFC2410C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEA580C).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.date_range_rounded, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '2 Haftalık Menü Yayınlama',
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              '14 günlük yemek takvimini tek ekrandan yönetin',
+                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Önümüzdeki 2 haftanın çorba, ana yemek, yan yemek, tatlı ve vejetaryen alternatiflerini planlayın ve personele bildirim olarak duyurun.',
+                    style: TextStyle(color: Colors.white, fontSize: 12.5, height: 1.35),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFFEA580C),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.edit_calendar_rounded, size: 18),
+                          label: const Text(
+                            '2 Haftalık Menüyü Yayınla',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const TwoWeekMenuPublisherScreen()),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white70),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        label: const Text('Çizelge', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen(initialTabIndex: 1)),
+                          );
+                        },
                       ),
                     ],
                   ),

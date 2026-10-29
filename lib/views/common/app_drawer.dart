@@ -286,7 +286,7 @@ class AppDrawer extends StatelessWidget {
                     icon: Icons.restaurant_rounded,
                     color: const Color(0xFFEA580C),
                     title: 'Yemekhane Menüsü',
-                    subtitle: 'Günün öğle yemeği & besin değerleri',
+                    subtitle: 'Günün menüsü & 2 haftalık çizelge',
                     destination: const CafeteriaMenuViewScreen(),
                   ),
                   _buildDrawerTile(
