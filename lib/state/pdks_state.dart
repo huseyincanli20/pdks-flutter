@@ -68,20 +68,23 @@ class PdksState extends ChangeNotifier {
   // 2 Haftalık Yemekhane Menüsü (14 Günlük Çizelge)
   late List<CafeteriaMenu> _twoWeekMenus = buildDefaultTwoWeekMenu();
 
-  // Admin Sayfa Düzenleme Modu (Yalnızca Admin rolünde aktiftir)
+  // Yönetici & Admin Sayfa Düzenleme Modu (Yalnızca Patron/CEO ve Admin rollerinde aktiftir)
   bool _isAdminEditMode = false;
   final Map<String, PageCustomization> _pageCustomizations = {};
 
-  bool get isAdminEditMode => _isAdminEditMode && _isLoggedIn && _currentUser.role == UserRole.admin;
+  bool get isAdminEditMode =>
+      _isAdminEditMode &&
+      _isLoggedIn &&
+      (_currentUser.role == UserRole.admin || _currentUser.role == UserRole.boss);
 
   void setAdminEditMode(bool active) {
-    if (_currentUser.role != UserRole.admin) return;
+    if (_currentUser.role != UserRole.admin && _currentUser.role != UserRole.boss) return;
     _isAdminEditMode = active;
     notifyListeners();
   }
 
   void toggleAdminEditMode() {
-    if (_currentUser.role != UserRole.admin) return;
+    if (_currentUser.role != UserRole.admin && _currentUser.role != UserRole.boss) return;
     _isAdminEditMode = !_isAdminEditMode;
     notifyListeners();
   }
@@ -91,13 +94,14 @@ class PdksState extends ChangeNotifier {
   }
 
   void updatePageCustomization(PageCustomization customization) {
-    if (_currentUser.role != UserRole.admin) return;
+    if (_currentUser.role != UserRole.admin && _currentUser.role != UserRole.boss) return;
     _pageCustomizations[customization.pageId] = customization;
+    _db.savePageCustomization(customization);
     notifyListeners();
   }
 
   void togglePageSection(String pageId, String sectionId) {
-    if (_currentUser.role != UserRole.admin) return;
+    if (_currentUser.role != UserRole.admin && _currentUser.role != UserRole.boss) return;
     final current = getPageCustomization(pageId);
     final hidden = Set<String>.from(current.hiddenSectionIds);
     if (hidden.contains(sectionId)) {
@@ -105,13 +109,16 @@ class PdksState extends ChangeNotifier {
     } else {
       hidden.add(sectionId);
     }
-    _pageCustomizations[pageId] = current.copyWith(hiddenSectionIds: hidden);
+    final updated = current.copyWith(hiddenSectionIds: hidden);
+    _pageCustomizations[pageId] = updated;
+    _db.savePageCustomization(updated);
     notifyListeners();
   }
 
   void resetPageCustomization(String pageId) {
-    if (_currentUser.role != UserRole.admin) return;
+    if (_currentUser.role != UserRole.admin && _currentUser.role != UserRole.boss) return;
     _pageCustomizations.remove(pageId);
+    _db.deletePageCustomization(pageId);
     notifyListeners();
   }
 
@@ -1831,6 +1838,8 @@ class PdksState extends ChangeNotifier {
     }
 
     _quickMenuItems = List.from(_db.getAllQuickMenuItems());
+    _pageCustomizations.clear();
+    _pageCustomizations.addAll(_db.getAllPageCustomizations());
 
     _isCheckedIn = false;
     _lastCheckInTime = null;

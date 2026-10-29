@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_notification.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
 import '../../core/services/ios_notification_service.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../mobile/leave_request_screen.dart';
 import '../common/email_preview_dialog.dart';
+import '../common/admin_edit_mode_bar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -577,8 +579,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   ) {
     return Column(
       children: [
+        // Yönetici & Admin Düzenleme Çubuğu
+        const AdminEditModeBar(
+          pageId: 'notifications',
+          pageTitle: 'Bildirimler Ekranı',
+          editableSections: [
+            PageSectionItem(id: 'notification_filters', title: 'Filtreler & Push Testi'),
+            PageSectionItem(id: 'notification_list', title: 'Bildirim Listesi Akışı'),
+          ],
+        ),
+
         // Test Butonu & Filtreler
-        Container(
+        AdminEditableSection(
+          pageId: 'notifications',
+          sectionId: 'notification_filters',
+          sectionTitle: 'Filtreler & Push Testi',
+          child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           color: AppColors.cardBg(context),
           child: Column(
@@ -621,11 +637,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ],
           ),
         ),
+        ),
         Divider(height: 1, color: AppColors.cardBorder(context)),
 
         // Bildirim Listesi
         Expanded(
-          child: filtered.isEmpty
+          child: AdminEditableSection(
+            pageId: 'notifications',
+            sectionId: 'notification_list',
+            sectionTitle: 'Bildirim Listesi Akışı',
+            child: filtered.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -665,6 +686,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     return _buildNotificationCard(context, item, isDark, pdks);
                   },
                 ),
+          ),
         ),
       ],
     );

@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/chat_message.dart';
 import '../../models/employee.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
 import 'chat_conversation_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -83,10 +85,28 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
       body: Column(
         children: [
-          // Arama Çubuğu
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-            child: Container(
+          // Yönetici & Admin Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'chat_list',
+            pageTitle: 'Mesajlaşma Ekranı',
+            editableSections: [
+              PageSectionItem(id: 'search_filter', title: 'Arama & Filtre Çubuğu'),
+              PageSectionItem(id: 'channels_section', title: 'Kurumsal Grup Kanalları'),
+              PageSectionItem(id: 'direct_chats_section', title: 'Bireysel Sohbetler (1-e-1)'),
+            ],
+          ),
+
+          // Arama Çubuğu & Filtre Kapsülleri
+          AdminEditableSection(
+            pageId: 'chat_list',
+            sectionId: 'search_filter',
+            sectionTitle: 'Arama & Filtre Çubuğu',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                  child: Container(
               decoration: BoxDecoration(
                 color: AppColors.cardBg(context),
                 borderRadius: BorderRadius.circular(16),
@@ -112,16 +132,19 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
 
-          // Filtre Butonları
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              children: [
-                _buildFilterChip('all', 'Tümü Sohbetler'),
-                const SizedBox(width: 8),
-                _buildFilterChip('channels', 'Şirket Kanalları (${channels.length})'),
-                const SizedBox(width: 8),
-                _buildFilterChip('direct', 'Bireysel (${directChats.length})'),
+                // Filtre Butonları
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('all', 'Tümü Sohbetler'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('channels', 'Şirket Kanalları (${channels.length})'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('direct', 'Bireysel (${directChats.length})'),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -134,187 +157,207 @@ class _ChatListScreenState extends State<ChatListScreen> {
               children: [
                 // 1. ŞİRKET KANALLARI BÖLÜMÜ
                 if (_selectedFilter != 'direct') ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                        child: Text(
-                          'KURUMSAL GRUP KANALLARI',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.primaryOf(context),
-                            letterSpacing: 0.8,
-                          ),
+                  AdminEditableSection(
+                    pageId: 'chat_list',
+                    sectionId: 'channels_section',
+                    sectionTitle: 'Kurumsal Grup Kanalları',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4, bottom: 8),
+                              child: Text(
+                                'KURUMSAL GRUP KANALLARI',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.primaryOf(context),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                            if (canCreateGroup)
+                              InkWell(
+                                onTap: () => _openCreateGroupModal(context, pdks),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.primaryOf(context)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '+ Yeni Grup Kur (Yönetim)',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryOf(context),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.textSub(context)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Grup Yetkisi: Patron & Admin',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSub(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      if (canCreateGroup)
-                        InkWell(
-                          onTap: () => _openCreateGroupModal(context, pdks),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.primaryOf(context)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '+ Yeni Grup Kur (Yönetim)',
+                        ...channels
+                            .where((ch) => _searchQuery.isEmpty || ch.title.toLowerCase().contains(_searchQuery) || ch.subtitle.toLowerCase().contains(_searchQuery))
+                            .map((ch) {
+                          final lastMsg = pdks.getLastMessageForChannel(ch.id);
+                          final unreadCount = pdks.getUnreadCountForChannel(ch.id);
+
+                          return _buildChannelTile(
+                            context: context,
+                            title: ch.title,
+                            subtitle: lastMsg != null
+                                ? '${lastMsg.senderName.split(' ').first}: ${lastMsg.text}'
+                                : ch.subtitle,
+                            icon: ch.icon,
+                            iconColor: ch.iconColor,
+                            time: lastMsg?.timestamp,
+                            unreadCount: unreadCount,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatConversationScreen(
+                                    channelId: ch.id,
+                                    title: ch.title,
+                                    subtitle: ch.subtitle,
+                                    icon: ch.icon,
+                                    iconColor: ch.iconColor,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
+
+                // 2. BİREYSEL DİREKT MESAJLAR BÖLÜMÜ
+                if (_selectedFilter != 'channels') ...[
+                  AdminEditableSection(
+                    pageId: 'chat_list',
+                    sectionId: 'direct_chats_section',
+                    sectionTitle: 'Bireysel Sohbetler (1-e-1)',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4, bottom: 8),
+                              child: Text(
+                                'BİREYSEL MESAJLAR (1-E-1)',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.textSub(context),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => _openNewChatModal(context, pdks),
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  '+ Yeni Sohbet',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.primaryOf(context),
                                   ),
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (directChats.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg(context),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: AppColors.cardBorder(context)),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(Icons.mark_chat_unread_outlined, size: 36, color: AppColors.primaryOf(context).withOpacity(0.5)),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Henüz bireysel mesajlaşmanız yok',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Rehberden bir çalışma arkadaşı seçerek hemen 1-e-1 sohbet başlatabilirsiniz.',
+                                  style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: const Icon(Icons.person_add_alt_rounded, size: 16),
+                                  label: const Text('Kişi Seç & Sohbet Başlat', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  onPressed: () => _openNewChatModal(context, pdks),
+                                ),
                               ],
                             ),
-                          ),
-                        )
-                      else
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.textSub(context)),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Grup Yetkisi: Patron & Admin',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSub(context),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
+                          )
+                        else
+                          ...directChats
+                              .where((d) => _searchQuery.isEmpty || d.employee.fullName.toLowerCase().contains(_searchQuery) || d.employee.department.toLowerCase().contains(_searchQuery))
+                              .map((d) {
+                            return _buildDirectChatTile(
+                              context: context,
+                              item: d,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatConversationScreen(
+                                      channelId: d.channelId,
+                                      title: d.employee.fullName,
+                                      subtitle: '${d.employee.department} • ${d.employee.title}',
+                                      directUser: d.employee,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }),
+                      ],
+                    ),
                   ),
-                  ...channels
-                      .where((ch) => _searchQuery.isEmpty || ch.title.toLowerCase().contains(_searchQuery) || ch.subtitle.toLowerCase().contains(_searchQuery))
-                      .map((ch) {
-                    final lastMsg = pdks.getLastMessageForChannel(ch.id);
-                    final unreadCount = pdks.getUnreadCountForChannel(ch.id);
-
-                    return _buildChannelTile(
-                      context: context,
-                      title: ch.title,
-                      subtitle: lastMsg != null
-                          ? '${lastMsg.senderName.split(' ').first}: ${lastMsg.text}'
-                          : ch.subtitle,
-                      icon: ch.icon,
-                      iconColor: ch.iconColor,
-                      time: lastMsg?.timestamp,
-                      unreadCount: unreadCount,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatConversationScreen(
-                              channelId: ch.id,
-                              title: ch.title,
-                              subtitle: ch.subtitle,
-                              icon: ch.icon,
-                              iconColor: ch.iconColor,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                  const SizedBox(height: 18),
-                ],
-
-                // 2. BİREYSEL DİREKT MESAJLAR BÖLÜMÜ
-                if (_selectedFilter != 'channels') ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 8),
-                        child: Text(
-                          'BİREYSEL MESAJLAR (1-E-1)',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textSub(context),
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => _openNewChatModal(context, pdks),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            '+ Yeni Sohbet',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryOf(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (directChats.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBg(context),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.cardBorder(context)),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(Icons.mark_chat_unread_outlined, size: 36, color: AppColors.primaryOf(context).withOpacity(0.5)),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Henüz bireysel mesajlaşmanız yok',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Rehberden bir çalışma arkadaşı seçerek hemen 1-e-1 sohbet başlatabilirsiniz.',
-                            style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            icon: const Icon(Icons.person_add_alt_rounded, size: 16),
-                            label: const Text('Kişi Seç & Sohbet Başlat', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            onPressed: () => _openNewChatModal(context, pdks),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ...directChats
-                        .where((d) => _searchQuery.isEmpty || d.employee.fullName.toLowerCase().contains(_searchQuery) || d.employee.department.toLowerCase().contains(_searchQuery))
-                        .map((d) {
-                      return _buildDirectChatTile(
-                        context: context,
-                        item: d,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatConversationScreen(
-                                channelId: d.channelId,
-                                title: d.employee.fullName,
-                                subtitle: '${d.employee.department} • ${d.employee.title}',
-                                directUser: d.employee,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    }),
                 ],
               ],
             ),

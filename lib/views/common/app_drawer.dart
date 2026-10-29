@@ -15,6 +15,7 @@ import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
 import 'firebase_config_dialog.dart';
+import 'quick_menu_manager_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -225,8 +226,8 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // Sadece Admin Rolüne Özel: Sayfa Düzenleme Modu Ana Şalteri
-            if (user.role == UserRole.admin) ...[
+            // Sadece Yönetici (Patron/CEO) ve Admin Rolüne Özel: Sayfa Düzenleme Modu Şalteri
+            if (user.role == UserRole.admin || user.role == UserRole.boss) ...[
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -300,7 +301,7 @@ class AppDrawer extends StatelessWidget {
                             behavior: SnackBarBehavior.floating,
                             backgroundColor: val ? const Color(0xFF9333EA) : Colors.grey.shade800,
                             content: Text(val
-                                ? 'Admin Düzenleme Modu Açıldı. Sayfaları canlı özelleştirebilirsiniz.'
+                                ? 'Yönetici & Admin Düzenleme Modu Açıldı. Sayfaları canlı özelleştirebilirsiniz.'
                                 : 'Düzenleme Modu Kapatıldı.'),
                             duration: const Duration(seconds: 2),
                           ),
@@ -312,19 +313,46 @@ class AppDrawer extends StatelessWidget {
               ),
             ],
 
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'HIZLI MENÜ',
-                  style: TextStyle(
-                    fontSize: 11,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textMuted,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 14, 6),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'HIZLI MENÜ',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ),
-                ),
+                  if (user.role == UserRole.admin || user.role == UserRole.boss)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => QuickMenuManagerDialog.show(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF9333EA).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF9333EA).withOpacity(0.3)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.tune_rounded, size: 12, color: Color(0xFF9333EA)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Menüyü Yönet',
+                              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF9333EA)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 
@@ -458,15 +486,16 @@ class AppDrawer extends StatelessWidget {
                       children: [
                         Icon(Icons.logout_rounded, color: AppColors.danger, size: 20),
                         SizedBox(width: 12),
-                        Text(
-                          'Oturumu Kapat',
-                          style: TextStyle(
-                            color: AppColors.danger,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        Expanded(
+                          child: Text(
+                            'Oturumu Kapat',
+                            style: TextStyle(
+                              color: AppColors.danger,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                        Spacer(),
                         Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.danger),
                       ],
                     ),

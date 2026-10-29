@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
 import '../chat/chat_conversation_screen.dart';
+import '../common/admin_edit_mode_bar.dart';
 
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
@@ -37,72 +39,93 @@ class _ContactsScreenState extends State<ContactsScreen> {
       ),
       body: Column(
         children: [
-          // Apple / Samsung OneUI Tarzı Arama Çubuğu
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.cardBg(context),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder(context)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                style: TextStyle(fontSize: 14, color: AppColors.text(context)),
-                decoration: InputDecoration(
-                  hintText: 'İsim, unvan veya departman ara...',
-                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 22),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 18),
-                          onPressed: () => setState(() => _searchQuery = ''),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-                onChanged: (val) => setState(() => _searchQuery = val),
-              ),
-            ),
+          // Yönetici & Admin Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'contacts',
+            pageTitle: 'Şirket Rehberi',
+            editableSections: [
+              PageSectionItem(id: 'search_filters', title: 'Arama & Departman Filtreleri'),
+              PageSectionItem(id: 'contacts_list', title: 'Personel Rehber Kartları'),
+            ],
           ),
 
-          // Departman Filtre Hapları (Pills)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              children: departments.map((dept) {
-                final isSelected = _selectedDept == dept;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(dept),
-                    selected: isSelected,
-                    selectedColor: AppColors.primary,
-                    checkmarkColor: Colors.white,
-                    backgroundColor: AppColors.cardBg(context),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? AppColors.primary : AppColors.cardBorder(context),
+          // Arama Çubuğu & Departman Filtreleri
+          AdminEditableSection(
+            pageId: 'contacts',
+            sectionId: 'search_filters',
+            sectionTitle: 'Arama & Departman Filtreleri',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Apple / Samsung OneUI Tarzı Arama Çubuğu
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg(context),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.cardBorder(context)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      style: TextStyle(fontSize: 14, color: AppColors.text(context)),
+                      decoration: InputDecoration(
+                        hintText: 'İsim, unvan veya departman ara...',
+                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 22),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                                onPressed: () => setState(() => _searchQuery = ''),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
                     ),
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.text(context),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 12,
-                    ),
-                    onSelected: (_) => setState(() => _selectedDept = dept),
                   ),
-                );
-              }).toList(),
+                ),
+
+                // Departman Filtre Hapları (Pills)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: Row(
+                    children: departments.map((dept) {
+                      final isSelected = _selectedDept == dept;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(dept),
+                          selected: isSelected,
+                          selectedColor: AppColors.primary,
+                          checkmarkColor: Colors.white,
+                          backgroundColor: AppColors.cardBg(context),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: isSelected ? AppColors.primary : AppColors.cardBorder(context),
+                            ),
+                          ),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : AppColors.text(context),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                          onSelected: (_) => setState(() => _selectedDept = dept),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -110,31 +133,36 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
           // Rehber Kartları Listesi
           Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.person_search_outlined, size: 48, color: AppColors.textMuted),
-                        SizedBox(height: 12),
-                        Text('Aramanızla eşleşen personel bulunamadı.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                      ],
+            child: AdminEditableSection(
+              pageId: 'contacts',
+              sectionId: 'contacts_list',
+              sectionTitle: 'Personel Rehber Kartları',
+              child: filtered.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_search_outlined, size: 48, color: AppColors.textMuted),
+                          SizedBox(height: 12),
+                          Text('Aramanızla eşleşen personel bulunamadı.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        8,
+                        16,
+                        MediaQuery.of(context).padding.bottom + 20,
+                      ),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (_, index) {
+                        final emp = filtered[index];
+                        return _buildContactCard(context, emp, isDark);
+                      },
                     ),
-                  )
-                : ListView.separated(
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      8,
-                      16,
-                      MediaQuery.of(context).padding.bottom + 20,
-                    ),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, index) {
-                      final emp = filtered[index];
-                      return _buildContactCard(context, emp, isDark);
-                    },
-                  ),
+            ),
           ),
         ],
       ),

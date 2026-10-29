@@ -10,6 +10,7 @@ import '../../models/chat_message.dart';
 import '../../models/app_notification.dart';
 import '../../models/cafeteria_menu.dart';
 import '../../models/quick_menu_item.dart';
+import '../../models/page_customization.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -29,6 +30,7 @@ class DatabaseService {
   static const String _keyNotifications = 'pdks_db_notifications_v1';
   static const String _keyMenu = 'pdks_db_menu_v1';
   static const String _keyQuickMenu = 'pdks_db_quick_menu_v1';
+  static const String _keyPageCustomizations = 'pdks_db_page_customizations_v1';
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -43,6 +45,7 @@ class DatabaseService {
   final List<ChatChannel> _customChannels = [];
   final List<AppNotification> _notifications = [];
   final List<QuickMenuItem> _quickMenuItems = [];
+  final Map<String, PageCustomization> _pageCustomizations = {};
   CafeteriaMenu? _todayMenu;
 
   bool get isInitialized => _isInitialized;
@@ -186,6 +189,24 @@ class DatabaseService {
         _quickMenuItems.addAll(list.map((item) => QuickMenuItem.fromJson(Map<String, dynamic>.from(item))));
       } catch (e) {
         debugPrint('⚠️ Hızlı menü yüklenirken hata: $e');
+      }
+    }
+
+    // 11. Sayfa Özelleştirmeleri (Yönetici & Admin Düzenleme Modu)
+    final pageCustRaw = prefs.getString(_keyPageCustomizations);
+    if (pageCustRaw != null && pageCustRaw.isNotEmpty) {
+      try {
+        final Map<String, dynamic> map = jsonDecode(pageCustRaw);
+        _pageCustomizations.clear();
+        map.forEach((k, v) {
+          if (v is Map<String, dynamic>) {
+            _pageCustomizations[k] = PageCustomization.fromJson(v);
+          } else if (v is Map) {
+            _pageCustomizations[k] = PageCustomization.fromJson(Map<String, dynamic>.from(v));
+          }
+        });
+      } catch (e) {
+        debugPrint('⚠️ Sayfa özelleştirmeleri yüklenirken hata: $e');
       }
     }
   }
@@ -736,6 +757,42 @@ class DatabaseService {
       await prefs.setString(_keyQuickMenu, jsonEncode(list));
     } catch (e) {
       debugPrint('⚠️ Hızlı menü diske kaydedilemedi: $e');
+    }
+  }
+
+  // ==========================================
+  // SAYFA ÖZELLEŞTİRMELERİ (YÖNETİCİ & ADMİN)
+  // ==========================================
+
+  Map<String, PageCustomization> getAllPageCustomizations() {
+    return Map.unmodifiable(_pageCustomizations);
+  }
+
+  PageCustomization? getPageCustomization(String pageId) {
+    return _pageCustomizations[pageId];
+  }
+
+  Future<void> savePageCustomization(PageCustomization customization) async {
+    _pageCustomizations[customization.pageId] = customization;
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final map = _pageCustomizations.map((k, v) => MapEntry(k, v.toJson()));
+      await prefs.setString(_keyPageCustomizations, jsonEncode(map));
+    } catch (e) {
+      debugPrint('⚠️ Sayfa özelleştirmesi kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> deletePageCustomization(String pageId) async {
+    _pageCustomizations.remove(pageId);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final map = _pageCustomizations.map((k, v) => MapEntry(k, v.toJson()));
+      await prefs.setString(_keyPageCustomizations, jsonEncode(map));
+    } catch (e) {
+      debugPrint('⚠️ Sayfa özelleştirmesi silinemedi: $e');
     }
   }
 }

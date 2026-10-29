@@ -23,13 +23,20 @@ class AdminEditModeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
 
-    // SADECE VE SADECE ADMİN MODUNDA GÖZÜKSÜN
-    if (!pdks.isLoggedIn || pdks.currentUser.role != UserRole.admin) {
-      return const SizedBox.shrink();
+    // SADECE YÖNETİCİ (PATRON/CEO) VE ADMİN DEĞİŞTİREBİLİR
+    final isAuthorized = pdks.isLoggedIn &&
+        (pdks.currentUser.role == UserRole.admin || pdks.currentUser.role == UserRole.boss);
+
+    final config = pdks.getPageCustomization(pageId);
+
+    // Yetkisiz kullanıcılar için sadece aktif duyuru veya bakım modu varsa göster, yoksa gizle
+    if (!isAuthorized) {
+      if (!config.showAnnouncement && !config.isMaintenanceMode) {
+        return const SizedBox.shrink();
+      }
     }
 
-    final isEditActive = pdks.isAdminEditMode;
-    final config = pdks.getPageCustomization(pageId);
+    final isEditActive = pdks.isAdminEditMode && isAuthorized;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -87,8 +94,9 @@ class AdminEditModeBar extends StatelessWidget {
             ),
           ),
 
-        // 3. Admin Düzenleme Modu Kontrol Çubuğu
-        Container(
+        // 3. Yönetici & Admin Düzenleme Modu Kontrol Çubuğu (Yalnızca yetkililere görünür)
+        if (isAuthorized)
+          Container(
           margin: const EdgeInsets.fromLTRB(14, 6, 14, 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -131,7 +139,7 @@ class AdminEditModeBar extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          isEditActive ? 'DÜZENLEME MODU AÇIK' : 'ADMİN MODU',
+                          isEditActive ? 'DÜZENLEME MODU AÇIK' : 'YÖNETİCİ & ADMİN DÜZENLEME',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -605,17 +613,18 @@ class AdminEditableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
-    final isUserAdmin = pdks.isLoggedIn && pdks.currentUser.role == UserRole.admin;
+    final isAuthorized = pdks.isLoggedIn &&
+        (pdks.currentUser.role == UserRole.admin || pdks.currentUser.role == UserRole.boss);
 
     // Normal kullanıcıysa ve bölüm gizlendiyse gösterme
     final config = pdks.getPageCustomization(pageId);
     final isHidden = config.isSectionHidden(sectionId);
 
-    if (isHidden && !pdks.isAdminEditMode) {
+    if (isHidden && (!isAuthorized || !pdks.isAdminEditMode)) {
       return const SizedBox.shrink();
     }
 
-    if (!isUserAdmin || !pdks.isAdminEditMode) {
+    if (!isAuthorized || !pdks.isAdminEditMode) {
       return child;
     }
 

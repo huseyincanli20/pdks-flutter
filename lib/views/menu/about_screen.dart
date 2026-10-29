@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../models/page_customization.dart';
+import '../common/admin_edit_mode_bar.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -20,8 +22,23 @@ class AboutScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
+            // Yönetici & Admin Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'about',
+              pageTitle: 'Hakkında Sayfası',
+              editableSections: [
+                PageSectionItem(id: 'app_branding', title: 'Uygulama Logosu & Versiyon'),
+                PageSectionItem(id: 'system_architecture', title: 'Sistem Mimarisi & Güvenlik'),
+                PageSectionItem(id: 'kvkk_privacy', title: 'KVKK ve Veri Gizliliği'),
+              ],
+            ),
+
             // Uygulama Başlığı ve Logosu
-            Center(
+            AdminEditableSection(
+              pageId: 'about',
+              sectionId: 'app_branding',
+              sectionTitle: 'Uygulama Logosu & Versiyon',
+              child: Center(
               child: Column(
                 children: [
                   Container(
@@ -63,11 +80,16 @@ class AboutScreen extends StatelessWidget {
                 ],
               ),
             ),
+            ),
 
             const SizedBox(height: 28),
 
             // Mimari Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'about',
+              sectionId: 'system_architecture',
+              sectionTitle: 'Sistem Mimarisi & Güvenlik',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -110,11 +132,16 @@ class AboutScreen extends StatelessWidget {
                 ],
               ),
             ),
+            ),
 
             const SizedBox(height: 14),
 
             // KVKK ve Gizlilik Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'about',
+              sectionId: 'kvkk_privacy',
+              sectionTitle: 'KVKK ve Veri Gizliliği',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -146,6 +173,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
             ),
 
             const SizedBox(height: 28),

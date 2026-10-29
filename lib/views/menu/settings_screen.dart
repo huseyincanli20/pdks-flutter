@@ -287,12 +287,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MediaQuery.of(context).padding.bottom + 24,
         ),
         children: [
-          // Sadece Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
+          // Sadece Yönetici & Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
           const AdminEditModeBar(
             pageId: 'settings',
             pageTitle: 'Ayarlar Sayfası',
             editableSections: [
               PageSectionItem(id: 'theme_settings', title: 'Tema & Görünüm Tercihi'),
+              PageSectionItem(id: 'notification_settings', title: 'Bildirim ve Hatırlatıcılar'),
+              PageSectionItem(id: 'security_settings', title: 'Güvenlik ve Biyometri'),
+              PageSectionItem(id: 'cloud_settings', title: 'Bulut ve Veritabanı'),
+              PageSectionItem(id: 'language_settings', title: 'Dil ve Bölge'),
             ],
           ),
 
@@ -321,121 +325,161 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: 20),
-          _buildSectionHeader('BİLDİRİM VE HATIRLATICILAR'),
-          _buildCardGroup(context, [
-            _buildSwitchItem(
-              context,
-              title: 'Mesai Başlama Hatırlatıcısı',
-              subtitle: 'Sabah 08:20\'de giriş yapmayı hatırlat',
-              icon: Icons.notifications_active_outlined,
-              iconColor: const Color(0xFF3B82F6),
-              value: _notifyCheckIn,
-              onChanged: (val) => setState(() => _notifyCheckIn = val),
+          AdminEditableSection(
+            pageId: 'settings',
+            sectionId: 'notification_settings',
+            sectionTitle: 'Bildirim ve Hatırlatıcılar',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('BİLDİRİM VE HATIRLATICILAR'),
+                _buildCardGroup(context, [
+                  _buildSwitchItem(
+                    context,
+                    title: 'Mesai Başlama Hatırlatıcısı',
+                    subtitle: 'Sabah 08:20\'de giriş yapmayı hatırlat',
+                    icon: Icons.notifications_active_outlined,
+                    iconColor: const Color(0xFF3B82F6),
+                    value: _notifyCheckIn,
+                    onChanged: (val) => setState(() => _notifyCheckIn = val),
+                  ),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
+                  _buildSwitchItem(
+                    context,
+                    title: 'Çıkış Unutma Uyarısı',
+                    subtitle: 'Akşam 18:00\'de çıkış kartını okutma bildirimi',
+                    icon: Icons.alarm_outlined,
+                    iconColor: const Color(0xFFF59E0B),
+                    value: _notifyCheckOut,
+                    onChanged: (val) => setState(() => _notifyCheckOut = val),
+                  ),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
+                  _buildSwitchItem(
+                    context,
+                    title: 'İzin Durum Bildirimleri',
+                    subtitle: 'Yöneticiniz talebi yanıtladığında anında ilet',
+                    icon: Icons.beach_access_outlined,
+                    iconColor: const Color(0xFF10B981),
+                    value: _notifyLeaves,
+                    onChanged: (val) => setState(() => _notifyLeaves = val),
+                  ),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
+                  _buildActionItem(
+                    context,
+                    title: 'Apple Bildirim Merkezi (iOS / Mac)',
+                    subtitle: 'Kilit Ekranı, Bildirim Merkezi ve Apple Watch ile senkronize',
+                    icon: Icons.apple_rounded,
+                    iconColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
+                    trailingText: 'Test Bildirimi',
+                    trailingBadgeColor: const Color(0xFF10B981),
+                    onTap: () async {
+                      final granted = await IosNotificationService.requestAppleNotificationPermission();
+                      IosNotificationService.sendAppleTestNotification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF10B981),
+                            content: Text(
+                              granted
+                                  ? '🍎 Apple Bildirim Merkezine test bildirimi gönderildi!'
+                                  : '🍎 Bildirim tetiklendi. Kilit ekranı ve bildirim merkezinde görüntülenecektir.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ]),
+              ],
             ),
-            Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
-            _buildSwitchItem(
-              context,
-              title: 'Çıkış Unutma Uyarısı',
-              subtitle: 'Akşam 18:00\'de çıkış kartını okutma bildirimi',
-              icon: Icons.alarm_outlined,
-              iconColor: const Color(0xFFF59E0B),
-              value: _notifyCheckOut,
-              onChanged: (val) => setState(() => _notifyCheckOut = val),
-            ),
-            Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
-            _buildSwitchItem(
-              context,
-              title: 'İzin Durum Bildirimleri',
-              subtitle: 'Yöneticiniz talebi yanıtladığında anında ilet',
-              icon: Icons.beach_access_outlined,
-              iconColor: const Color(0xFF10B981),
-              value: _notifyLeaves,
-              onChanged: (val) => setState(() => _notifyLeaves = val),
-            ),
-            Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
-            _buildActionItem(
-              context,
-              title: 'Apple Bildirim Merkezi (iOS / Mac)',
-              subtitle: 'Kilit Ekranı, Bildirim Merkezi ve Apple Watch ile senkronize',
-              icon: Icons.apple_rounded,
-              iconColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF0F172A),
-              trailingText: 'Test Bildirimi',
-              trailingBadgeColor: const Color(0xFF10B981),
-              onTap: () async {
-                final granted = await IosNotificationService.requestAppleNotificationPermission();
-                IosNotificationService.sendAppleTestNotification();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: const Color(0xFF10B981),
-                      content: Text(
-                        granted
-                            ? '🍎 Apple Bildirim Merkezine test bildirimi gönderildi!'
-                            : '🍎 Bildirim tetiklendi. Kilit ekranı ve bildirim merkezinde görüntülenecektir.',
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ]),
+          ),
 
           const SizedBox(height: 20),
-          _buildSectionHeader('GÜVENLİK VE BİYOMETRİ'),
-          _buildCardGroup(context, [
-            _buildSwitchItem(
-              context,
-              title: 'Biyometrik Onay (FaceID / TouchID)',
-              subtitle: 'Giriş ve çıkışlarda fiziksel kimlik onayı iste',
-              icon: Icons.fingerprint_rounded,
-              iconColor: const Color(0xFF6366F1),
-              value: _biometricEnabled,
-              onChanged: (val) => setState(() => _biometricEnabled = val),
+          AdminEditableSection(
+            pageId: 'settings',
+            sectionId: 'security_settings',
+            sectionTitle: 'Güvenlik ve Biyometri',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('GÜVENLİK VE BİYOMETRİ'),
+                _buildCardGroup(context, [
+                  _buildSwitchItem(
+                    context,
+                    title: 'Biyometrik Onay (FaceID / TouchID)',
+                    subtitle: 'Giriş ve çıkışlarda fiziksel kimlik onayı iste',
+                    icon: Icons.fingerprint_rounded,
+                    iconColor: const Color(0xFF6366F1),
+                    value: _biometricEnabled,
+                    onChanged: (val) => setState(() => _biometricEnabled = val),
+                  ),
+                  Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
+                  _buildSwitchItem(
+                    context,
+                    title: 'Fused GPS Hassas Konum',
+                    subtitle: 'Geofence sınır doğrulaması için yüksek hassasiyet',
+                    icon: Icons.my_location_rounded,
+                    iconColor: const Color(0xFF06B6D4),
+                    value: _autoGps,
+                    onChanged: (val) => setState(() => _autoGps = val),
+                  ),
+                ]),
+              ],
             ),
-            Divider(height: 1, indent: 56, endIndent: 16, color: AppColors.cardBorder(context)),
-            _buildSwitchItem(
-              context,
-              title: 'Fused GPS Hassas Konum',
-              subtitle: 'Geofence sınır doğrulaması için yüksek hassasiyet',
-              icon: Icons.my_location_rounded,
-              iconColor: const Color(0xFF06B6D4),
-              value: _autoGps,
-              onChanged: (val) => setState(() => _autoGps = val),
-            ),
-          ]),
+          ),
 
           if (pdks.currentUser.role == UserRole.admin || pdks.currentUser.role == UserRole.boss) ...[
             const SizedBox(height: 20),
-            _buildSectionHeader('BULUT VE VERİTABANI'),
-            _buildCardGroup(context, [
-              _buildActionItem(
-                context,
-                title: 'Firebase Bulut Veritabanı',
-                subtitle: pdks.isFirebaseConnected
-                    ? 'Canlı senkronizasyon aktif (Proje: ${pdks.firebaseProjectId})'
-                    : 'Yerel ve bulut DB yönetimi (Proje: ${pdks.firebaseProjectId})',
-                icon: Icons.local_fire_department_rounded,
-                iconColor: const Color(0xFFFF5722),
-                trailingText: pdks.isFirebaseConnected ? 'Bağlı (Online)' : 'Standby',
-                trailingBadgeColor: pdks.isFirebaseConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                onTap: () => showFirebaseConfigDialog(context),
+            AdminEditableSection(
+              pageId: 'settings',
+              sectionId: 'cloud_settings',
+              sectionTitle: 'Bulut ve Veritabanı',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader('BULUT VE VERİTABANI'),
+                  _buildCardGroup(context, [
+                    _buildActionItem(
+                      context,
+                      title: 'Firebase Bulut Veritabanı',
+                      subtitle: pdks.isFirebaseConnected
+                          ? 'Canlı senkronizasyon aktif (Proje: ${pdks.firebaseProjectId})'
+                          : 'Yerel ve bulut DB yönetimi (Proje: ${pdks.firebaseProjectId})',
+                      icon: Icons.local_fire_department_rounded,
+                      iconColor: const Color(0xFFFF5722),
+                      trailingText: pdks.isFirebaseConnected ? 'Bağlı (Online)' : 'Standby',
+                      trailingBadgeColor: pdks.isFirebaseConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                      onTap: () => showFirebaseConfigDialog(context),
+                    ),
+                  ]),
+                ],
               ),
-            ]),
+            ),
           ],
 
           const SizedBox(height: 20),
-          _buildSectionHeader('DİL VE BÖLGE'),
-          _buildCardGroup(context, [
-            _buildActionItem(
-              context,
-              title: 'Uygulama Dili',
-              subtitle: 'Varsayılan sistem dili',
-              icon: Icons.language_rounded,
-              iconColor: const Color(0xFF8B5CF6),
-              trailingText: 'Türkçe (TR)',
-              onTap: () {},
+          AdminEditableSection(
+            pageId: 'settings',
+            sectionId: 'language_settings',
+            sectionTitle: 'Dil ve Bölge',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader('DİL VE BÖLGE'),
+                _buildCardGroup(context, [
+                  _buildActionItem(
+                    context,
+                    title: 'Uygulama Dili',
+                    subtitle: 'Varsayılan sistem dili',
+                    icon: Icons.language_rounded,
+                    iconColor: const Color(0xFF8B5CF6),
+                    trailingText: 'Türkçe (TR)',
+                    onTap: () {},
+                  ),
+                ]),
+              ],
             ),
-          ]),
+          ),
         ],
       ),
     );

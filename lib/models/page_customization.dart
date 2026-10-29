@@ -68,4 +68,30 @@ class PageCustomization {
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'pageId': pageId,
+    'customTitle': customTitle,
+    'customSubtitle': customSubtitle,
+    'announcementText': announcementText,
+    'showAnnouncement': showAnnouncement,
+    'accentColor': accentColor?.value,
+    'hiddenSectionIds': hiddenSectionIds.toList(),
+    'customSectionTitles': customSectionTitles,
+    'isMaintenanceMode': isMaintenanceMode,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory PageCustomization.fromJson(Map<String, dynamic> json) => PageCustomization(
+    pageId: json['pageId'] ?? '',
+    customTitle: json['customTitle'],
+    customSubtitle: json['customSubtitle'],
+    announcementText: json['announcementText'],
+    showAnnouncement: json['showAnnouncement'] ?? false,
+    accentColor: json['accentColor'] != null ? Color(json['accentColor'] as int) : null,
+    hiddenSectionIds: (json['hiddenSectionIds'] as List<dynamic>?)?.map((e) => e.toString()).toSet() ?? {},
+    customSectionTitles: (json['customSectionTitles'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+    isMaintenanceMode: json['isMaintenanceMode'] ?? false,
+    updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) ?? DateTime.now() : DateTime.now(),
+  );
 }

@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -392,8 +394,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
+            // Yönetici & Admin Sayfa Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'profile',
+              pageTitle: 'Profil Sayfası',
+              editableSections: [
+                PageSectionItem(id: 'profile_header', title: 'Profil & Kimlik Kartı'),
+                PageSectionItem(id: 'leave_stats', title: 'İzin Bakiyesi & Çalışma Durumu'),
+                PageSectionItem(id: 'personal_info', title: 'Kişisel & Kurumsal Bilgiler'),
+                PageSectionItem(id: 'clothing_sizes', title: 'Kıyafet & Zimmet Bedenleri'),
+              ],
+            ),
+
             // Profil Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'profile',
+              sectionId: 'profile_header',
+              sectionTitle: 'Profil & Kimlik Kartı',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               decoration: BoxDecoration(
@@ -491,11 +509,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+            ),
 
             const SizedBox(height: 16),
 
             // Kalan İzin & Çalışma Durumu (2'li Kompakt Kartlar)
-            Row(
+            AdminEditableSection(
+              pageId: 'profile',
+              sectionId: 'leave_stats',
+              sectionTitle: 'İzin Bakiyesi & Çalışma Durumu',
+              child: Row(
               children: [
                 Expanded(
                   child: Container(
@@ -582,11 +605,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
+            ),
 
             const SizedBox(height: 16),
 
             // Kişisel & Kurumsal Bilgiler Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'profile',
+              sectionId: 'personal_info',
+              sectionTitle: 'Kişisel & Kurumsal Bilgiler',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.cardBg(context),
@@ -759,11 +790,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 16),
 
             // Kıyafet & Zimmet Beden Bilgileri Kartı
-            Container(
+            AdminEditableSection(
+              pageId: 'profile',
+              sectionId: 'clothing_sizes',
+              sectionTitle: 'Kıyafet & Zimmet Bedenleri',
+              child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.cardBg(context),
@@ -854,6 +892,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

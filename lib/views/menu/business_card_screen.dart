@@ -6,7 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/platform_file_helper.dart';
 import '../../models/employee.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
+import '../common/admin_edit_mode_bar.dart';
 
 class BusinessCardScreen extends StatelessWidget {
   const BusinessCardScreen({super.key});
@@ -226,8 +228,22 @@ END:VCARD''';
         ),
         child: Column(
           children: [
+            // Yönetici & Admin Düzenleme Çubuğu
+            const AdminEditModeBar(
+              pageId: 'business_card',
+              pageTitle: 'Dijital Kartvizit',
+              editableSections: [
+                PageSectionItem(id: 'card_pass', title: 'PDKS Pass / Cüzdan Kartı'),
+                PageSectionItem(id: 'card_qr', title: 'vCard QR Kodu & Paylaşım'),
+              ],
+            ),
+
             // Apple Wallet / Samsung Wallet Tarzı Dijital Kartvizit
-            Container(
+            AdminEditableSection(
+              pageId: 'business_card',
+              sectionId: 'card_pass',
+              sectionTitle: 'PDKS Pass / Cüzdan Kartı',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -331,11 +347,16 @@ END:VCARD''';
                 ],
               ),
             ),
+            ),
 
             const SizedBox(height: 24),
 
             // vCard QR Kod Kartı (Rehbere Ekleme)
-            Container(
+            AdminEditableSection(
+              pageId: 'business_card',
+              sectionId: 'card_qr',
+              sectionTitle: 'vCard QR Kodu & Paylaşım',
+              child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -424,6 +445,7 @@ END:VCARD''';
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

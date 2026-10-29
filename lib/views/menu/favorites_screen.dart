@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
+import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
 import '../mobile/leave_request_screen.dart';
 import '../common/quick_menu_manager_dialog.dart';
 import '../common/field_work_dialog.dart';
+import '../common/admin_edit_mode_bar.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -83,6 +85,16 @@ class FavoritesScreen extends StatelessWidget {
           MediaQuery.of(context).padding.bottom + 24,
         ),
         children: [
+          // Yönetici & Admin Düzenleme Çubuğu
+          const AdminEditModeBar(
+            pageId: 'favorites',
+            pageTitle: 'Sık Kullanılanlar',
+            editableSections: [
+              PageSectionItem(id: 'dynamic_quick_menu', title: 'Hızlı Kısayollar (Özel Menü)'),
+              PageSectionItem(id: 'corporate_services', title: 'Kurumsal Bilgi Kartları'),
+            ],
+          ),
+
           if (canManage) ...[
             Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -120,110 +132,125 @@ class FavoritesScreen extends StatelessWidget {
           ),
 
           // Dinamik Hızlı Menü Öğeleri
-          ...pdks.visibleQuickMenuItems.map((item) {
-            return _buildFavoriteCard(
-              context,
-              icon: item.icon,
-              color: item.color,
-              title: item.title,
-              subtitle: item.subtitle,
-              onTap: () {
-                switch (item.actionType) {
-                  case 'leave':
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                    break;
-                  case 'field_work':
-                    FieldWorkDialog.show(context);
-                    break;
-                  case 'cafeteria':
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
-                    break;
-                  case 'overtime':
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
-                    );
-                    break;
-                  case 'info_dialog':
-                  default:
+          AdminEditableSection(
+            pageId: 'favorites',
+            sectionId: 'dynamic_quick_menu',
+            sectionTitle: 'Hızlı Kısayollar (Özel Menü)',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: pdks.visibleQuickMenuItems.map((item) {
+                return _buildFavoriteCard(
+                  context,
+                  icon: item.icon,
+                  color: item.color,
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  onTap: () {
+                    switch (item.actionType) {
+                      case 'leave':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+                        break;
+                      case 'field_work':
+                        FieldWorkDialog.show(context);
+                        break;
+                      case 'cafeteria':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+                        break;
+                      case 'overtime':
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+                        );
+                        break;
+                      case 'info_dialog':
+                      default:
+                        _showInfoDialog(
+                          context,
+                          item.title,
+                          item.customContent ?? item.subtitle,
+                          item.icon,
+                          item.color,
+                        );
+                        break;
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+
+          AdminEditableSection(
+            pageId: 'favorites',
+            sectionId: 'corporate_services',
+            sectionTitle: 'Kurumsal Bilgi Kartları',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildFavoriteCard(
+                  context,
+                  icon: Icons.restaurant_rounded,
+                  color: const Color(0xFF10B981),
+                  title: 'Günün Yemek Menüsü',
+                  subtitle: 'Süzme mercimek, ızgara tavuk, pilav & meyve',
+                  onTap: () {
                     _showInfoDialog(
                       context,
-                      item.title,
-                      item.customContent ?? item.subtitle,
-                      item.icon,
-                      item.color,
+                      'Günün Yemek Menüsü',
+                      'Bugün şirket yemekhanemizde:\n\n• Süzme Mercimek Çorbası\n• Izgara Tavuk Fileto & Garnitür\n• Tereyağlı Pirinç Pilavı\n• Akdeniz Yeşillikleri Salatası\n• Mevsim Meyvesi & Ayran\n\nAfiyet olsun!',
+                      Icons.restaurant_rounded,
+                      const Color(0xFF10B981),
                     );
-                    break;
-                }
-              },
-            );
-          }),
-
-          _buildFavoriteCard(
-            context,
-            icon: Icons.restaurant_rounded,
-            color: const Color(0xFF10B981),
-            title: 'Günün Yemek Menüsü',
-            subtitle: 'Süzme mercimek, ızgara tavuk, pilav & meyve',
-            onTap: () {
-              _showInfoDialog(
-                context,
-                'Günün Yemek Menüsü',
-                'Bugün şirket yemekhanemizde:\n\n• Süzme Mercimek Çorbası\n• Izgara Tavuk Fileto & Garnitür\n• Tereyağlı Pirinç Pilavı\n• Akdeniz Yeşillikleri Salatası\n• Mevsim Meyvesi & Ayran\n\nAfiyet olsun!',
-                Icons.restaurant_rounded,
-                const Color(0xFF10B981),
-              );
-            },
-          ),
-
-          _buildFavoriteCard(
-            context,
-            icon: Icons.directions_bus_rounded,
-            color: const Color(0xFF3B82F6),
-            title: 'Şirket Servis Saatleri',
-            subtitle: 'Kadıköy, Beşiktaş ve Bakırköy akşam güzergahları',
-            onTap: () {
-              _showInfoDialog(
-                context,
-                'Şirket Servis Saatleri',
-                'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n1. Hat: Maslak - Levent - Zincirlikuyu - Kadıköy\n2. Hat: Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n3. Hat: Maslak - Kozyatağı - Ataşehir - Ümraniye\n4. Hat: Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\nServis Sorumlusu İletişim: 0532 000 11 22',
-                Icons.directions_bus_rounded,
-                const Color(0xFF3B82F6),
-              );
-            },
-          ),
-
-          _buildFavoriteCard(
-            context,
-            icon: Icons.calendar_month_rounded,
-            color: const Color(0xFF6366F1),
-            title: 'Resmi Tatiller Takvimi',
-            subtitle: '2026 yılı resmi tatil günleri ve köprü tatilleri',
-            onTap: () {
-              _showInfoDialog(
-                context,
-                '2026 Resmi Tatil Günleri',
-                '• 1 Ocak (Perşembe): Yılbaşı\n• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n• 30 Ağustos (Pazar): Zafer Bayramı\n• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
-                Icons.calendar_month_rounded,
-                const Color(0xFF6366F1),
-              );
-            },
-          ),
-
-          _buildFavoriteCard(
-            context,
-            icon: Icons.medical_services_outlined,
-            color: const Color(0xFFEF4444),
-            title: 'İş Yeri Hekimi & Revir',
-            subtitle: 'Revir mesai saatleri ve acil durum dahili hatları',
-            onTap: () {
-              _showInfoDialog(
-                context,
-                'Revir & Acil Durum',
-                'İş Yeri Hekimi: Dr. Mehmet Yılmaz\nÇalışma Saatleri: Hafta içi 09:00 - 17:30\nKonum: B Blok, Giriş Kat, Oda No: 104\n\nAcil Dahili Hatlar:\n• Revir: Dahili 1044\n• İK Masası: Dahili 1002\n• Güvenlik Masası: Dahili 1000\n• Genel Acil Çağrı: 112',
-                Icons.medical_services_outlined,
-                const Color(0xFFEF4444),
-              );
-            },
+                  },
+                ),
+                _buildFavoriteCard(
+                  context,
+                  icon: Icons.directions_bus_rounded,
+                  color: const Color(0xFF3B82F6),
+                  title: 'Şirket Servis Saatleri',
+                  subtitle: 'Kadıköy, Beşiktaş ve Bakırköy akşam güzergahları',
+                  onTap: () {
+                    _showInfoDialog(
+                      context,
+                      'Şirket Servis Saatleri',
+                      'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n1. Hat: Maslak - Levent - Zincirlikuyu - Kadıköy\n2. Hat: Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n3. Hat: Maslak - Kozyatağı - Ataşehir - Ümraniye\n4. Hat: Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\nServis Sorumlusu İletişim: 0532 000 11 22',
+                      Icons.directions_bus_rounded,
+                      const Color(0xFF3B82F6),
+                    );
+                  },
+                ),
+                _buildFavoriteCard(
+                  context,
+                  icon: Icons.calendar_month_rounded,
+                  color: const Color(0xFF6366F1),
+                  title: 'Resmi Tatiller Takvimi',
+                  subtitle: '2026 yılı resmi tatil günleri ve köprü tatilleri',
+                  onTap: () {
+                    _showInfoDialog(
+                      context,
+                      '2026 Resmi Tatil Günleri',
+                      '• 1 Ocak (Perşembe): Yılbaşı\n• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n• 30 Ağustos (Pazar): Zafer Bayramı\n• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
+                      Icons.calendar_month_rounded,
+                      const Color(0xFF6366F1),
+                    );
+                  },
+                ),
+                _buildFavoriteCard(
+                  context,
+                  icon: Icons.medical_services_outlined,
+                  color: const Color(0xFFEF4444),
+                  title: 'İş Yeri Hekimi & Revir',
+                  subtitle: 'Revir mesai saatleri ve acil durum dahili hatları',
+                  onTap: () {
+                    _showInfoDialog(
+                      context,
+                      'Revir & Acil Durum',
+                      'İş Yeri Hekimi: Dr. Mehmet Yılmaz\nÇalışma Saatleri: Hafta içi 09:00 - 17:30\nKonum: B Blok, Giriş Kat, Oda No: 104\n\nAcil Dahili Hatlar:\n• Revir: Dahili 1044\n• İK Masası: Dahili 1002\n• Güvenlik Masası: Dahili 1000\n• Genel Acil Çağrı: 112',
+                      Icons.medical_services_outlined,
+                      const Color(0xFFEF4444),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
