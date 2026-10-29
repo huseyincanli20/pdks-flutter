@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'ios_notification_stub.dart'
     if (dart.library.html) 'ios_notification_web.dart' as helper;
@@ -177,7 +178,7 @@ class _IosNotificationBannerWidgetState extends State<_IosNotificationBannerWidg
       right: 0,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: SlideTransition(
             position: _offsetAnimation,
             child: FadeTransition(
@@ -191,129 +192,106 @@ class _IosNotificationBannerWidgetState extends State<_IosNotificationBannerWidg
                 },
                 child: Material(
                   color: Colors.transparent,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xF2181F2C), // iOS Dark Glass
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.white.withOpacity(0.18), width: 1.2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.45),
-                          blurRadius: 28,
-                          offset: const Offset(0, 12),
-                        ),
-                        BoxShadow(
-                          color: widget.iconColor.withOpacity(0.2),
-                          blurRadius: 18,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Apple iOS Başlık Çubuğu
-                        Row(
-                          children: [
-                            // PDKS App Simgesi
-                            Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.white24, width: 0.8),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'P',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'PDKS',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              width: 3,
-                              height: 3,
-                              decoration: const BoxDecoration(
-                                color: Colors.white38,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              'ŞİMDİ',
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            // Kapatma / Yukarı kaydır ipucu
-                            Container(
-                              width: 32,
-                              height: 3.5,
-                              decoration: BoxDecoration(
-                                color: Colors.white24,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xB81A2230), // Apple iOS Kilit Ekranı Cam Efekti
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: Colors.white.withOpacity(0.18), width: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.4),
+                              blurRadius: 28,
+                              offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-
-                        // Bildirim İçeriği
-                        Row(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Apple iOS Squircle Uygulama İkonu (Screenshot ile birebir)
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 38,
+                              height: 38,
                               decoration: BoxDecoration(
-                                color: widget.iconColor.withOpacity(0.18),
-                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              child: Icon(widget.icon, color: widget.iconColor, size: 20),
+                              child: Center(
+                                child: Icon(
+                                  widget.icon,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
+                            // Bildirim Metin Alanı
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  // 1. Satır: Uygulama Adı + Zaman Damgası
+                                  const Row(
+                                    children: [
+                                      Text(
+                                        'PDKS Enterprise',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                      Spacer(),
+                                      Text(
+                                        'şimdi',
+                                        style: TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // 2. Satır: Bildirim Başlığı (Kalın)
                                   Text(
                                     widget.title,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                       fontSize: 13.5,
+                                      letterSpacing: -0.2,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
+                                  // 3. Satır: Bildirim Detayı
                                   Text(
                                     widget.body,
                                     style: const TextStyle(
-                                      color: Color(0xFFCBD5E1),
-                                      fontSize: 12,
-                                      height: 1.3,
+                                      color: Color(0xFFE2E8F0),
+                                      fontSize: 12.5,
+                                      height: 1.25,
+                                      letterSpacing: -0.1,
                                     ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -323,7 +301,7 @@ class _IosNotificationBannerWidgetState extends State<_IosNotificationBannerWidg
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

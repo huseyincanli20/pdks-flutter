@@ -146,8 +146,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               title: Text('Telefonumdan Belge / PDF Seç', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
               subtitle: Text('Cihazınızdaki PDF, Word veya rapor dosyasını gönderin', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
               onTap: () async {
+                // iOS Safari uyumluluğu için dosya seçiciyi modal kapanmadan ÖNCE hemen tetikle
+                final pickFuture = PlatformFileHelper.pickDocumentFile();
                 Navigator.pop(ctx);
-                final file = await PlatformFileHelper.pickDocumentFile();
+                final file = await pickFuture;
                 if (file != null) {
                   _handleSend(
                     customText: '📄 ${file.name}',
