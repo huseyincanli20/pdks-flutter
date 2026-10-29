@@ -1,6 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'dart:convert';
+import 'dart:async';
 
 Future<void> platformSaveAndOpenFile({
   required String fileName,
@@ -32,4 +33,35 @@ Future<void> platformSaveAndOpenFile({
   } catch (e) {
     // Web fallback
   }
+}
+
+Future<({String name, String size, String? path, String? base64Data})?> platformPickDocumentFile() async {
+  final completer = Completer<({String name, String size, String? path, String? base64Data})?>();
+  final uploadInput = html.FileUploadInputElement();
+  uploadInput.accept = '.pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg';
+  uploadInput.click();
+
+  uploadInput.onChange.listen((e) {
+    final files = uploadInput.files;
+    if (files != null && files.isNotEmpty) {
+      final file = files[0];
+      final reader = html.FileReader();
+      reader.onLoadEnd.listen((e) {
+        final sizeFormatted = file.size > 1024 * 1024
+            ? '${(file.size / (1024 * 1024)).toStringAsFixed(1)} MB'
+            : '${(file.size / 1024).toStringAsFixed(0)} KB';
+        completer.complete((
+          name: file.name,
+          size: sizeFormatted,
+          path: null,
+          base64Data: reader.result?.toString(),
+        ));
+      });
+      reader.readAsDataUrl(file);
+    } else {
+      completer.complete(null);
+    }
+  });
+
+  return completer.future;
 }

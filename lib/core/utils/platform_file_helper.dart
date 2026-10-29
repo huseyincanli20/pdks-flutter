@@ -13,4 +13,8 @@ class PlatformFileHelper {
       mimeType: mimeType,
     );
   }
+
+  static Future<({String name, String size, String? path, String? base64Data})?> pickDocumentFile() async {
+    return await helper.platformPickDocumentFile();
+  }
 }

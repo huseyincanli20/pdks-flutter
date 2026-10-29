@@ -12,3 +12,7 @@ Future<void> platformSaveAndOpenFile({
     // Fallback if needed
   }
 }
+
+Future<({String name, String size, String? path, String? base64Data})?> platformPickDocumentFile() async {
+  return null;
+}

@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../models/chat_message.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
+import '../../core/utils/platform_file_helper.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String channelId;
@@ -129,7 +130,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Mesaja Dosya & Ek Ekle',
+              'Mesaja Belge, PDF veya Konum Ekle',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text(context)),
             ),
             const SizedBox(height: 16),
@@ -140,18 +141,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   color: const Color(0xFF2563EB).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.description_rounded, color: Color(0xFF2563EB)),
+                child: const Icon(Icons.file_upload_rounded, color: Color(0xFF2563EB)),
               ),
-              title: Text('Belge / PDF Paylaş', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
-              subtitle: Text('Rapor, izin formu veya sözleşme eki', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
+              title: Text('Telefonumdan Belge / PDF Seç', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
+              subtitle: Text('Cihazınızdaki PDF, Word veya rapor dosyasını gönderin', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final file = await PlatformFileHelper.pickDocumentFile();
+                if (file != null) {
+                  _handleSend(
+                    customText: '📄 ${file.name}',
+                    type: MessageType.document,
+                    attachmentName: file.name,
+                    attachmentSize: file.size,
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0284C7).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0284C7)),
+              ),
+              title: Text('Kurumsal Hazır Formlar (PDF)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
+              subtitle: Text('İzin formu, sağlık raporu veya masraf pusulası', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
               onTap: () {
                 Navigator.pop(ctx);
-                _handleSend(
-                  customText: '📄 Personel Raporu & Ek Belgeler paylaşıldı.',
-                  type: MessageType.document,
-                  attachmentName: 'Personel_Rapor_Ekim_2026.pdf',
-                  attachmentSize: '1.4 MB',
-                );
+                _showPredefinedFormsDialog(context);
               },
             ),
             ListTile(
@@ -194,6 +214,72 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showPredefinedFormsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Kurumsal Belge Seçin', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.text(context))),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildFormOption(
+              title: 'İş Göremezlik & Sağlık Raporu (PDF)',
+              size: '1.2 MB',
+              onTap: () {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 Sağlık Raporu ektedir, bilginize sunarım.',
+                  type: MessageType.document,
+                  attachmentName: 'Saglik_Raporu_Ekim_2026.pdf',
+                  attachmentSize: '1.2 MB',
+                );
+              },
+            ),
+            _buildFormOption(
+              title: 'Yıllık İzin Talep Dilekçesi (PDF)',
+              size: '480 KB',
+              onTap: () {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 İmzalı Yıllık İzin Talep Formum ektedir.',
+                  type: MessageType.document,
+                  attachmentName: 'Yillik_Izin_Dilekcesi_2026.pdf',
+                  attachmentSize: '480 KB',
+                );
+              },
+            ),
+            _buildFormOption(
+              title: 'Personel Masraf & Harcama Pusulası (PDF)',
+              size: '890 KB',
+              onTap: () {
+                Navigator.pop(ctx);
+                _handleSend(
+                  customText: '📄 Şirket Görevi Masraf ve Harcama Pusulası.',
+                  type: MessageType.document,
+                  attachmentName: 'Personel_Masraf_Pusulasi.pdf',
+                  attachmentSize: '890 KB',
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormOption({required String title, required String size, required VoidCallback onTap}) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 24),
+      title: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+      subtitle: Text(size, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13),
+      onTap: onTap,
     );
   }
 
@@ -520,42 +606,78 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
                   // Belge / Ek Kartı
                   if (msg.type == MessageType.document) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isMe ? Colors.white.withOpacity(0.15) : AppColors.subtle(context),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.picture_as_pdf_rounded, color: isMe ? Colors.white : Colors.redAccent, size: 22),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  msg.attachmentName ?? 'Belge.pdf',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: isMe ? Colors.white : AppColors.text(context),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  msg.attachmentSize ?? 'PDF Belgesi',
-                                  style: TextStyle(
-                                    fontSize: 9.5,
-                                    color: isMe ? Colors.white70 : AppColors.textSub(context),
-                                  ),
-                                ),
-                              ],
+                        onTap: () {
+                          PlatformFileHelper.saveAndOpen(
+                            fileName: msg.attachmentName ?? 'Belge.pdf',
+                            content: 'Kurumsal PDKS Belgesi\nDosya: ${msg.attachmentName ?? "Belge.pdf"}\nGönderen: ${msg.senderName}\nTarih: ${DateFormat("dd.MM.yyyy HH:mm").format(msg.timestamp)}',
+                            mimeType: 'application/pdf',
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              content: Text('📄 ${msg.attachmentName ?? "Belge"} açılıyor / indiriliyor...'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isMe ? Colors.white.withOpacity(0.18) : AppColors.subtle(context),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isMe ? Colors.white.withOpacity(0.3) : AppColors.cardBorder(context),
                             ),
                           ),
-                        ],
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.picture_as_pdf_rounded, color: isMe ? Colors.white : Colors.redAccent, size: 22),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      msg.attachmentName ?? 'Belge.pdf',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isMe ? Colors.white : AppColors.text(context),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          msg.attachmentSize ?? 'PDF Belgesi',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            color: isMe ? Colors.white70 : AppColors.textSub(context),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '• Aç / İndir',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: isMe ? Colors.white : AppColors.primaryOf(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],

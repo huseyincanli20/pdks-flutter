@@ -513,6 +513,65 @@ class PdksState extends ChangeNotifier {
   ];
 
   List<ChatChannel> get systemChatChannels => List.unmodifiable(_systemChatChannels);
+  final List<ChatChannel> _customGroupChannels = [];
+  List<ChatChannel> get allGroupChannels => [..._systemChatChannels, ..._customGroupChannels];
+
+  bool get canCreateGroupChat => _currentUser.role == UserRole.boss || _currentUser.role == UserRole.admin;
+
+  /// Yeni Grup Kanalı Oluşturma Metodu (Yalnızca Patron ve Admin Yetkili)
+  ({bool success, String message, ChatChannel? channel}) createGroupChannel({
+    required String title,
+    required String subtitle,
+    IconData? icon,
+    Color? iconColor,
+    List<int>? participantIds,
+  }) {
+    if (_currentUser.role != UserRole.boss && _currentUser.role != UserRole.admin) {
+      return (
+        success: false,
+        message: 'Yetki Sınırı: Yalnızca Şirket Patronu (CEO) veya Sistem Yöneticisi (Admin) yeni grup kurabilir.',
+        channel: null,
+      );
+    }
+
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      return (success: false, message: 'Lütfen grup için bir başlık giriniz.', channel: null);
+    }
+
+    if (allGroupChannels.any((c) => c.title.toLowerCase() == trimmed.toLowerCase())) {
+      return (success: false, message: '"$trimmed" adında bir grup zaten mevcut.', channel: null);
+    }
+
+    final channelId = 'group_${DateTime.now().millisecondsSinceEpoch}';
+    final newChannel = ChatChannel(
+      id: channelId,
+      title: trimmed,
+      subtitle: subtitle.trim().isEmpty ? 'Grup Sohbeti' : subtitle.trim(),
+      icon: icon ?? Icons.group_rounded,
+      iconColor: iconColor ?? const Color(0xFF2563EB),
+      participantIds: participantIds ?? _employees.map((e) => e.id).toList(),
+    );
+
+    _customGroupChannels.add(newChannel);
+
+    // Gruba ilk kurucu açılış mesajını ekle
+    final creatorRole = _currentUser.role == UserRole.boss ? 'Patron (CEO)' : 'Sistem Yöneticisi (Admin)';
+    _chatMessages.add(ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      channelId: channelId,
+      text: '🎉 "$trimmed" grubu ${_currentUser.fullName} ($creatorRole) tarafından kuruldu.',
+      timestamp: DateTime.now(),
+      isRead: true,
+    ));
+
+    notifyListeners();
+    return (success: true, message: '"$trimmed" grubu başarıyla oluşturuldu.', channel: newChannel);
+  }
+
   List<ChatMessage> get chatMessages => List.unmodifiable(_chatMessages);
 
   String getDirectChannelId(int userA, int userB) {
