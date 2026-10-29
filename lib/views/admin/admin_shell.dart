@@ -15,6 +15,32 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
+  late TextEditingController _latCtrl;
+  late TextEditingController _lngCtrl;
+  late TextEditingController _radCtrl;
+  late TextEditingController _wifiCtrl;
+  bool _isLatApproved = true;
+  bool _isLngApproved = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final pdks = context.read<PdksState>();
+    _latCtrl = TextEditingController(text: pdks.officeLat.toStringAsFixed(5));
+    _lngCtrl = TextEditingController(text: pdks.officeLng.toStringAsFixed(5));
+    _radCtrl = TextEditingController(text: pdks.allowedRadiusMeters.toStringAsFixed(0));
+    _wifiCtrl = TextEditingController(text: pdks.allowedWifiSsid);
+  }
+
+  @override
+  void dispose() {
+    _latCtrl.dispose();
+    _lngCtrl.dispose();
+    _radCtrl.dispose();
+    _wifiCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
@@ -220,10 +246,7 @@ class _AdminShellState extends State<AdminShell> {
 
   // 2. Geofence & Ofis Lokasyon Ayarları
   Widget _buildGeofenceSettingsTab(BuildContext context, PdksState pdks) {
-    final latCtrl = TextEditingController(text: pdks.officeLat.toString());
-    final lngCtrl = TextEditingController(text: pdks.officeLng.toString());
-    final radCtrl = TextEditingController(text: pdks.allowedRadiusMeters.toStringAsFixed(0));
-    final wifiCtrl = TextEditingController(text: pdks.allowedWifiSsid);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -235,11 +258,91 @@ class _AdminShellState extends State<AdminShell> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ofis Geofence & Lokasyon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
+          Text('Ofis Geofence & Şirket Koordinatları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context))),
           const SizedBox(height: 4),
-          Text('Personelin giriş yapabilmesi için izin verilen ofis yarıçapı ve GPS sınırları.', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
+          Text('Personelin giriş ve çıkış yapabilmesi için şirketin resmi enlem/boylam koordinatları ve onay durumu.', style: TextStyle(color: AppColors.textSub(context), fontSize: 12)),
           const SizedBox(height: 16),
 
+          // Şirket Adresi ve Koordinat Kartı (Sincan / Ankara)
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(isDark ? 0.15 : 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Fırat Cd. 14, 06946 Sincan Ankara',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text('Şirket Konumu', style: TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Koordinatlar: 40,01461° K, 32,51520° D',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  ),
+                  icon: const Icon(Icons.sync_rounded, size: 16),
+                  label: const Text('Doldur', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    setState(() {
+                      _latCtrl.text = '40.01461';
+                      _lngCtrl.text = '32.51520';
+                      _isLatApproved = true;
+                      _isLngApproved = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: AppColors.primary,
+                        content: Text('Sincan/Ankara koordinatları yüklendi ve onaylandı.'),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // Form Alanları Kartı
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -255,46 +358,160 @@ class _AdminShellState extends State<AdminShell> {
               ],
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: latCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Ofis Enlemi (Latitude)',
-                    prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  keyboardType: TextInputType.number,
+                // 1. Ofis Enlemi (Latitude) + Onay Kutucuğu
+                Text('Ofis Enlemi (Latitude)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSub(context))),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _latCtrl,
+                        decoration: InputDecoration(
+                          hintText: '40.01461',
+                          prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Enlem Onay Kutucuğu
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _isLatApproved
+                            ? AppColors.success.withOpacity(isDark ? 0.2 : 0.1)
+                            : (isDark ? const Color(0xFF131B2E) : const Color(0xFFF1F5F9)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _isLatApproved ? AppColors.success : AppColors.cardBorder(context),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: _isLatApproved,
+                            activeColor: AppColors.success,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            onChanged: (val) {
+                              setState(() => _isLatApproved = val ?? false);
+                            },
+                          ),
+                          InkWell(
+                            onTap: () => setState(() => _isLatApproved = !_isLatApproved),
+                            child: Text(
+                              'Onayla',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: _isLatApproved ? AppColors.success : AppColors.textSub(context),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: lngCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Ofis Boylamı (Longitude)',
-                    prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  keyboardType: TextInputType.number,
+
+                const SizedBox(height: 16),
+
+                // 2. Ofis Boylamı (Longitude) + Onay Kutucuğu
+                Text('Ofis Boylamı (Longitude)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSub(context))),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _lngCtrl,
+                        decoration: InputDecoration(
+                          hintText: '32.51520',
+                          prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.primary),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Boylam Onay Kutucuğu
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _isLngApproved
+                            ? AppColors.success.withOpacity(isDark ? 0.2 : 0.1)
+                            : (isDark ? const Color(0xFF131B2E) : const Color(0xFFF1F5F9)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _isLngApproved ? AppColors.success : AppColors.cardBorder(context),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: _isLngApproved,
+                            activeColor: AppColors.success,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            onChanged: (val) {
+                              setState(() => _isLngApproved = val ?? false);
+                            },
+                          ),
+                          InkWell(
+                            onTap: () => setState(() => _isLngApproved = !_isLngApproved),
+                            child: Text(
+                              'Onayla',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: _isLngApproved ? AppColors.success : AppColors.textSub(context),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
+
+                const SizedBox(height: 16),
+
+                // 3. İzin Verilen Yarıçap
+                Text('İzin Verilen Yarıçap (Metre)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSub(context))),
+                const SizedBox(height: 6),
                 TextField(
-                  controller: radCtrl,
+                  controller: _radCtrl,
                   decoration: InputDecoration(
-                    labelText: 'İzin Verilen Yarıçap (Metre)',
+                    hintText: '150',
                     prefixIcon: const Icon(Icons.radar, color: AppColors.primary),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 14),
+
+                const SizedBox(height: 16),
+
+                // 4. Ofis Wi-Fi SSID
+                Text('Ofis Wi-Fi SSID Adı', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSub(context))),
+                const SizedBox(height: 6),
                 TextField(
-                  controller: wifiCtrl,
+                  controller: _wifiCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Ofis Wi-Fi SSID Adı',
+                    hintText: 'Sirket_Personel',
                     prefixIcon: const Icon(Icons.wifi, color: AppColors.primary),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 22),
+
+                // Kaydet Butonu
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -303,18 +520,30 @@ class _AdminShellState extends State<AdminShell> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     icon: const Icon(Icons.save_rounded),
-                    label: const Text('Ayarları Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('Şirket Koordinatlarını ve Ayarları Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () {
-                      final lat = double.tryParse(latCtrl.text) ?? pdks.officeLat;
-                      final lng = double.tryParse(lngCtrl.text) ?? pdks.officeLng;
-                      final radius = double.tryParse(radCtrl.text) ?? pdks.allowedRadiusMeters;
-                      pdks.updateSystemSettings(lat: lat, lng: lng, radius: radius, wifiSsid: wifiCtrl.text.trim());
+                      final lat = double.tryParse(_latCtrl.text.replaceAll(',', '.')) ?? pdks.officeLat;
+                      final lng = double.tryParse(_lngCtrl.text.replaceAll(',', '.')) ?? pdks.officeLng;
+                      final radius = double.tryParse(_radCtrl.text) ?? pdks.allowedRadiusMeters;
+
+                      setState(() {
+                        _isLatApproved = true;
+                        _isLngApproved = true;
+                      });
+
+                      pdks.updateSystemSettings(
+                        lat: lat,
+                        lng: lng,
+                        radius: radius,
+                        wifiSsid: _wifiCtrl.text.trim(),
+                        address: 'Fırat Cd. 14, 06946 Sincan Ankara',
+                      );
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: AppColors.success,
-                          content: Text('Geofence ve Ağ ayarları başarıyla güncellendi!'),
+                          content: Text('Şirket koordinatları ($lat, $lng - Fırat Cd. 14, Sincan) onaylandı ve kaydedildi!'),
                         ),
                       );
                     },

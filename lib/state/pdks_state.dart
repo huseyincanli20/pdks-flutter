@@ -26,11 +26,12 @@ class PdksState extends ChangeNotifier {
   List<LeaveRequest> _leaves = [];
   List<ShiftSchedule> _shifts = [];
 
-  // Sistem & Geofence Ayarları (Admin tarafından değiştirilebilir)
-  double _officeLat = 41.0082;
-  double _officeLng = 28.9784;
+  // Sistem & Geofence Ayarları (Admin tarafından değiştirilebilir - Sincan / Ankara)
+  double _officeLat = 40.01461;
+  double _officeLng = 32.51520;
   double _allowedRadiusMeters = 150.0;
   String _allowedWifiSsid = 'Sirket_Personel';
+  String _officeAddress = 'Fırat Cd. 14, 06946 Sincan Ankara, Türkiye';
 
   // Görünüm Teması: Sistem, Aydınlık, Koyu
   ThemeMode _themeMode = ThemeMode.system;
@@ -78,6 +79,7 @@ class PdksState extends ChangeNotifier {
   double get officeLng => _officeLng;
   double get allowedRadiusMeters => _allowedRadiusMeters;
   String get allowedWifiSsid => _allowedWifiSsid;
+  String get officeAddress => _officeAddress;
 
   // İK & Patron Dashboard Sayaçları
   int get totalEmployeesCount => _employees.length;
@@ -397,11 +399,15 @@ class PdksState extends ChangeNotifier {
     required double lng,
     required double radius,
     required String wifiSsid,
+    String? address,
   }) {
     _officeLat = lat;
     _officeLng = lng;
     _allowedRadiusMeters = radius;
     _allowedWifiSsid = wifiSsid;
+    if (address != null && address.isNotEmpty) {
+      _officeAddress = address;
+    }
     notifyListeners();
   }
 
