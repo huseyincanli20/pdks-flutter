@@ -176,9 +176,282 @@ class EmployeesTab extends StatelessWidget {
     );
   }
 
+  void _openApprovalSheet(BuildContext context, PdksState pdks, Employee emp) {
+    final formKey = GlobalKey<FormState>();
+    final deptCtrl = TextEditingController(text: 'Yazılım & Ar-Ge');
+    final titleCtrl = TextEditingController(text: 'Yazılım Uzmanı');
+    final salaryCtrl = TextEditingController(text: '52000');
+    UserRole selectedRole = UserRole.employee;
+
+    final departments = [
+      'Yazılım & Ar-Ge',
+      'İnsan Kaynakları',
+      'Satış & Pazarlama',
+      'Mali İşler & Muhasebe',
+      'Operasyon & Lojistik',
+      'Mutfak & Yemekhane',
+      'Yönetim',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cardBg(context),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            22,
+            16,
+            22,
+            MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Personel Kaydını Onayla & Görev Ata',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Adayın görev, departman ve unvan bilgilerini tanımlayın.',
+                              style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Aday Bilgi Kartı
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryOf(context).withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primaryOf(context).withOpacity(0.18)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: AppColors.primaryOf(context),
+                          radius: 20,
+                          child: Text(
+                            emp.fullName.isNotEmpty ? emp.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text('${emp.email} • ${emp.phone}', style: TextStyle(fontSize: 11.5, color: AppColors.textSub(context))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Departman Seçimi
+                  const Text('Departman Belirleyin *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: departments.map((d) {
+                      final isSelected = deptCtrl.text == d;
+                      return ChoiceChip(
+                        label: Text(d, style: TextStyle(fontSize: 11.5, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryOf(context).withOpacity(0.2),
+                        onSelected: (val) {
+                          if (val) {
+                            setSheetState(() => deptCtrl.text = d);
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: deptCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Departman Adı',
+                      prefixIcon: Icon(Icons.business_outlined, size: 20),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Departman zorunludur' : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Unvan
+                  TextFormField(
+                    controller: titleCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Görevi / Unvanı *',
+                      hintText: 'Örn: Kıdemli Yazılım Geliştirici',
+                      prefixIcon: Icon(Icons.badge_outlined, size: 20),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Unvan zorunludur' : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Başlangıç Maaşı
+                  TextFormField(
+                    controller: salaryCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Aylık Brüt Maaş (TL)',
+                      prefixIcon: Icon(Icons.payments_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Rol Seçimi
+                  DropdownButtonFormField<UserRole>(
+                    value: selectedRole,
+                    decoration: const InputDecoration(
+                      labelText: 'Sistem Rolü',
+                      prefixIcon: Icon(Icons.admin_panel_settings_outlined, size: 20),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: UserRole.employee, child: Text('Standart Personel (Mobil)')),
+                      DropdownMenuItem(value: UserRole.hr, child: Text('İnsan Kaynakları (İK)')),
+                      DropdownMenuItem(value: UserRole.cafeteria, child: Text('Yemekhane Personeli')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setSheetState(() => selectedRole = val);
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Onayla Butonu
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.check_circle_rounded),
+                      label: const Text('Personeli Onayla ve Sisteme Al', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      onPressed: () {
+                        if (!formKey.currentState!.validate()) return;
+                        final salary = double.tryParse(salaryCtrl.text.replaceAll('.', '').replaceAll(',', '.')) ?? 52000.0;
+                        final result = pdks.approveEmployeeRegistration(
+                          employeeId: emp.id,
+                          department: deptCtrl.text.trim(),
+                          title: titleCtrl.text.trim(),
+                          baseSalary: salary,
+                          role: selectedRole,
+                        );
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: result.success ? AppColors.success : AppColors.danger,
+                            behavior: SnackBarBehavior.floating,
+                            content: Text(result.message),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRejectConfirmation(BuildContext context, PdksState pdks, Employee emp) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.person_remove_rounded, color: AppColors.danger),
+            SizedBox(width: 10),
+            Text('Başvuruyu Reddet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          ],
+        ),
+        content: Text(
+          '${emp.fullName} personeline ait kayıt başvurusunu reddetmek ve listeden kaldırmak istediğinize emin misiniz?',
+          style: const TextStyle(fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final result = pdks.rejectEmployeeRegistration(emp.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: result.success ? AppColors.danger : AppColors.primary,
+                  behavior: SnackBarBehavior.floating,
+                  content: Text(result.message),
+                ),
+              );
+            },
+            child: const Text('Reddet ve Sil', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final employees = context.watch<PdksState>().employees;
+    final pdks = context.watch<PdksState>();
+    final employees = pdks.employees;
+    final pendingEmployees = pdks.pendingEmployees;
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Padding(
@@ -191,6 +464,145 @@ class EmployeesTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // İK Onayı Bekleyen Personeller Kutusu
+          if (pendingEmployees.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 18),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFF59E0B).withOpacity(0.14),
+                    const Color(0xFFD97706).withOpacity(0.06),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.4), width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'İK ONAYI BEKLEYEN KAYITLAR',
+                                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFFB45309), letterSpacing: 0.5),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF59E0B),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${pendingEmployees.length} Talep',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Text(
+                              'Yeni kayıt olan adayların departman ve unvanını atayarak onaylayın.',
+                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...pendingEmployees.map((pending) => Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg(context),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.cardBorder(context)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFF59E0B).withOpacity(0.15),
+                          child: Text(
+                            pending.fullName.isNotEmpty ? pending.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(pending.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                              Text(
+                                '${pending.email} • ${pending.phone}',
+                                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                              ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  '⏳ İK Onayı Bekliyor',
+                                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Colors.redAccent, size: 20),
+                          tooltip: 'Başvuruyu Reddet',
+                          onPressed: () => _showRejectConfirmation(context, pdks, pending),
+                        ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.check_rounded, size: 16),
+                          label: const Text('Onayla', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          onPressed: () => _openApprovalSheet(context, pdks, pending),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

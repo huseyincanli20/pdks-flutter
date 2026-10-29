@@ -69,6 +69,8 @@ class Employee {
   final int annualLeaveAllowance;
   final int usedLeaveDays;
   final bool isActive;
+  final bool isApproved;
+  final DateTime? registeredAt;
   final String? avatarUrl;
   final String? customRoleId;
   final String? customRoleName;
@@ -90,6 +92,8 @@ class Employee {
     this.annualLeaveAllowance = 14,
     this.usedLeaveDays = 0,
     this.isActive = true,
+    this.isApproved = true,
+    this.registeredAt,
     this.avatarUrl,
     this.customRoleId,
     this.customRoleName,
@@ -116,6 +120,8 @@ class Employee {
     int? annualLeaveAllowance,
     int? usedLeaveDays,
     bool? isActive,
+    bool? isApproved,
+    DateTime? registeredAt,
     String? avatarUrl,
     String? customRoleId,
     String? customRoleName,
@@ -138,6 +144,8 @@ class Employee {
       annualLeaveAllowance: annualLeaveAllowance ?? this.annualLeaveAllowance,
       usedLeaveDays: usedLeaveDays ?? this.usedLeaveDays,
       isActive: isActive ?? this.isActive,
+      isApproved: isApproved ?? this.isApproved,
+      registeredAt: registeredAt ?? this.registeredAt,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       customRoleId: clearCustomRole ? null : (customRoleId ?? this.customRoleId),
       customRoleName: clearCustomRole ? null : (customRoleName ?? this.customRoleName),
@@ -169,6 +177,8 @@ class Employee {
       annualLeaveAllowance: json['annualLeaveAllowance'] ?? 14,
       usedLeaveDays: json['usedLeaveDays'] ?? 0,
       isActive: json['isActive'] ?? true,
+      isApproved: json['isApproved'] ?? true,
+      registeredAt: json['registeredAt'] != null ? DateTime.tryParse(json['registeredAt']) : null,
       avatarUrl: json['avatarUrl'],
       customRoleId: json['customRoleId'],
       customRoleName: json['customRoleName'],
@@ -193,6 +203,8 @@ class Employee {
       'annualLeaveAllowance': annualLeaveAllowance,
       'usedLeaveDays': usedLeaveDays,
       'isActive': isActive,
+      'isApproved': isApproved,
+      'registeredAt': registeredAt?.toIso8601String(),
       'avatarUrl': avatarUrl,
       'customRoleId': customRoleId,
       'customRoleName': customRoleName,

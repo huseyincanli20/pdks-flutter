@@ -40,7 +40,8 @@ class _HrShellState extends State<HrShell> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<PdksState>().currentUser;
+    final pdks = context.watch<PdksState>();
+    final user = pdks.currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.bg(context),
@@ -114,28 +115,40 @@ class _HrShellState extends State<HrShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard, color: AppColors.primary),
             label: 'Özet',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people, color: AppColors.primary),
+            icon: pdks.pendingApprovalsCount > 0
+                ? Badge(
+                    label: Text('${pdks.pendingApprovalsCount}'),
+                    backgroundColor: const Color(0xFFF59E0B),
+                    child: const Icon(Icons.people_outline),
+                  )
+                : const Icon(Icons.people_outline),
+            selectedIcon: pdks.pendingApprovalsCount > 0
+                ? Badge(
+                    label: Text('${pdks.pendingApprovalsCount}'),
+                    backgroundColor: const Color(0xFFF59E0B),
+                    child: const Icon(Icons.people, color: AppColors.primary),
+                  )
+                : const Icon(Icons.people, color: AppColors.primary),
             label: 'Personel',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month, color: AppColors.primary),
             label: 'Vardiya',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.beach_access_outlined),
             selectedIcon: Icon(Icons.beach_access, color: AppColors.primary),
             label: 'İzinler',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.assessment_outlined),
             selectedIcon: Icon(Icons.assessment, color: AppColors.primary),
             label: 'Puantaj',

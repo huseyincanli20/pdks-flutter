@@ -275,7 +275,12 @@ class PdksState extends ChangeNotifier {
 
   // Tenant filtrelenmiş veriler (Aktif şirkete ait kayıtlar)
   List<Employee> get employees =>
-      _employees.where((e) => e.companyId == _activeCompanyId).toList();
+      _employees.where((e) => e.companyId == _activeCompanyId && e.isApproved).toList();
+  List<Employee> get pendingEmployees =>
+      _employees.where((e) => e.companyId == _activeCompanyId && !e.isApproved).toList();
+  List<Employee> get allPendingEmployees =>
+      _employees.where((e) => !e.isApproved).toList();
+  int get pendingApprovalsCount => pendingEmployees.length;
   List<Employee> get allEmployees => List.unmodifiable(_employees);
   List<AttendanceRecord> get records =>
       _records.where((r) => r.companyId == _activeCompanyId).toList();
@@ -1222,7 +1227,8 @@ class PdksState extends ChangeNotifier {
   }
 
   // Giriş Yapma: YALNIZCA GİRİŞ BİLGİLERİNE GÖRE ROL BELİRLENİR
-  bool login(String email, String pin) {
+  // Giriş Yapma: İK ONAYI KONTROLÜ İLE BİRLİKTE
+  ({bool success, bool isPendingApproval, String message}) login(String email, String pin) {
     final cleanEmail = email.trim().toLowerCase();
     final cleanPin = pin.trim();
 
@@ -1232,19 +1238,44 @@ class PdksState extends ChangeNotifier {
     );
 
     if (found.isNotEmpty) {
-      _currentUser = found.first;
+      final user = found.first;
+      // İK ONAYI KONTROLÜ
+      if (!user.isApproved) {
+        return (
+          success: false,
+          isPendingApproval: true,
+          message: 'Hesabınız henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır. Lütfen İK yöneticinizin onayını ve görev atamasını bekleyin.',
+        );
+      }
+      _currentUser = user;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
       notifyListeners();
-      return true;
+      return (
+        success: true,
+        isPendingApproval: false,
+        message: 'Giriş başarılı.',
+      );
+    }
+
+    // E-posta doğru fakat PIN henüz onaylanmamış bir hesap mı?
+    final pendingWithEmail = _employees.where(
+      (e) => e.email.toLowerCase() == cleanEmail && !e.isApproved,
+    );
+    if (pendingWithEmail.isNotEmpty) {
+      return (
+        success: false,
+        isPendingApproval: true,
+        message: 'Kaydınız oluşturulmuş olup İnsan Kaynakları (İK) onayı beklemektedir. İK yöneticiniz departman ve unvanınızı atayıp onayladıktan sonra PIN kodunuz ile giriş yapabilirsiniz.',
+      );
     }
 
     // 2. Demo kısayolları için kullanıcı adı bazlı kontrol
     Employee? matched;
     // Aktif şirketin personelleri içinden eşleştir
-    final companyPool = _employees.where((e) => e.companyId == _activeCompanyId).toList();
-    final fallbackPool = companyPool.isNotEmpty ? companyPool : _employees;
+    final companyPool = _employees.where((e) => e.companyId == _activeCompanyId && e.isApproved).toList();
+    final fallbackPool = companyPool.isNotEmpty ? companyPool : _employees.where((e) => e.isApproved).toList();
 
     if (cleanEmail == 'personel@sirket.com' || cleanEmail == 'personel') {
       matched = fallbackPool.firstWhere((e) => e.role == UserRole.employee, orElse: () => _employees.firstWhere((e) => e.role == UserRole.employee));
@@ -1259,25 +1290,40 @@ class PdksState extends ChangeNotifier {
     }
 
     if (matched != null) {
+      if (!matched.isApproved) {
+        return (
+          success: false,
+          isPendingApproval: true,
+          message: 'Hesabınız henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır.',
+        );
+      }
       _currentUser = matched;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
       _startTimer();
       notifyListeners();
-      return true;
+      return (
+        success: true,
+        isPendingApproval: false,
+        message: 'Giriş başarılı.',
+      );
     }
 
-    return false;
+    return (
+      success: false,
+      isPendingApproval: false,
+      message: 'Hatalı e-posta veya PIN kodu!',
+    );
   }
 
-  // Yeni Personel Kaydı - Şirket Kodu ile Şirket Belirleme
+  // Yeni Personel Kaydı - Şirket Kodu ile Şirket Belirleme (Departman & Unvan İK onayında atanır)
   ({bool success, String message}) register({
     required String companyCode,
     required String fullName,
     required String email,
     required String phone,
-    required String department,
-    required String title,
+    String? department,
+    String? title,
     required String pin,
   }) {
     final cleanCode = companyCode.trim().toUpperCase();
@@ -1290,35 +1336,130 @@ class PdksState extends ChangeNotifier {
       );
     }
 
+    // E-posta mükerrer kontrolü
+    final cleanEmail = email.trim().toLowerCase();
+    if (_employees.any((e) => e.email.trim().toLowerCase() == cleanEmail)) {
+      return (
+        success: false,
+        message: 'Bu e-posta adresiyle ("$cleanEmail") zaten kayıtlı bir hesap bulunmaktadır.',
+      );
+    }
+
     final targetCompany = _companies[idx];
     final newId = _employees.length + 1;
     final newEmployee = Employee(
       id: newId,
       companyId: targetCompany.id,
-      fullName: fullName,
-      email: email,
-      phone: phone,
-      department: department.isEmpty ? 'Genel' : department,
-      title: title.isEmpty ? 'Personel' : title,
-      pinCode: pin,
-      role: UserRole.employee, // Yeni kaydolanlar daima personel olarak başlar
+      fullName: fullName.trim(),
+      email: cleanEmail,
+      phone: phone.trim().isEmpty ? '+90 555 000 00 00' : phone.trim(),
+      department: (department != null && department.trim().isNotEmpty) ? department.trim() : 'Onay Bekliyor',
+      title: (title != null && title.trim().isNotEmpty) ? title.trim() : 'Personel Adayı',
+      pinCode: pin.trim(),
+      role: UserRole.employee, // Yeni kaydolanlar personel olarak başlar
       annualLeaveAllowance: 14,
       usedLeaveDays: 0,
       isActive: true,
+      isApproved: false, // İLK ÖNCE İK ONAYI GEREKLİ!
+      registeredAt: DateTime.now(),
     );
 
     _employees.add(newEmployee);
-    _currentUser = newEmployee;
-    _activeCompanyId = targetCompany.id;
-    _isLoggedIn = true;
+
+    // İK yetkililerine sistem içi bildirim ekle
+    _notifications.insert(
+      0,
+      AppNotification(
+        id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Yeni Personel Kayıt Talebi ⏳',
+        message: '${newEmployee.fullName} ("${targetCompany.name}") şirketine kayıt oldu. İK onayı, departman ve unvan ataması bekleniyor.',
+        timestamp: DateTime.now(),
+        type: NotificationType.system,
+        icon: Icons.person_add_alt_1_rounded,
+        color: const Color(0xFFF59E0B),
+        isRead: false,
+      ),
+    );
+
+    // Oturum açılmaz, İK onayı beklenir
+    _isLoggedIn = false;
     _isCheckedIn = false;
-    _workedToday = Duration.zero;
-    _startTimer();
+    notifyListeners();
+
+    return (
+      success: true,
+      message: 'Kaydınız başarıyla oluşturuldu! Güvenlik gereği ilk önce İnsan Kaynakları (İK) departmanı kaydınızı onaylayacak ve görevinizi atayacaktır. Onaylandıktan sonra PIN kodunuz ile giriş yapabilirsiniz.',
+    );
+  }
+
+  /// İK Tarafından Personel Kaydı Onaylama ve Departman/Unvan Atama
+  ({bool success, String message}) approveEmployeeRegistration({
+    required int employeeId,
+    required String department,
+    required String title,
+    double? baseSalary,
+    UserRole? role,
+  }) {
+    if (_currentUser.role != UserRole.hr &&
+        _currentUser.role != UserRole.boss &&
+        _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Bu onay işlemini yalnızca İK veya Yönetim yetkilileri yapabilir.');
+    }
+
+    final index = _employees.indexWhere((e) => e.id == employeeId);
+    if (index == -1) {
+      return (success: false, message: 'Personel kaydı bulunamadı.');
+    }
+
+    final existing = _employees[index];
+    final updated = existing.copyWith(
+      isApproved: true,
+      department: department.trim().isEmpty ? 'Genel' : department.trim(),
+      title: title.trim().isEmpty ? 'Personel' : title.trim(),
+      baseGrossSalary: baseSalary ?? existing.baseGrossSalary,
+      role: role ?? existing.role,
+    );
+
+    _employees[index] = updated;
+
+    _notifications.insert(
+      0,
+      AppNotification(
+        id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Personel Kaydı Onaylandı ✅',
+        message: '${updated.fullName} personeli İK tarafından onaylandı ve "${updated.department}" departmanına (${updated.title}) atandı.',
+        timestamp: DateTime.now(),
+        type: NotificationType.system,
+        icon: Icons.check_circle_rounded,
+        color: const Color(0xFF10B981),
+        isRead: false,
+      ),
+    );
+
     notifyListeners();
     return (
       success: true,
-      message: '"${targetCompany.name}" şirketine kaydınız başarıyla yapıldı.',
+      message: '${updated.fullName} personeli başarıyla onaylandı ve ${updated.department} departmanına (${updated.title}) atandı.',
     );
+  }
+
+  /// İK Tarafından Personel Kaydını Reddetme
+  ({bool success, String message}) rejectEmployeeRegistration(int employeeId) {
+    if (_currentUser.role != UserRole.hr &&
+        _currentUser.role != UserRole.boss &&
+        _currentUser.role != UserRole.admin) {
+      return (success: false, message: 'Yetkisiz işlem.');
+    }
+
+    final index = _employees.indexWhere((e) => e.id == employeeId);
+    if (index == -1) {
+      return (success: false, message: 'Personel kaydı bulunamadı.');
+    }
+
+    final name = _employees[index].fullName;
+    _employees.removeAt(index);
+    notifyListeners();
+    return (success: true, message: '$name personelinin kayıt başvurusu reddedildi ve listeden kaldırıldı.');
   }
 
   // Oturumu Kapat

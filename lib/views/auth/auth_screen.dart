@@ -23,8 +23,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPhoneController = TextEditingController();
-  final _regDeptController = TextEditingController(text: 'Yazılım & Ar-Ge');
-  final _regTitleController = TextEditingController();
   final _regPinController = TextEditingController();
   bool _regObscure = true;
 
@@ -43,8 +41,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _regNameController.dispose();
     _regEmailController.dispose();
     _regPhoneController.dispose();
-    _regDeptController.dispose();
-    _regTitleController.dispose();
     _regPinController.dispose();
     super.dispose();
   }
@@ -60,12 +56,71 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       return;
     }
 
-    final success = context.read<PdksState>().login(email, pin);
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(backgroundColor: AppColors.danger, content: Text('Hatalı e-posta veya PIN kodu!')),
-      );
+    final result = context.read<PdksState>().login(email, pin);
+    if (!result.success) {
+      if (result.isPendingApproval) {
+        _showPendingApprovalDialog(context, result.message);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: AppColors.danger, content: Text(result.message)),
+        );
+      }
     }
+  }
+
+  void _showPendingApprovalDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Row(
+          children: [
+            Icon(Icons.hourglass_top_rounded, color: Color(0xFFF59E0B), size: 26),
+            SizedBox(width: 10),
+            Text('İK Onayı Bekleniyor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message, style: const TextStyle(fontSize: 13.5, height: 1.4)),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.35)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'İnsan Kaynakları departmanı başvurunuzu inceleyip onayladığında ve departman/unvan atamanızı yaptığında PIN kodunuz ile sisteme giriş yapabileceksiniz.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF92400E)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Anladım', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleRegister() {
@@ -73,8 +128,6 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     final name = _regNameController.text.trim();
     final email = _regEmailController.text.trim();
     final phone = _regPhoneController.text.trim();
-    final dept = _regDeptController.text.trim();
-    final title = _regTitleController.text.trim();
     final pin = _regPinController.text.trim();
 
     if (companyCode.isEmpty || name.isEmpty || email.isEmpty || pin.isEmpty) {
@@ -92,15 +145,77 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       fullName: name,
       email: email,
       phone: phone.isEmpty ? '+90 555 000 00 00' : phone,
-      department: dept,
-      title: title.isEmpty ? 'Personel' : title,
       pin: pin,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: result.success ? AppColors.success : AppColors.danger,
-        content: Text(result.message),
+    if (result.success) {
+      _showRegistrationSuccessDialog(context, name, email);
+      _loginEmailController.text = email;
+      _loginPinController.text = pin;
+      _tabController.animateTo(0);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(backgroundColor: AppColors.danger, content: Text(result.message)),
+      );
+    }
+  }
+
+  void _showRegistrationSuccessDialog(BuildContext context, String name, String email) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 28),
+            SizedBox(width: 10),
+            Text('Kayıt Alındı!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tebrikler $name, personel kayıt başvurunuz başarıyla oluşturuldu.',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.25)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 22),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Kurumsal işleyiş gereği kaydınız ilk önce İnsan Kaynakları (İK) onayına iletilmiştir.\n\nİK departmanı departman ve unvanınızı belirleyip onay verdiğinde PIN kodunuz ile giriş yapabileceksiniz.',
+                      style: TextStyle(fontSize: 12, height: 1.4, color: Color(0xFF1E3A8A)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Giriş Ekranına Git', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -408,11 +523,31 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'ahmet@sirket.com', keyboardType: TextInputType.emailAddress),
           const SizedBox(height: 8),
           _buildInput('Telefon Numarası', _regPhoneController, Icons.phone_outlined, hint: '+90 532 000 00 00', keyboardType: TextInputType.phone),
-          const SizedBox(height: 8),
-          _buildInput('Departman', _regDeptController, Icons.business_outlined, hint: 'Yazılım & Ar-Ge'),
-          const SizedBox(height: 8),
-          _buildInput('Unvan', _regTitleController, Icons.badge_outlined, hint: 'Mobil Geliştirici'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // İK Onay Bilgilendirme Kutusu
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.assignment_ind_rounded, color: Color(0xFF2563EB), size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Departman ve unvan atamanız, kaydınız oluştuktan sonra İnsan Kaynakları (İK) tarafından onay sürecinde yapılacaktır.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF), height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
           const Text('PIN Kodu Belirleyin *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           const SizedBox(height: 4),
           TextField(
@@ -444,7 +579,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: _handleRegister,
-              child: const Text('Şirkete Kayıt Ol ve Giriş Yap', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              child: const Text('Kayıt Talebi Gönder (İK Onayına İlet)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
