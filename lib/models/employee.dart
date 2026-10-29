@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum UserRole { employee, hr, boss, admin }
 
 extension UserRoleExtension on UserRole {
@@ -28,6 +30,28 @@ extension UserRoleExtension on UserRole {
   }
 }
 
+class AppRoleItem {
+  final String id;
+  final String name;
+  final String description;
+  final UserRole baseRole;
+  final Color color;
+  final IconData icon;
+  final bool isSystemRole;
+  final String createdBy;
+
+  const AppRoleItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.baseRole,
+    required this.color,
+    required this.icon,
+    this.isSystemRole = false,
+    this.createdBy = 'Sistem',
+  });
+}
+
 class Employee {
   final int id;
   final String fullName;
@@ -41,6 +65,8 @@ class Employee {
   final int usedLeaveDays;
   final bool isActive;
   final String? avatarUrl;
+  final String? customRoleId;
+  final String? customRoleName;
 
   Employee({
     required this.id,
@@ -55,9 +81,48 @@ class Employee {
     this.usedLeaveDays = 0,
     this.isActive = true,
     this.avatarUrl,
+    this.customRoleId,
+    this.customRoleName,
   });
 
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
+
+  String get roleDisplayName => customRoleName ?? role.label;
+
+  Employee copyWith({
+    int? id,
+    String? fullName,
+    String? email,
+    String? phone,
+    String? department,
+    String? title,
+    String? pinCode,
+    UserRole? role,
+    int? annualLeaveAllowance,
+    int? usedLeaveDays,
+    bool? isActive,
+    String? avatarUrl,
+    String? customRoleId,
+    String? customRoleName,
+    bool clearCustomRole = false,
+  }) {
+    return Employee(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      department: department ?? this.department,
+      title: title ?? this.title,
+      pinCode: pinCode ?? this.pinCode,
+      role: role ?? this.role,
+      annualLeaveAllowance: annualLeaveAllowance ?? this.annualLeaveAllowance,
+      usedLeaveDays: usedLeaveDays ?? this.usedLeaveDays,
+      isActive: isActive ?? this.isActive,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      customRoleId: clearCustomRole ? null : (customRoleId ?? this.customRoleId),
+      customRoleName: clearCustomRole ? null : (customRoleName ?? this.customRoleName),
+    );
+  }
 
   factory Employee.fromJson(Map<String, dynamic> json) {
     UserRole parsedRole = UserRole.employee;
@@ -79,6 +144,8 @@ class Employee {
       usedLeaveDays: json['usedLeaveDays'] ?? 0,
       isActive: json['isActive'] ?? true,
       avatarUrl: json['avatarUrl'],
+      customRoleId: json['customRoleId'],
+      customRoleName: json['customRoleName'],
     );
   }
 
@@ -96,6 +163,8 @@ class Employee {
       'usedLeaveDays': usedLeaveDays,
       'isActive': isActive,
       'avatarUrl': avatarUrl,
+      'customRoleId': customRoleId,
+      'customRoleName': customRoleName,
     };
   }
 }

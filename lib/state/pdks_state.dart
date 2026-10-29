@@ -28,6 +28,50 @@ class PdksState extends ChangeNotifier {
   List<LeaveRequest> _leaves = [];
   List<ShiftSchedule> _shifts = [];
 
+  // Sistem Rolleri ve Patron/Admin tarafından eklenen roller
+  final List<AppRoleItem> _roles = [
+    const AppRoleItem(
+      id: 'role_employee',
+      name: 'Personel',
+      description: 'Standart mobil devam takip ve QR okuma yetkisi',
+      baseRole: UserRole.employee,
+      color: Color(0xFF2563EB),
+      icon: Icons.badge_outlined,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+    ),
+    const AppRoleItem(
+      id: 'role_hr',
+      name: 'İnsan Kaynakları (İK)',
+      description: 'Personel, puantaj, vardiya ve izin yönetimi yetkileri',
+      baseRole: UserRole.hr,
+      color: Color(0xFF0284C7),
+      icon: Icons.people_alt_outlined,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+    ),
+    const AppRoleItem(
+      id: 'role_boss',
+      name: 'Patron (Yönetim)',
+      description: 'Şirket maliyetleri, devam istatistikleri ve rol ekleme yetkisi',
+      baseRole: UserRole.boss,
+      color: Color(0xFFD97706),
+      icon: Icons.workspace_premium_outlined,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+    ),
+    const AppRoleItem(
+      id: 'role_admin',
+      name: 'Sistem Yöneticisi (Admin)',
+      description: 'En yüksek güvenlikli teknik sistem yapılandırma yetkisi',
+      baseRole: UserRole.admin,
+      color: Color(0xFF9333EA),
+      icon: Icons.admin_panel_settings_outlined,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+    ),
+  ];
+
   // Sistem & Geofence Ayarları (Admin tarafından değiştirilebilir - Sincan / Ankara)
   double _officeLat = 40.01461;
   double _officeLng = 32.51520;
@@ -88,6 +132,11 @@ class PdksState extends ChangeNotifier {
   List<AttendanceRecord> get records => _records;
   List<LeaveRequest> get leaves => _leaves;
   List<ShiftSchedule> get shifts => _shifts;
+
+  List<AppRoleItem> get roles => List.unmodifiable(_roles);
+  List<AppRoleItem> get customRoles => _roles.where((r) => !r.isSystemRole).toList();
+  List<AppRoleItem> get rolesSelectableByBoss =>
+      _roles.where((r) => r.baseRole != UserRole.admin && r.id != 'role_admin').toList();
 
   double get officeLat => _officeLat;
   double get officeLng => _officeLng;
@@ -381,30 +430,144 @@ class PdksState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Admin: Personel Rolünü Değiştir
-  void changeEmployeeRole(int employeeId, UserRole newRole) {
-    final index = _employees.indexWhere((e) => e.id == employeeId);
-    if (index != -1) {
-      final old = _employees[index];
-      final updated = Employee(
-        id: old.id,
-        fullName: old.fullName,
-        email: old.email,
-        phone: old.phone,
-        department: old.department,
-        title: old.title,
-        pinCode: old.pinCode,
-        role: newRole,
-        annualLeaveAllowance: old.annualLeaveAllowance,
-        usedLeaveDays: old.usedLeaveDays,
-        isActive: old.isActive,
-      );
-      _employees[index] = updated;
-      if (_currentUser.id == employeeId) {
-        _currentUser = updated;
-      }
-      notifyListeners();
+  // ==========================================
+  // ROL YÖNETİMİ & GÜVENLİK PROTOKOLLERİ
+  // Kural: Patron yeni roller ekleyebilir AMA admin rolü ekleyemez ve admin atayamaz.
+  // ==========================================
+
+  /// Yeni Rol Ekleme Metodu
+  /// Güvenlik kuralı: Patron yeni roller ekleyebilir AMA admin rolünü ekleyemez!
+  ({bool success, String message}) addNewRole({
+    required String name,
+    required String description,
+    required UserRole baseRole,
+    required Color color,
+    required IconData icon,
+  }) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      return (success: false, message: 'Lütfen bir rol adı giriniz.');
     }
+
+    // GÜVENLİK PROTOKOLÜ 1: Patron seviyesinde Admin yetkili rol EKLEYEMEZ
+    if (_currentUser.role == UserRole.boss) {
+      if (baseRole == UserRole.admin) {
+        return (
+          success: false,
+          message: 'Yetki Sınırı: Patron seviyesinde Sistem Yöneticisi (Admin) tabanlı rol eklenemez.',
+        );
+      }
+      final lower = trimmedName.toLowerCase();
+      if (lower == 'admin' || lower.contains('admin') || lower.contains('sistem yöneticisi')) {
+        return (
+          success: false,
+          message: 'Güvenlik Sınırı: "Admin" veya "Sistem Yöneticisi" ismiyle yeni rol tanımlanamaz.',
+        );
+      }
+    }
+
+    // İsim benzersizlik kontrolü
+    if (_roles.any((r) => r.name.toLowerCase() == trimmedName.toLowerCase())) {
+      return (success: false, message: '"$trimmedName" isimli bir rol sistemde zaten mevcut.');
+    }
+
+    final newRole = AppRoleItem(
+      id: 'role_${DateTime.now().millisecondsSinceEpoch}',
+      name: trimmedName,
+      description: description.trim().isEmpty ? '$trimmedName Yetkisi' : description.trim(),
+      baseRole: baseRole,
+      color: color,
+      icon: icon,
+      isSystemRole: false,
+      createdBy: _currentUser.role == UserRole.boss ? 'Patron (${_currentUser.fullName})' : 'Admin (${_currentUser.fullName})',
+    );
+
+    _roles.add(newRole);
+    notifyListeners();
+    return (success: true, message: '"$trimmedName" rolü başarıyla oluşturuldu.');
+  }
+
+  /// Özel Rolü Sil
+  ({bool success, String message}) deleteRole(String roleId) {
+    final index = _roles.indexWhere((r) => r.id == roleId);
+    if (index == -1) return (success: false, message: 'Rol bulunamadı.');
+
+    final role = _roles[index];
+    if (role.isSystemRole) {
+      return (success: false, message: 'Varsayılan sistem rolleri silinemez.');
+    }
+
+    // Bu role sahip personellerin özel rol kaydını temizle
+    for (int i = 0; i < _employees.length; i++) {
+      if (_employees[i].customRoleId == roleId) {
+        _employees[i] = _employees[i].copyWith(clearCustomRole: true);
+      }
+    }
+
+    _roles.removeAt(index);
+    notifyListeners();
+    return (success: true, message: '"${role.name}" rolü başarıyla silindi.');
+  }
+
+  /// Personel Rolünü Değiştir (Rol Atama)
+  /// Güvenlik kuralı: Patron kimseye Admin rolü ATAYAMAZ ve Admin personeli DEĞİŞTİREMEZ.
+  ({bool success, String message}) changeEmployeeRoleByActor({
+    required int employeeId,
+    required UserRole newBaseRole,
+    String? customRoleId,
+    String? customRoleName,
+  }) {
+    final index = _employees.indexWhere((e) => e.id == employeeId);
+    if (index == -1) {
+      return (success: false, message: 'Personel kaydı bulunamadı.');
+    }
+
+    final target = _employees[index];
+
+    // GÜVENLİK KONTROLLERİ (Patron İçin):
+    if (_currentUser.role == UserRole.boss) {
+      // 1. Patron kimseye Admin rolü ATAYAMAZ
+      if (newBaseRole == UserRole.admin) {
+        return (
+          success: false,
+          message: 'Yetki Sınırı: Patron seviyesinde kullanıcılara Admin rolü atanamaz!',
+        );
+      }
+      // 2. Patron mevcut Admin kullanıcısının yetkisini DEĞİŞTİREMEZ
+      if (target.role == UserRole.admin) {
+        return (
+          success: false,
+          message: 'Güvenlik Sınırı: Sistem Yöneticisi (Admin) kullanıcısının yetkisi Patron tarafından değiştirilemez.',
+        );
+      }
+    }
+
+    final updated = target.copyWith(
+      role: newBaseRole,
+      customRoleId: customRoleId,
+      customRoleName: customRoleName,
+      clearCustomRole: customRoleId == null,
+    );
+
+    _employees[index] = updated;
+    if (_currentUser.id == employeeId) {
+      _currentUser = updated;
+    }
+    notifyListeners();
+
+    final roleName = customRoleName ?? newBaseRole.label;
+    return (
+      success: true,
+      message: '${target.fullName} kullanıcısına "$roleName" rolü atandı.',
+    );
+  }
+
+  // Admin / Geriye Uyumluluk İçin Rol Değiştirme
+  void changeEmployeeRole(int employeeId, UserRole newRole) {
+    changeEmployeeRoleByActor(
+      employeeId: employeeId,
+      newBaseRole: newRole,
+    );
   }
 
   // Admin: Geofence Ayarlarını Güncelle

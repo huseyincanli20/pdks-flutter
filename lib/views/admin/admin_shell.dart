@@ -184,7 +184,7 @@ class _AdminShellState extends State<AdminShell> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${emp.department} • PIN: ${emp.pinCode}',
+                          '${emp.department} • PIN: ${emp.pinCode} • ${emp.roleDisplayName}',
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
