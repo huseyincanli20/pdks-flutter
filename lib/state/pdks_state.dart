@@ -19,7 +19,7 @@ class PdksState extends ChangeNotifier {
 
   // Aktif Giriş Yapan Kullanıcı
   late Employee _currentUser;
-  bool _isLoggedIn = true;
+  bool _isLoggedIn = false;
 
   // Personelin anlık durumu: true = İçeride (Checked in), false = Dışarıda
   bool _isCheckedIn = false;
