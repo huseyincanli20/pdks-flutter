@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_theme_type.dart';
 import 'models/employee.dart';
 import 'state/pdks_state.dart';
 import 'views/auth/auth_screen.dart';
@@ -25,13 +26,15 @@ class PdksApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = context.watch<PdksState>().themeMode;
+    final pdks = context.watch<PdksState>();
+    final themeData = pdks.activeThemeData;
+    final themeMode = pdks.themeMode;
 
     return MaterialApp(
       title: 'PDKS - Personel Devam Kontrol Sistemi',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: pdks.currentTheme == AppThemeType.system ? AppTheme.lightTheme : themeData,
+      darkTheme: pdks.currentTheme == AppThemeType.system ? AppTheme.darkTheme : themeData,
       themeMode: themeMode,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

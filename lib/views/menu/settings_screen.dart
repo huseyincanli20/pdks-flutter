@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_theme_type.dart';
 import '../../state/pdks_state.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showThemePickerModal(BuildContext context) {
     final pdks = context.read<PdksState>();
-    final currentMode = pdks.themeMode;
+    final activeTheme = pdks.currentTheme;
 
     showModalBottomSheet(
       context: context,
@@ -29,6 +30,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
 
         return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+          ),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -44,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             20,
             12,
             20,
-            MediaQuery.of(ctx).padding.bottom + 20,
+            MediaQuery.of(ctx).padding.bottom + 16,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -58,89 +62,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.12),
+                      color: activeTheme.primaryColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.palette_rounded, color: AppColors.primary, size: 22),
+                    child: Icon(Icons.palette_rounded, color: activeTheme.primaryColor, size: 22),
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Görünüm Teması',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : AppColors.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Görünüm Teması',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Uygulama renk modunu tercihinize göre belirleyin',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? Colors.white60 : AppColors.textSecondary,
+                        const SizedBox(height: 2),
+                        Text(
+                          '7 farklı renk ve mod seçeneğiyle tarzınızı yansıtın',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white60 : AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // 1. Sistem Varsayılanı
-              _buildThemeOptionTile(
-                ctx,
-                title: 'Sistem Varsayılanı',
-                subtitle: 'Telefonunuzun (iOS / Android) temasını otomatik takip eder',
-                icon: Icons.brightness_auto_rounded,
-                iconColor: const Color(0xFF3B82F6),
-                isSelected: currentMode == ThemeMode.system,
-                onTap: () {
-                  pdks.setThemeMode(ThemeMode.system);
-                  Navigator.pop(ctx);
-                  _showToast(context, 'Sistem teması etkinleştirildi.');
-                },
-              ),
-              const SizedBox(height: 10),
+              // Scrollable Tema Listesi
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: AppThemeType.values.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final theme = AppThemeType.values[index];
+                    final isSelected = activeTheme == theme;
 
-              // 2. Aydınlık (Light) Tema
-              _buildThemeOptionTile(
-                ctx,
-                title: 'Aydınlık (Light) Mod',
-                subtitle: 'Ferah, canlı ve berrak gündüz görünümü',
-                icon: Icons.light_mode_rounded,
-                iconColor: const Color(0xFFF59E0B),
-                isSelected: currentMode == ThemeMode.light,
-                onTap: () {
-                  pdks.setThemeMode(ThemeMode.light);
-                  Navigator.pop(ctx);
-                  _showToast(context, 'Aydınlık tema etkinleştirildi.');
-                },
-              ),
-              const SizedBox(height: 10),
-
-              // 3. Koyu (Dark) Tema
-              _buildThemeOptionTile(
-                ctx,
-                title: 'Koyu (Dark / Gece) Mod',
-                subtitle: 'AMOLED derin siyah tonlar, göz konforu ve pil tasarrufu',
-                icon: Icons.dark_mode_rounded,
-                iconColor: const Color(0xFF8B5CF6),
-                isSelected: currentMode == ThemeMode.dark,
-                onTap: () {
-                  pdks.setThemeMode(ThemeMode.dark);
-                  Navigator.pop(ctx);
-                  _showToast(context, 'Koyu tema etkinleştirildi.');
-                },
+                    return _buildThemeOptionTile(
+                      ctx,
+                      title: theme.title,
+                      subtitle: theme.subtitle,
+                      icon: theme.icon,
+                      iconColor: theme.primaryColor,
+                      previewBg: theme.previewBg,
+                      isSelected: isSelected,
+                      onTap: () {
+                        pdks.setTheme(theme);
+                        Navigator.pop(ctx);
+                        _showToast(context, '${theme.title} teması etkinleştirildi.');
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -165,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String subtitle,
     required IconData icon,
     required Color iconColor,
+    required Color previewBg,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -176,45 +164,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.08)
+                ? iconColor.withOpacity(isDark ? 0.2 : 0.08)
                 : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: isSelected ? AppColors.primary : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              color: isSelected ? iconColor : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
               width: isSelected ? 1.8 : 1,
             ),
           ),
           child: Row(
             children: [
+              // Tema Renk Önizleme Rozeti
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(14),
+                  color: previewBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? iconColor : (isDark ? Colors.white24 : Colors.black12),
+                    width: isSelected ? 2 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: Center(
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: iconColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? AppColors.primary
-                            : (isDark ? Colors.white : AppColors.textPrimary),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected
+                                ? iconColor
+                                : (isDark ? Colors.white : AppColors.textPrimary),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? Colors.white60 : AppColors.textSecondary,
@@ -223,11 +239,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               if (isSelected)
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
+                  decoration: BoxDecoration(
+                    color: iconColor,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, size: 14, color: Colors.white),
@@ -270,11 +287,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildActionItem(
               context,
               title: 'Görünüm Teması',
-              subtitle: 'Aydınlık, Koyu veya Otomatik Sistem Teması',
+              subtitle: 'Aydınlık, Koyu, Lacivert, Zümrüt, Mor & Kehribar (7 Tema)',
               icon: Icons.palette_outlined,
-              iconColor: const Color(0xFF3B82F6),
+              iconColor: pdks.currentTheme.primaryColor,
               trailingText: pdks.themeModeName,
-              trailingBadgeColor: AppColors.primary,
+              trailingBadgeColor: pdks.currentTheme.primaryColor,
               onTap: () => _showThemePickerModal(context),
             ),
           ]),

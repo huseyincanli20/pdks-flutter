@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/platform_file_helper.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 
@@ -24,6 +27,153 @@ TITLE:$title
 TEL;TYPE=CELL:$phone
 EMAIL:$email
 END:VCARD''';
+  }
+
+  Future<void> _addToContacts(BuildContext context, Employee user, String vCardData) async {
+    final fileName = '${user.fullName.replaceAll(' ', '_')}.vcf';
+
+    // vCard dosyasını cihaza kaydet ve telefonun rehber uygulamasında açmasını tetikle
+    await PlatformFileHelper.saveAndOpen(
+      fileName: fileName,
+      content: vCardData,
+      mimeType: 'text/vcard;charset=utf-8',
+    );
+
+    if (!context.mounted) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          16,
+          24,
+          MediaQuery.of(ctx).padding.bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white24 : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF10B981), size: 36),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Rehbere Aktarılıyor',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${user.fullName} için vCard (.vcf) oluşturuldu ve telefonunuza gönderildi. Ekrandaki "Kişilere Ekle" uyarısından rehberinize ekleyebilirsiniz.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white70 : AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                    ),
+                    icon: const Icon(Icons.phone_rounded, size: 18, color: Color(0xFF2563EB)),
+                    label: const Text('Hemen Ara', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      final cleanPhone = user.phone.replaceAll(RegExp(r'[^\d+]'), '');
+                      launchUrl(Uri.parse('tel:$cleanPhone'));
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                    ),
+                    icon: const Icon(Icons.email_rounded, size: 18, color: Color(0xFF8B5CF6)),
+                    label: const Text('E-Posta At', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      launchUrl(Uri.parse('mailto:${user.email}'));
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.file_open_rounded, size: 18),
+                label: const Text('Kişi Kartını (.vcf) Tekrar Aç', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  PlatformFileHelper.saveAndOpen(
+                    fileName: fileName,
+                    content: vCardData,
+                    mimeType: 'text/vcard;charset=utf-8',
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _shareContact(BuildContext context, Employee user) {
+    Clipboard.setData(ClipboardData(
+      text: '${user.fullName}\n${user.department} - ${user.title}\nTel: ${user.phone}\nE-posta: ${user.email}\nŞirket: ACME TEKNOLOJİ VE HOLDİNG A.Ş.',
+    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('Kartvizit ve iletişim bilgileri panoya kopyalandı.'),
+      ),
+    );
   }
 
   @override
@@ -241,38 +391,25 @@ END:VCARD''';
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.white24 : const Color(0xFFCBD5E1)),
                           ),
                           icon: const Icon(Icons.share_rounded, size: 18),
                           label: const Text('Paylaş', style: TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Kartvizit bağlantısı panoya kopyalandı.'),
-                              ),
-                            );
-                          },
+                          onPressed: () => _shareContact(context, user),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOf(context),
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          icon: const Icon(Icons.contact_page_rounded, size: 18),
+                          icon: const Icon(Icons.person_add_rounded, size: 18),
                           label: const Text('Rehbere Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: AppColors.success,
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Kişi kartvizit verisi (.vcf) oluşturuldu.'),
-                              ),
-                            );
-                          },
+                          onPressed: () => _addToContacts(context, user, vCardData),
                         ),
                       ),
                     ],

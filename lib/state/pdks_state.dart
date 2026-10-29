@@ -6,6 +6,8 @@ import '../models/leave_request.dart';
 import '../models/shift_schedule.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
+import '../core/theme/app_theme_type.dart';
+import '../core/theme/app_theme.dart';
 
 class PdksState extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -33,8 +35,9 @@ class PdksState extends ChangeNotifier {
   String _allowedWifiSsid = 'Sirket_Personel';
   String _officeAddress = 'Fırat Cd. 14, 06946 Sincan Ankara, Türkiye';
 
-  // Görünüm Teması: Sistem, Aydınlık, Koyu
+  // Görünüm Teması: Sistem, Aydınlık, Koyu, Lacivert, Zümrüt, Mor, Kehribar
   ThemeMode _themeMode = ThemeMode.system;
+  AppThemeType _currentTheme = AppThemeType.system;
 
   // Getters
   Employee get currentUser => _currentUser;
@@ -43,31 +46,42 @@ class PdksState extends ChangeNotifier {
   DateTime? get lastCheckInTime => _lastCheckInTime;
   Duration get workedToday => _workedToday;
 
+  AppThemeType get currentTheme => _currentTheme;
+  ThemeData get activeThemeData => AppTheme.getThemeData(_currentTheme);
   ThemeMode get themeMode => _themeMode;
-  String get themeModeName {
-    switch (_themeMode) {
-      case ThemeMode.light:
-        return 'Aydınlık';
-      case ThemeMode.dark:
-        return 'Koyu (Gece)';
-      case ThemeMode.system:
-      default:
-        return 'Sistem';
-    }
-  }
 
-  void setThemeMode(ThemeMode mode) {
-    _themeMode = mode;
-    notifyListeners();
-  }
+  String get themeModeName => _currentTheme.title;
 
-  void toggleTheme() {
-    if (_themeMode == ThemeMode.dark) {
+  void setTheme(AppThemeType theme) {
+    _currentTheme = theme;
+    if (theme == AppThemeType.system) {
+      _themeMode = ThemeMode.system;
+    } else if (theme == AppThemeType.light) {
       _themeMode = ThemeMode.light;
     } else {
       _themeMode = ThemeMode.dark;
     }
     notifyListeners();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    if (mode == ThemeMode.system) {
+      _currentTheme = AppThemeType.system;
+    } else if (mode == ThemeMode.light) {
+      _currentTheme = AppThemeType.light;
+    } else {
+      _currentTheme = AppThemeType.dark;
+    }
+    notifyListeners();
+  }
+
+  void toggleTheme() {
+    if (_currentTheme.isDarkTheme) {
+      setTheme(AppThemeType.light);
+    } else {
+      setTheme(AppThemeType.dark);
+    }
   }
 
   List<Employee> get employees => _employees;

@@ -31,17 +31,23 @@ class AppColors {
   static const Color border = Color(0xFFE2E8F0);
   static const Color divider = Color(0xFFF1F5F9);
 
-  // Dynamic Context-Aware Colors (Light / Dark)
+  // Dynamic Context-Aware Colors (Light / Dark / Custom Themes)
   static bool isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 
+  static Color primaryOf(BuildContext context) => Theme.of(context).primaryColor;
+
   static Color bg(BuildContext context) =>
-      isDark(context) ? darkBackground : background;
+      Theme.of(context).scaffoldBackgroundColor;
 
   static Color cardBg(BuildContext context) =>
-      isDark(context) ? darkSurface : Colors.white;
+      Theme.of(context).cardTheme.color ?? (isDark(context) ? darkSurface : Colors.white);
 
-  static Color cardBorder(BuildContext context) =>
-      isDark(context) ? darkBorder : border;
+  static Color cardBorder(BuildContext context) {
+    final borderSide = Theme.of(context).cardTheme.shape is RoundedRectangleBorder
+        ? (Theme.of(context).cardTheme.shape as RoundedRectangleBorder).side
+        : null;
+    return borderSide?.color ?? (isDark(context) ? darkBorder : border);
+  }
 
   static Color text(BuildContext context) =>
       isDark(context) ? darkTextPrimary : textPrimary;
@@ -50,10 +56,10 @@ class AppColors {
       isDark(context) ? darkTextSecondary : textSecondary;
 
   static Color subtle(BuildContext context) =>
-      isDark(context) ? const Color(0xFF131B2E) : const Color(0xFFF1F5F9);
+      isDark(context) ? (Theme.of(context).cardTheme.color?.withOpacity(0.5) ?? const Color(0xFF131B2E)) : const Color(0xFFF1F5F9);
 
   static Color inputBg(BuildContext context) =>
-      isDark(context) ? const Color(0xFF131B2E) : const Color(0xFFF8FAFC);
+      Theme.of(context).inputDecorationTheme.fillColor ?? (isDark(context) ? const Color(0xFF131B2E) : const Color(0xFFF8FAFC));
 
   // Gradient accents
   static const LinearGradient primaryGradient = LinearGradient(
