@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 
-enum UserRole { employee, hr, boss, admin, cafeteria }
+enum UserRole {
+  employee,
+  hr,
+  boss,
+  admin,
+  cafeteria,
+  technician,
+  doctor,
+  serviceManager,
+  vehicleRentalManager,
+}
 
 extension UserRoleExtension on UserRole {
   String get label {
@@ -15,6 +25,14 @@ extension UserRoleExtension on UserRole {
         return 'Sistem Yöneticisi (Admin)';
       case UserRole.cafeteria:
         return 'Yemekhane Personeli';
+      case UserRole.technician:
+        return 'Teknisyen';
+      case UserRole.doctor:
+        return 'İşyeri Hekimi (Doktor)';
+      case UserRole.serviceManager:
+        return 'Servis Sorumlusu';
+      case UserRole.vehicleRentalManager:
+        return 'Araç Kiralama Sorumlusu';
     }
   }
 
@@ -30,6 +48,60 @@ extension UserRoleExtension on UserRole {
         return 'Admin';
       case UserRole.cafeteria:
         return 'Yemekhane';
+      case UserRole.technician:
+        return 'Teknisyen';
+      case UserRole.doctor:
+        return 'Doktor';
+      case UserRole.serviceManager:
+        return 'Servis';
+      case UserRole.vehicleRentalManager:
+        return 'Araç Kiralama';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case UserRole.boss:
+        return const Color(0xFFD97706);
+      case UserRole.admin:
+        return const Color(0xFF9333EA);
+      case UserRole.hr:
+        return const Color(0xFF0284C7);
+      case UserRole.cafeteria:
+        return const Color(0xFFEA580C);
+      case UserRole.technician:
+        return const Color(0xFF0D9488);
+      case UserRole.doctor:
+        return const Color(0xFFE11D48);
+      case UserRole.serviceManager:
+        return const Color(0xFF4F46E5);
+      case UserRole.vehicleRentalManager:
+        return const Color(0xFF059669);
+      case UserRole.employee:
+        return const Color(0xFF2563EB);
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case UserRole.boss:
+        return Icons.workspace_premium_outlined;
+      case UserRole.admin:
+        return Icons.admin_panel_settings_outlined;
+      case UserRole.hr:
+        return Icons.people_alt_outlined;
+      case UserRole.cafeteria:
+        return Icons.restaurant_menu_rounded;
+      case UserRole.technician:
+        return Icons.build_rounded;
+      case UserRole.doctor:
+        return Icons.medical_services_rounded;
+      case UserRole.serviceManager:
+        return Icons.airport_shuttle_rounded;
+      case UserRole.vehicleRentalManager:
+        return Icons.car_rental_rounded;
+      case UserRole.employee:
+        return Icons.badge_outlined;
     }
   }
 }
@@ -61,6 +133,7 @@ const List<AppPageDefinition> kAllAppPages = [
   AppPageDefinition(id: 'records', title: 'Giriş / Çıkış Kayıtları', category: 'Operasyon', icon: Icons.history_rounded),
   AppPageDefinition(id: 'field_work', title: 'Dışarıda Çalışma (Saha)', category: 'Operasyon', icon: Icons.location_on_rounded),
   AppPageDefinition(id: 'overtime', title: 'Fazla Mesai Talebi', category: 'Operasyon', icon: Icons.more_time_rounded),
+  AppPageDefinition(id: 'vehicle_request', title: 'Araç Talebi & Filo', category: 'Operasyon', icon: Icons.directions_car_rounded),
   AppPageDefinition(id: 'settings', title: 'Uygulama Ayarları', category: 'Sistem', icon: Icons.settings_rounded),
   AppPageDefinition(id: 'about', title: 'Hakkımda & Güvenlik', category: 'Sistem', icon: Icons.info_rounded),
   AppPageDefinition(id: 'cloud_db', title: 'Firebase Bulut DB', category: 'Sistem (Korumalı)', icon: Icons.cloud_rounded),
@@ -255,6 +328,12 @@ class Employee {
     if (r == 'boss' || r == 'patron' || r == 'ceo') parsedRole = UserRole.boss;
     if (r == 'admin') parsedRole = UserRole.admin;
     if (r == 'cafeteria' || r == 'yemekhane') parsedRole = UserRole.cafeteria;
+    if (r == 'technician' || r == 'teknisyen') parsedRole = UserRole.technician;
+    if (r == 'doctor' || r == 'doktor') parsedRole = UserRole.doctor;
+    if (r == 'servicemanager' || r == 'servis' || r == 'servis_sorumlusu') parsedRole = UserRole.serviceManager;
+    if (r == 'vehiclerentalmanager' || r == 'arackiralama' || r == 'arac_kiralama' || r == 'arac_kiralama_sorumlusu') {
+      parsedRole = UserRole.vehicleRentalManager;
+    }
 
     return Employee(
       id: json['id'] ?? 0,

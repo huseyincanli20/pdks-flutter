@@ -14,6 +14,7 @@ import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
+import '../vehicle/vehicle_request_screen.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
 
@@ -67,27 +68,8 @@ class AppDrawer extends StatelessWidget {
     final user = pdks.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Color roleColor;
-    String roleName;
-    switch (user.role) {
-      case UserRole.boss:
-        roleColor = const Color(0xFFD97706);
-        roleName = 'Patron / CEO';
-        break;
-      case UserRole.admin:
-        roleColor = const Color(0xFF9333EA);
-        roleName = 'Sistem Admin';
-        break;
-      case UserRole.hr:
-        roleColor = const Color(0xFF0284C7);
-        roleName = 'İnsan Kaynakları';
-        break;
-      case UserRole.employee:
-      default:
-        roleColor = const Color(0xFF2563EB);
-        roleName = 'Personel';
-        break;
-    }
+    final Color roleColor = user.role.color;
+    final String roleName = user.roleDisplayName;
 
     return Drawer(
       backgroundColor: AppColors.bg(context),
@@ -434,6 +416,17 @@ class AppDrawer extends StatelessWidget {
                     subtitle: 'Hızlı kısayollar, yemek & servis',
                     destination: const FavoritesScreen(),
                   ),
+                  if (pdks.hasPagePermission('vehicle_request'))
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.directions_car_rounded,
+                      color: const Color(0xFF059669),
+                      title: 'Araç Talebi & Filo',
+                      subtitle: (user.role == UserRole.vehicleRentalManager || user.role == UserRole.boss || user.role == UserRole.admin)
+                          ? 'Filo yönetimi & araç tahsis'
+                          : 'Şirket havuz araçları ve talep takibi',
+                      destination: const VehicleRequestScreen(),
+                    ),
                   if (user.role == UserRole.admin || user.role == UserRole.boss)
                     _buildDrawerTile(
                       context,

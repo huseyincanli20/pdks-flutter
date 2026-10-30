@@ -19,6 +19,7 @@ import '../notifications/notifications_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../common/firebase_config_dialog.dart';
+import '../vehicle/vehicle_request_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -210,6 +211,9 @@ class FavoritesScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
                         );
+                        break;
+                      case 'vehicle_request':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
                         break;
                       case 'settings':
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));

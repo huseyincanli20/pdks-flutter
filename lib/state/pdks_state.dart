@@ -11,6 +11,7 @@ import '../models/payroll_slip.dart';
 import '../models/page_customization.dart';
 import '../models/chat_message.dart';
 import '../models/quick_menu_item.dart';
+import '../models/vehicle_request.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
@@ -146,6 +147,7 @@ class PdksState extends ChangeNotifier {
         'records',
         'field_work',
         'overtime',
+        'vehicle_request',
         'settings',
         'about',
       ],
@@ -172,6 +174,7 @@ class PdksState extends ChangeNotifier {
         'records',
         'field_work',
         'overtime',
+        'vehicle_request',
         'settings',
         'about',
       ],
@@ -198,6 +201,7 @@ class PdksState extends ChangeNotifier {
         'records',
         'field_work',
         'overtime',
+        'vehicle_request',
         'settings',
         'about',
         'cloud_db',
@@ -225,6 +229,7 @@ class PdksState extends ChangeNotifier {
         'records',
         'field_work',
         'overtime',
+        'vehicle_request',
         'settings',
         'about',
         'cloud_db',
@@ -242,6 +247,108 @@ class PdksState extends ChangeNotifier {
       allowedPageIds: [
         'cafeteria',
         'profile',
+        'settings',
+        'about',
+      ],
+    ),
+    const AppRoleItem(
+      id: 'role_technician',
+      name: 'Teknisyen',
+      description: 'Saha teknik bakım, arıza müdahalesi, cihaz kalibrasyonu ve araç talep yetkisi',
+      baseRole: UserRole.technician,
+      color: Color(0xFF0D9488),
+      icon: Icons.build_rounded,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'field_work',
+        'overtime',
+        'vehicle_request',
+        'settings',
+        'about',
+      ],
+    ),
+    const AppRoleItem(
+      id: 'role_doctor',
+      name: 'İşyeri Hekimi (Doktor)',
+      description: 'İş sağlığı ve güvenliği, periyodik muayene, vizite kontrolleri ve araç talep yetkisi',
+      baseRole: UserRole.doctor,
+      color: Color(0xFFE11D48),
+      icon: Icons.medical_services_rounded,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'vehicle_request',
+        'settings',
+        'about',
+      ],
+    ),
+    const AppRoleItem(
+      id: 'role_service_manager',
+      name: 'Servis Sorumlusu',
+      description: 'Personel servis güzergahları, vardiya servis çizelgesi ve ulaşım koordinasyonu',
+      baseRole: UserRole.serviceManager,
+      color: Color(0xFF4F46E5),
+      icon: Icons.airport_shuttle_rounded,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'vehicle_request',
+        'settings',
+        'about',
+      ],
+    ),
+    const AppRoleItem(
+      id: 'role_vehicle_rental_manager',
+      name: 'Araç Kiralama Sorumlusu',
+      description: 'Şirket araç filosu, filo kiralama sözleşmeleri ve araç talep onay & tahsis yönetimi',
+      baseRole: UserRole.vehicleRentalManager,
+      color: Color(0xFF059669),
+      icon: Icons.car_rental_rounded,
+      isSystemRole: true,
+      createdBy: 'Sistem',
+      allowedPageIds: [
+        'profile',
+        'payroll',
+        'chat',
+        'contacts',
+        'notifications',
+        'cafeteria',
+        'business_card',
+        'favorites',
+        'leave',
+        'records',
+        'vehicle_request',
         'settings',
         'about',
       ],
@@ -1759,6 +1866,66 @@ class PdksState extends ChangeNotifier {
       avatarUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
     );
 
+    final teknisyen = Employee(
+      id: 8,
+      companyId: 'cmp_acme',
+      fullName: 'Serkan Usta',
+      email: 'teknisyen@sirket.com',
+      phone: '+90 534 123 45 67',
+      department: 'Teknik Hizmetler & Bakım',
+      title: 'Kıdemli Saha Teknisyeni',
+      pinCode: '1234',
+      role: UserRole.technician,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 0,
+      avatarUrl: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=150',
+    );
+
+    final doktor = Employee(
+      id: 9,
+      companyId: 'cmp_acme',
+      fullName: 'Dr. Elif Çetin',
+      email: 'doktor@sirket.com',
+      phone: '+90 535 987 65 43',
+      department: 'İş Sağlığı ve Güvenliği',
+      title: 'İşyeri Hekimi',
+      pinCode: '1234',
+      role: UserRole.doctor,
+      annualLeaveAllowance: 20,
+      usedLeaveDays: 0,
+      avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150',
+    );
+
+    final servisSorumlusu = Employee(
+      id: 10,
+      companyId: 'cmp_acme',
+      fullName: 'Murat Şen',
+      email: 'servis@sirket.com',
+      phone: '+90 536 456 78 90',
+      department: 'Ulaşım & Lojistik',
+      title: 'Servis ve Ulaşım Sorumlusu',
+      pinCode: '1234',
+      role: UserRole.serviceManager,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 0,
+      avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
+    );
+
+    final aracKiralamaSorumlusu = Employee(
+      id: 20,
+      companyId: 'cmp_acme',
+      fullName: 'Cenk Vural',
+      email: 'arackiralama@sirket.com',
+      phone: '+90 537 321 65 49',
+      department: 'Filo & Araç Kiralama',
+      title: 'Filo & Araç Kiralama Sorumlusu',
+      pinCode: '1234',
+      role: UserRole.vehicleRentalManager,
+      annualLeaveAllowance: 16,
+      usedLeaveDays: 0,
+      avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
+    );
+
     // NOVA Savunma Personelleri
     final novaPersonel = Employee(
       id: 11,
@@ -1876,17 +2043,28 @@ class PdksState extends ChangeNotifier {
     // Veritabanı Servisinden Verileri Yükle
     if (_db.getAllEmployees().isNotEmpty) {
       _employees = List.from(_db.getAllEmployees());
+      for (final demo in [teknisyen, doktor, servisSorumlusu, aracKiralamaSorumlusu]) {
+        if (!_employees.any((e) => e.email.toLowerCase() == demo.email.toLowerCase())) {
+          _employees.add(demo);
+        }
+      }
       _currentUser = _employees.firstWhere((e) => e.id == 1, orElse: () => _employees.first);
     } else {
       _currentUser = personel; // Varsayılan personel
       _employees = [
         personel, ik, patron, admin, diger1, diger2, yemekhane,
+        teknisyen, doktor, servisSorumlusu, aracKiralamaSorumlusu,
         novaPersonel, novaIk, novaPatron, novaAdmin,
         ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
       ];
       for (final e in _employees) {
         _db.insertEmployee(e);
       }
+    }
+
+    if (_db.getAllVehicleRequests().isNotEmpty) {
+      _vehicleRequests.clear();
+      _vehicleRequests.addAll(_db.getAllVehicleRequests());
     }
 
     if (_db.getAllRecords().isNotEmpty) {
@@ -2047,6 +2225,14 @@ class PdksState extends ChangeNotifier {
       demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.admin, orElse: () => _employees.firstWhere((e) => e.role == UserRole.admin));
     } else if (cleanEmail == 'yemekhane@sirket.com' || cleanEmail == 'yemekhane') {
       demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.cafeteria, orElse: () => _employees.firstWhere((e) => e.role == UserRole.cafeteria));
+    } else if (cleanEmail == 'teknisyen@sirket.com' || cleanEmail == 'teknisyen') {
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.technician, orElse: () => _employees.firstWhere((e) => e.role == UserRole.technician));
+    } else if (cleanEmail == 'doktor@sirket.com' || cleanEmail == 'doktor') {
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.doctor, orElse: () => _employees.firstWhere((e) => e.role == UserRole.doctor));
+    } else if (cleanEmail == 'servis@sirket.com' || cleanEmail == 'servis') {
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.serviceManager, orElse: () => _employees.firstWhere((e) => e.role == UserRole.serviceManager));
+    } else if (cleanEmail == 'arackiralama@sirket.com' || cleanEmail == 'arackiralama' || cleanEmail == 'filo') {
+      demoMatched = fallbackPool.firstWhere((e) => e.role == UserRole.vehicleRentalManager, orElse: () => _employees.firstWhere((e) => e.role == UserRole.vehicleRentalManager));
     }
 
     if (demoMatched != null && demoMatched.isApproved) {
@@ -3047,6 +3233,216 @@ class PdksState extends ChangeNotifier {
 
       notifyListeners();
     }
+  }
+
+  // ==========================================
+  // ARAÇ TALEP VE FİLO YÖNETİMİ (VEHICLE REQUESTS)
+  // ==========================================
+  final List<VehicleRequest> _vehicleRequests = [];
+
+  List<VehicleRequest> get allVehicleRequests => List.unmodifiable(_vehicleRequests);
+
+  /// Kullanıcının yetkisine göre filtreli araç talepleri:
+  /// Araç Kiralama Sorumlusu, Servis Sorumlusu, Patron (CEO), Admin ve İK tüm şirket taleplerini görebilir.
+  /// Standart personel, teknisyen veya doktor ise kendi taleplerini görür.
+  List<VehicleRequest> get vehicleRequestsForCurrentUser {
+    final isManager = _currentUser.role == UserRole.vehicleRentalManager ||
+        _currentUser.role == UserRole.serviceManager ||
+        _currentUser.role == UserRole.boss ||
+        _currentUser.role == UserRole.admin ||
+        _currentUser.role == UserRole.hr;
+
+    if (isManager) {
+      return _vehicleRequests.where((r) => r.companyId == _currentUser.companyId).toList();
+    }
+    return _vehicleRequests.where((r) => r.employeeId == _currentUser.id).toList();
+  }
+
+  /// Yeni Araç Talebi Gönder
+  Future<({bool success, String message, VehicleRequest? request})> createVehicleRequest({
+    required String vehicleType,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String destination,
+    required String purpose,
+    int passengerCount = 1,
+    bool needsDriver = false,
+    String? notes,
+  }) async {
+    if (destination.trim().isEmpty) {
+      return (success: false, message: 'Lütfen gidilecek güzergah / varış noktasını giriniz.', request: null);
+    }
+    if (purpose.trim().isEmpty) {
+      return (success: false, message: 'Lütfen araç talep nedeninizi belirtiniz.', request: null);
+    }
+    if (endDate.isBefore(startDate)) {
+      return (success: false, message: 'Teslim tarihi başlangıç tarihinden önce olamaz.', request: null);
+    }
+
+    final newReq = VehicleRequest(
+      id: 'vr_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _currentUser.companyId,
+      employeeId: _currentUser.id,
+      employeeName: _currentUser.fullName,
+      employeeDepartment: _currentUser.department,
+      employeeTitle: _currentUser.title,
+      vehicleType: vehicleType,
+      startDate: startDate,
+      endDate: endDate,
+      destination: destination.trim(),
+      purpose: purpose.trim(),
+      passengerCount: passengerCount,
+      needsDriver: needsDriver,
+      notes: notes?.trim().isNotEmpty == true ? notes!.trim() : null,
+      status: VehicleRequestStatus.pending,
+      createdAt: DateTime.now(),
+    );
+
+    _vehicleRequests.insert(0, newReq);
+    await _db.insertVehicleRequest(newReq);
+
+    // Bildirim Oluştur
+    final notif = AppNotification(
+      id: 'vr_notif_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🚗 Yeni Araç Talebi',
+      message: '${_currentUser.fullName}, $destination için $vehicleType talep etti.',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.directions_car_rounded,
+      color: const Color(0xFF059669),
+    );
+    _notifications.insert(0, notif);
+    await _db.insertNotification(notif);
+
+    notifyListeners();
+    return (success: true, message: 'Araç talebiniz başarıyla oluşturuldu ve filo yönetimine iletildi.', request: newReq);
+  }
+
+  /// Araç Talebini Onayla & Araç ve Şoför Ata
+  Future<({bool success, String message})> approveVehicleRequest(
+    String requestId, {
+    required String assignedVehicle,
+    String? assignedDriver,
+    String? note,
+  }) async {
+    final isAuthorized = _currentUser.role == UserRole.vehicleRentalManager ||
+        _currentUser.role == UserRole.boss ||
+        _currentUser.role == UserRole.admin ||
+        _currentUser.role == UserRole.hr;
+
+    if (!isAuthorized) {
+      return (success: false, message: 'Yetki Sınırı: Yalnızca Araç Kiralama Sorumlusu, CEO veya Admin onaylayabilir.');
+    }
+
+    final idx = _vehicleRequests.indexWhere((r) => r.id == requestId);
+    if (idx == -1) {
+      return (success: false, message: 'Araç talebi bulunamadı.');
+    }
+
+    final old = _vehicleRequests[idx];
+    final updated = old.copyWith(
+      status: VehicleRequestStatus.approved,
+      assignedVehicle: assignedVehicle,
+      assignedDriver: assignedDriver ?? 'Personel Kendisi',
+      approvalNote: note ?? 'Filo yönetimi tarafından araç tahsisi yapıldı.',
+      approvedBy: '${_currentUser.fullName} (${_currentUser.role.label})',
+    );
+
+    _vehicleRequests[idx] = updated;
+    await _db.updateVehicleRequest(updated);
+
+    // Bildirim Oluştur
+    final notif = AppNotification(
+      id: 'vr_app_${DateTime.now().millisecondsSinceEpoch}',
+      title: '✅ Araç Talebiniz Onaylandı',
+      message: 'Sayın ${old.employeeName}, ${old.destination} için tahsis edilen araç: $assignedVehicle',
+      timestamp: DateTime.now(),
+      type: NotificationType.leave,
+      icon: Icons.check_circle_rounded,
+      color: const Color(0xFF10B981),
+    );
+    _notifications.insert(0, notif);
+    await _db.insertNotification(notif);
+
+    // iOS Bildirimi (Kural: Bir şey onaylandığında bildirim gönderilir)
+    IosNotificationService.showIosNotification(
+      title: notif.title,
+      body: notif.message,
+      icon: notif.icon,
+      iconColor: notif.color,
+    );
+
+    notifyListeners();
+    return (success: true, message: 'Araç talebi onaylandı ve $assignedVehicle aracı tahsis edildi.');
+  }
+
+  /// Araç Talebini Reddet
+  Future<({bool success, String message})> rejectVehicleRequest(
+    String requestId, {
+    required String reason,
+  }) async {
+    final isAuthorized = _currentUser.role == UserRole.vehicleRentalManager ||
+        _currentUser.role == UserRole.boss ||
+        _currentUser.role == UserRole.admin ||
+        _currentUser.role == UserRole.hr;
+
+    if (!isAuthorized) {
+      return (success: false, message: 'Yetki Sınırı: Yalnızca Araç Kiralama Sorumlusu, CEO veya Admin reddedebilir.');
+    }
+
+    final idx = _vehicleRequests.indexWhere((r) => r.id == requestId);
+    if (idx == -1) {
+      return (success: false, message: 'Araç talebi bulunamadı.');
+    }
+
+    final old = _vehicleRequests[idx];
+    final updated = old.copyWith(
+      status: VehicleRequestStatus.rejected,
+      approvalNote: reason,
+      approvedBy: '${_currentUser.fullName} (${_currentUser.role.label})',
+    );
+
+    _vehicleRequests[idx] = updated;
+    await _db.updateVehicleRequest(updated);
+
+    final notif = AppNotification(
+      id: 'vr_rej_${DateTime.now().millisecondsSinceEpoch}',
+      title: '❌ Araç Talebiniz Reddedildi',
+      message: 'Sayın ${old.employeeName}, ${old.destination} araç talebiniz uygun görülmedi: $reason',
+      timestamp: DateTime.now(),
+      type: NotificationType.leave,
+      icon: Icons.cancel_rounded,
+      color: const Color(0xFFEF4444),
+    );
+    _notifications.insert(0, notif);
+    await _db.insertNotification(notif);
+
+    notifyListeners();
+    return (success: true, message: 'Araç talebi reddedildi.');
+  }
+
+  /// Araç Kullanım / Teslim Durumunu Güncelle (Seferde / Tamamlandı)
+  Future<({bool success, String message})> updateVehicleRequestStatus(
+    String requestId,
+    VehicleRequestStatus newStatus, {
+    String? note,
+  }) async {
+    final idx = _vehicleRequests.indexWhere((r) => r.id == requestId);
+    if (idx == -1) {
+      return (success: false, message: 'Araç talebi bulunamadı.');
+    }
+
+    final old = _vehicleRequests[idx];
+    final updated = old.copyWith(
+      status: newStatus,
+      approvalNote: note ?? old.approvalNote,
+    );
+
+    _vehicleRequests[idx] = updated;
+    await _db.updateVehicleRequest(updated);
+
+    notifyListeners();
+    return (success: true, message: 'Talep durumu güncellendi: ${newStatus.label}');
   }
 
   bool _isDisposed = false;

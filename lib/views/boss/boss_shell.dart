@@ -805,11 +805,7 @@ class _BossShellState extends State<BossShell> {
                             decoration: BoxDecoration(
                               color: isEmpAdmin
                                   ? Colors.purple.withOpacity(0.15)
-                                  : emp.role == UserRole.boss
-                                      ? Colors.orange.withOpacity(0.15)
-                                      : emp.role == UserRole.hr
-                                          ? AppColors.primary.withOpacity(0.15)
-                                          : Colors.grey.withOpacity(0.15),
+                                  : emp.role.color.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -819,11 +815,7 @@ class _BossShellState extends State<BossShell> {
                                 fontWeight: FontWeight.bold,
                                 color: isEmpAdmin
                                     ? Colors.purple
-                                    : emp.role == UserRole.boss
-                                        ? Colors.orange.shade800
-                                        : emp.role == UserRole.hr
-                                            ? AppColors.primary
-                                            : AppColors.textSecondary,
+                                    : emp.role.color,
                               ),
                             ),
                           ),
@@ -902,6 +894,7 @@ class _BossShellState extends State<BossShell> {
       'records',
       'field_work',
       'overtime',
+      'vehicle_request',
       'settings',
       'about',
     };
@@ -1063,7 +1056,47 @@ class _BossShellState extends State<BossShell> {
                   ),
                   const SizedBox(height: 8),
 
-                  // 4. ADMIN SEÇENEĞİ: PATRON İÇİN KİLİTLİ!
+                  // 4. Teknisyen Tabanı
+                  _buildBaseRoleChoice(
+                    title: 'Teknisyen',
+                    subtitle: 'Saha bakım, onarım, teknik ekipman ve araç talebi',
+                    icon: Icons.build_rounded,
+                    isSelected: selectedBase == UserRole.technician,
+                    onTap: () => setSheetState(() => selectedBase = UserRole.technician),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 5. İşyeri Hekimi (Doktor) Tabanı
+                  _buildBaseRoleChoice(
+                    title: 'İşyeri Hekimi (Doktor)',
+                    subtitle: 'İş sağlığı ve güvenliği, sağlık kontrolleri ve viziteler',
+                    icon: Icons.medical_services_rounded,
+                    isSelected: selectedBase == UserRole.doctor,
+                    onTap: () => setSheetState(() => selectedBase = UserRole.doctor),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 6. Servis Sorumlusu Tabanı
+                  _buildBaseRoleChoice(
+                    title: 'Servis Sorumlusu',
+                    subtitle: 'Personel servis hatları, güzergah ve şoför planlama',
+                    icon: Icons.airport_shuttle_rounded,
+                    isSelected: selectedBase == UserRole.serviceManager,
+                    onTap: () => setSheetState(() => selectedBase = UserRole.serviceManager),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 7. Araç Kiralama Sorumlusu Tabanı
+                  _buildBaseRoleChoice(
+                    title: 'Araç Kiralama Sorumlusu (Filo)',
+                    subtitle: 'Şirket araç filosu, filo kiralama ve araç talep onay/tahsis',
+                    icon: Icons.car_rental_rounded,
+                    isSelected: selectedBase == UserRole.vehicleRentalManager,
+                    onTap: () => setSheetState(() => selectedBase = UserRole.vehicleRentalManager),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 8. ADMIN SEÇENEĞİ: PATRON İÇİN KİLİTLİ!
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -1696,11 +1729,7 @@ class _BossShellState extends State<BossShell> {
                         decoration: BoxDecoration(
                           color: emp.role == UserRole.admin
                               ? Colors.purple.withOpacity(0.15)
-                              : emp.role == UserRole.boss
-                                  ? Colors.orange.withOpacity(0.15)
-                                  : emp.role == UserRole.hr
-                                      ? AppColors.primary.withOpacity(0.15)
-                                      : Colors.grey.withOpacity(0.15),
+                              : emp.role.color.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1710,11 +1739,7 @@ class _BossShellState extends State<BossShell> {
                             fontWeight: FontWeight.bold,
                             color: emp.role == UserRole.admin
                                 ? Colors.purple
-                                : emp.role == UserRole.boss
-                                    ? Colors.orange.shade800
-                                    : emp.role == UserRole.hr
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
+                                : emp.role.color,
                           ),
                         ),
                       ),

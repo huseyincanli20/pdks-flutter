@@ -606,6 +606,54 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             pin: '5678',
           ),
         ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRoleButton(
+                label: 'Teknisyen',
+                icon: Icons.build_rounded,
+                color: const Color(0xFF0D9488),
+                email: 'teknisyen@sirket.com',
+                pin: '1234',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildRoleButton(
+                label: 'İşyeri Hekimi (Doktor)',
+                icon: Icons.medical_services_rounded,
+                color: const Color(0xFFE11D48),
+                email: 'doktor@sirket.com',
+                pin: '1234',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRoleButton(
+                label: 'Servis Sorumlusu',
+                icon: Icons.airport_shuttle_rounded,
+                color: const Color(0xFF4F46E5),
+                email: 'servis@sirket.com',
+                pin: '1234',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildRoleButton(
+                label: 'Araç Kiralama (Filo)',
+                icon: Icons.car_rental_rounded,
+                color: const Color(0xFF059669),
+                email: 'arackiralama@sirket.com',
+                pin: '1234',
+              ),
+            ),
+          ],
+        ),
       ],
     ),
     );

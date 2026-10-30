@@ -11,6 +11,7 @@ import '../../models/app_notification.dart';
 import '../../models/cafeteria_menu.dart';
 import '../../models/quick_menu_item.dart';
 import '../../models/page_customization.dart';
+import '../../models/vehicle_request.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -31,6 +32,7 @@ class DatabaseService {
   static const String _keyMenu = 'pdks_db_menu_v1';
   static const String _keyQuickMenu = 'pdks_db_quick_menu_v1';
   static const String _keyPageCustomizations = 'pdks_db_page_customizations_v1';
+  static const String _keyVehicleRequests = 'pdks_db_vehicle_requests_v1';
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -45,6 +47,7 @@ class DatabaseService {
   final List<ChatChannel> _customChannels = [];
   final List<AppNotification> _notifications = [];
   final List<QuickMenuItem> _quickMenuItems = [];
+  final List<VehicleRequest> _vehicleRequests = [];
   final Map<String, PageCustomization> _pageCustomizations = {};
   CafeteriaMenu? _todayMenu;
 
@@ -209,6 +212,24 @@ class DatabaseService {
         debugPrint('⚠️ Sayfa özelleştirmeleri yüklenirken hata: $e');
       }
     }
+
+    // 12. Araç Talepleri (Vehicle Requests)
+    final vehicleRaw = prefs.getString(_keyVehicleRequests);
+    if (vehicleRaw != null && vehicleRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(vehicleRaw);
+        _vehicleRequests.clear();
+        _vehicleRequests.addAll(list.map((item) => VehicleRequest.fromJson(Map<String, dynamic>.from(item))));
+      } catch (e) {
+        debugPrint('⚠️ Araç talepleri yüklenirken hata: $e');
+      }
+    }
+    if (_vehicleRequests.isEmpty) {
+      await _seedDefaultVehicleRequests();
+    }
+
+    // Mevcut veritabanında yeni demo roller (Teknisyen, Doktor, Servis, Araç Kiralama) eksikse ekle
+    await _ensureNewDemoEmployees();
   }
 
   /// Varsayılan Veritabanı Tohumlama (Seed Data)
@@ -395,7 +416,144 @@ class DatabaseService {
           isApproved: true,
           hireDate: DateTime(2021, 1, 10),
         ),
+        Employee(
+          id: 8,
+          companyId: 'cmp_acme',
+          fullName: 'Serkan Usta',
+          email: 'teknisyen@sirket.com',
+          phone: '05341234567',
+          department: 'Teknik Hizmetler & Bakım',
+          title: 'Kıdemli Saha Teknisyeni',
+          pinCode: '1234',
+          role: UserRole.technician,
+          annualLeaveAllowance: 14,
+          usedLeaveDays: 0,
+          isApproved: true,
+          hireDate: DateTime(2022, 5, 10),
+        ),
+        Employee(
+          id: 9,
+          companyId: 'cmp_acme',
+          fullName: 'Dr. Elif Çetin',
+          email: 'doktor@sirket.com',
+          phone: '05359876543',
+          department: 'İş Sağlığı ve Güvenliği',
+          title: 'İşyeri Hekimi',
+          pinCode: '1234',
+          role: UserRole.doctor,
+          annualLeaveAllowance: 20,
+          usedLeaveDays: 0,
+          isApproved: true,
+          hireDate: DateTime(2021, 8, 15),
+        ),
+        Employee(
+          id: 10,
+          companyId: 'cmp_acme',
+          fullName: 'Murat Şen',
+          email: 'servis@sirket.com',
+          phone: '05364567890',
+          department: 'Ulaşım & Lojistik',
+          title: 'Servis ve Ulaşım Sorumlusu',
+          pinCode: '1234',
+          role: UserRole.serviceManager,
+          annualLeaveAllowance: 14,
+          usedLeaveDays: 0,
+          isApproved: true,
+          hireDate: DateTime(2020, 11, 1),
+        ),
+        Employee(
+          id: 11,
+          companyId: 'cmp_acme',
+          fullName: 'Cenk Vural',
+          email: 'arackiralama@sirket.com',
+          phone: '05373216549',
+          department: 'Filo & Araç Kiralama',
+          title: 'Filo & Araç Kiralama Sorumlusu',
+          pinCode: '1234',
+          role: UserRole.vehicleRentalManager,
+          annualLeaveAllowance: 16,
+          usedLeaveDays: 0,
+          isApproved: true,
+          hireDate: DateTime(2022, 1, 20),
+        ),
       ]);
+      await _persistEmployees();
+    }
+  }
+
+  /// Mevcut veritabanında yeni rollerin demo hesapları eksikse ekle
+  Future<void> _ensureNewDemoEmployees() async {
+    final newDemoUsers = [
+      Employee(
+        id: 8,
+        companyId: 'cmp_acme',
+        fullName: 'Serkan Usta',
+        email: 'teknisyen@sirket.com',
+        phone: '05341234567',
+        department: 'Teknik Hizmetler & Bakım',
+        title: 'Kıdemli Saha Teknisyeni',
+        pinCode: '1234',
+        role: UserRole.technician,
+        annualLeaveAllowance: 14,
+        usedLeaveDays: 0,
+        isApproved: true,
+        hireDate: DateTime(2022, 5, 10),
+      ),
+      Employee(
+        id: 9,
+        companyId: 'cmp_acme',
+        fullName: 'Dr. Elif Çetin',
+        email: 'doktor@sirket.com',
+        phone: '05359876543',
+        department: 'İş Sağlığı ve Güvenliği',
+        title: 'İşyeri Hekimi',
+        pinCode: '1234',
+        role: UserRole.doctor,
+        annualLeaveAllowance: 20,
+        usedLeaveDays: 0,
+        isApproved: true,
+        hireDate: DateTime(2021, 8, 15),
+      ),
+      Employee(
+        id: 10,
+        companyId: 'cmp_acme',
+        fullName: 'Murat Şen',
+        email: 'servis@sirket.com',
+        phone: '05364567890',
+        department: 'Ulaşım & Lojistik',
+        title: 'Servis ve Ulaşım Sorumlusu',
+        pinCode: '1234',
+        role: UserRole.serviceManager,
+        annualLeaveAllowance: 14,
+        usedLeaveDays: 0,
+        isApproved: true,
+        hireDate: DateTime(2020, 11, 1),
+      ),
+      Employee(
+        id: 11,
+        companyId: 'cmp_acme',
+        fullName: 'Cenk Vural',
+        email: 'arackiralama@sirket.com',
+        phone: '05373216549',
+        department: 'Filo & Araç Kiralama',
+        title: 'Filo & Araç Kiralama Sorumlusu',
+        pinCode: '1234',
+        role: UserRole.vehicleRentalManager,
+        annualLeaveAllowance: 16,
+        usedLeaveDays: 0,
+        isApproved: true,
+        hireDate: DateTime(2022, 1, 20),
+      ),
+    ];
+
+    bool added = false;
+    for (final demo in newDemoUsers) {
+      if (!_employees.any((e) => e.email.toLowerCase() == demo.email.toLowerCase() || e.id == demo.id)) {
+        _employees.add(demo);
+        added = true;
+      }
+    }
+    if (added) {
       await _persistEmployees();
     }
   }
@@ -815,6 +973,15 @@ class DatabaseService {
       actionType: 'overtime',
     ),
     QuickMenuItem(
+      id: 'qm_vehicle_request',
+      title: 'Araç Talebi & Filo',
+      subtitle: 'Şirket havuz araçları ve filo kiralama',
+      iconCode: 0xe1d7,
+      colorValue: 0xFF059669,
+      isVisible: true,
+      actionType: 'vehicle_request',
+    ),
+    QuickMenuItem(
       id: 'qm_settings',
       title: 'Ayarlar',
       subtitle: 'Tema, bildirim ve sistem tercihleri',
@@ -902,5 +1069,106 @@ class DatabaseService {
     } catch (e) {
       debugPrint('⚠️ Sayfa özelleştirmesi silinemedi: $e');
     }
+  }
+
+  // ==========================================
+  // ARAÇ TALEP İŞLEMLERİ (VEHICLE REQUESTS)
+  // ==========================================
+
+  List<VehicleRequest> getAllVehicleRequests() => List.unmodifiable(_vehicleRequests);
+
+  Future<void> insertVehicleRequest(VehicleRequest req) async {
+    _vehicleRequests.removeWhere((r) => r.id == req.id);
+    _vehicleRequests.insert(0, req);
+    await _persistVehicleRequests();
+  }
+
+  Future<void> updateVehicleRequest(VehicleRequest req) async {
+    final idx = _vehicleRequests.indexWhere((r) => r.id == req.id);
+    if (idx != -1) {
+      _vehicleRequests[idx] = req;
+      await _persistVehicleRequests();
+    }
+  }
+
+  Future<void> deleteVehicleRequest(String reqId) async {
+    _vehicleRequests.removeWhere((r) => r.id == reqId);
+    await _persistVehicleRequests();
+  }
+
+  Future<void> _persistVehicleRequests() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final list = _vehicleRequests.map((r) => r.toJson()).toList();
+      await prefs.setString(_keyVehicleRequests, jsonEncode(list));
+    } catch (e) {
+      debugPrint('⚠️ Araç talepleri diske kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> _seedDefaultVehicleRequests() async {
+    final now = DateTime.now();
+    _vehicleRequests.clear();
+    _vehicleRequests.addAll([
+      VehicleRequest(
+        id: 'vr_demo_1',
+        companyId: 'cmp_acme',
+        employeeId: 8,
+        employeeName: 'Serkan Usta',
+        employeeDepartment: 'Teknik Hizmetler & Bakım',
+        employeeTitle: 'Kıdemli Saha Teknisyeni',
+        vehicleType: 'Hafif Ticari / Kamyonet',
+        startDate: now.add(const Duration(hours: 2)),
+        endDate: now.add(const Duration(hours: 8)),
+        destination: 'Sincan OSB Fabrika Arıza Bakımı',
+        purpose: 'Arızalanan üretim hattı motorlarının teknik bakımı ve test ekipmanı sevki',
+        passengerCount: 2,
+        needsDriver: false,
+        notes: 'Arkada 3 adet ağır kalibrasyon çantası taşınacaktır.',
+        status: VehicleRequestStatus.pending,
+      ),
+      VehicleRequest(
+        id: 'vr_demo_2',
+        companyId: 'cmp_acme',
+        employeeId: 9,
+        employeeName: 'Dr. Elif Çetin',
+        employeeDepartment: 'İş Sağlığı ve Güvenliği',
+        employeeTitle: 'İşyeri Hekimi',
+        vehicleType: 'Binek Otomobil (Sedan/HB)',
+        startDate: now.subtract(const Duration(days: 1, hours: 2)),
+        endDate: now.subtract(const Duration(days: 1)),
+        destination: 'Bölge Hastanesi Vizite & Sağlık Denetimi',
+        purpose: 'İşe giriş periyodik sağlık raporu onayları ve heyet görüşmesi',
+        passengerCount: 1,
+        needsDriver: false,
+        status: VehicleRequestStatus.approved,
+        assignedVehicle: '06 ACME 101 - Fiat Egea 1.6 Multijet',
+        assignedDriver: 'Personel Kendisi',
+        approvalNote: 'Güzergah uygun görüldü, araç anahtarı güvenlikten teslim alınabilir.',
+        approvedBy: 'Cenk Vural (Araç Kiralama Sorumlusu)',
+      ),
+      VehicleRequest(
+        id: 'vr_demo_3',
+        companyId: 'cmp_acme',
+        employeeId: 10,
+        employeeName: 'Murat Şen',
+        employeeDepartment: 'Ulaşım & Lojistik',
+        employeeTitle: 'Servis ve Ulaşım Sorumlusu',
+        vehicleType: 'Minibüs / Servis',
+        startDate: now.subtract(const Duration(days: 3)),
+        endDate: now.subtract(const Duration(days: 3, hours: -6)),
+        destination: 'Eryaman - Batıkent Vardiya Servis Ringi',
+        purpose: 'Mesaiye kalan yazılım ve teknik ekibin akşam transferi',
+        passengerCount: 12,
+        needsDriver: true,
+        status: VehicleRequestStatus.completed,
+        assignedVehicle: '06 PDKS 007 - Mercedes Sprinter 16+1',
+        assignedDriver: 'Murat Şen (Servis Sorumlusu)',
+        approvalNote: 'Servis planlaması tamamlandı.',
+        approvedBy: 'Cenk Vural (Araç Kiralama Sorumlusu)',
+      ),
+    ]);
+    await _persistVehicleRequests();
   }
 }

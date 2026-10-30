@@ -58,18 +58,22 @@ class PdksApp extends StatelessWidget {
             return const AuthScreen();
           }
 
-          // 5 TİP MOD: YALNIZCA GİRİŞ BİLGİLERİNE (ROLE) GÖRE GÖRÜLEBİLİR:
+          // GİRİŞ BİLGİLERİNE (ROLE) GÖRE EKRAN YÖNLENDİRMESİ:
           switch (state.currentUser.role) {
             case UserRole.employee:
-              return const MobileHomeScreen(); // 1. PERSONEL MODU
+            case UserRole.technician:
+            case UserRole.doctor:
+            case UserRole.serviceManager:
+            case UserRole.vehicleRentalManager:
+              return const MobileHomeScreen(); // MOBİL KURUMSAL PORTAL (Personel, Teknisyen, Doktor, Servis, Filo)
             case UserRole.hr:
-              return const HrShell();          // 2. İK (İNSAN KAYNAKLARI) MODU
+              return const HrShell();          // İK (İNSAN KAYNAKLARI) MODU
             case UserRole.boss:
-              return const BossShell();        // 3. PATRON (YÖNETİM & CEO) MODU
+              return const BossShell();        // PATRON (YÖNETİM & CEO) MODU
             case UserRole.admin:
-              return const AdminShell();       // 4. ADMİN (SİSTEM YÖNETİCİSİ) MODU
+              return const AdminShell();       // ADMİN (SİSTEM YÖNETİCİSİ) MODU
             case UserRole.cafeteria:
-              return const CafeteriaShell();   // 5. YEMEKHANE PERSONELİ MODU
+              return const CafeteriaShell();   // YEMEKHANE PERSONELİ MODU
           }
         },
       ),

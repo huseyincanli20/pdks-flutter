@@ -28,6 +28,7 @@ import '../../core/utils/marquee_text.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../common/quick_menu_manager_dialog.dart';
 import '../common/field_work_dialog.dart';
+import '../vehicle/vehicle_request_screen.dart';
 import '../../models/page_customization.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -701,6 +702,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
                                 );
+                                break;
+                              case 'vehicle_request':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
                                 break;
                               case 'settings':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));

@@ -356,6 +356,10 @@ class EmployeesTab extends StatelessWidget {
                       DropdownMenuItem(value: UserRole.employee, child: Text('Standart Personel (Mobil)')),
                       DropdownMenuItem(value: UserRole.hr, child: Text('İnsan Kaynakları (İK)')),
                       DropdownMenuItem(value: UserRole.cafeteria, child: Text('Yemekhane Personeli')),
+                      DropdownMenuItem(value: UserRole.technician, child: Text('Teknisyen')),
+                      DropdownMenuItem(value: UserRole.doctor, child: Text('İşyeri Hekimi (Doktor)')),
+                      DropdownMenuItem(value: UserRole.serviceManager, child: Text('Servis Sorumlusu')),
+                      DropdownMenuItem(value: UserRole.vehicleRentalManager, child: Text('Araç Kiralama Sorumlusu')),
                     ],
                     onChanged: (val) {
                       if (val != null) setSheetState(() => selectedRole = val);
@@ -665,7 +669,15 @@ class EmployeesTab extends StatelessWidget {
                                   if (isCurrentUserHr) {
                                     selectableRoles = isTargetAdmin
                                         ? [UserRole.admin]
-                                        : [UserRole.employee, UserRole.hr, UserRole.cafeteria];
+                                        : [
+                                            UserRole.employee,
+                                            UserRole.hr,
+                                            UserRole.cafeteria,
+                                            UserRole.technician,
+                                            UserRole.doctor,
+                                            UserRole.serviceManager,
+                                            UserRole.vehicleRentalManager,
+                                          ];
                                   } else {
                                     selectableRoles = UserRole.values;
                                   }

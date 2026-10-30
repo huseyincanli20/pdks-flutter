@@ -25,6 +25,14 @@ class QuickMenuItem {
   Color get color => Color(colorValue);
 
   static IconData _resolveIcon(int code) {
+    if (code == Icons.directions_car_rounded.codePoint ||
+        code == Icons.car_rental_rounded.codePoint ||
+        code == Icons.airport_shuttle_rounded.codePoint ||
+        code == 0xe1d7 ||
+        code == 0xe1d5 ||
+        code == 0xf689) {
+      return Icons.directions_car_rounded;
+    }
     switch (code) {
       case 0xe156:
         return Icons.beach_access_rounded;

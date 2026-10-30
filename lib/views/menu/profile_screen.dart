@@ -336,31 +336,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = context.watch<PdksState>().currentUser;
     final isHrOrAdmin = user.role == UserRole.hr || user.role == UserRole.admin;
 
-    Color roleColor;
-    String roleName;
-    switch (user.role) {
-      case UserRole.boss:
-        roleColor = const Color(0xFFD97706);
-        roleName = 'Patron / CEO';
-        break;
-      case UserRole.admin:
-        roleColor = const Color(0xFF9333EA);
-        roleName = 'Süper Admin';
-        break;
-      case UserRole.hr:
-        roleColor = const Color(0xFF0284C7);
-        roleName = 'İnsan Kaynakları';
-        break;
-      case UserRole.cafeteria:
-        roleColor = const Color(0xFFEA580C);
-        roleName = 'Yemekhane Şefi';
-        break;
-      case UserRole.employee:
-      default:
-        roleColor = const Color(0xFF2563EB);
-        roleName = 'Personel';
-        break;
-    }
+    final Color roleColor = user.role.color;
+    final String roleName = user.roleDisplayName;
 
     return Scaffold(
       backgroundColor: AppColors.bg(context),

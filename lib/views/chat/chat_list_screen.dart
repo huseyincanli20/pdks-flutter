@@ -618,19 +618,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Color _getRoleBadgeColor(UserRole role) {
-    switch (role) {
-      case UserRole.boss:
-        return const Color(0xFFD97706);
-      case UserRole.admin:
-        return const Color(0xFF9333EA);
-      case UserRole.hr:
-        return const Color(0xFF0284C7);
-      case UserRole.cafeteria:
-        return const Color(0xFFEA580C);
-      case UserRole.employee:
-      default:
-        return const Color(0xFF2563EB);
-    }
+    return role.color;
   }
 
   void _openNewChatModal(BuildContext context, PdksState pdks) {
