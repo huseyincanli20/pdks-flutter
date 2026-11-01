@@ -15,6 +15,7 @@ import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../vehicle/vehicle_request_screen.dart';
+import '../enterprise/enterprise_hub_screen.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
 
@@ -426,6 +427,15 @@ class AppDrawer extends StatelessWidget {
                           ? 'Filo yönetimi & araç tahsis'
                           : 'Şirket havuz araçları ve talep takibi',
                       destination: const VehicleRequestScreen(),
+                    ),
+                  if (pdks.hasPagePermission('enterprise_hub'))
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.hub_rounded,
+                      color: const Color(0xFF6366F1),
+                      title: 'Kurumsal Modüller (15 Modül)',
+                      subtitle: 'Vardiya takası, hibrit masa, helpdesk, hedefler...',
+                      destination: const EnterpriseHubScreen(),
                     ),
                   if (user.role == UserRole.admin || user.role == UserRole.boss)
                     _buildDrawerTile(

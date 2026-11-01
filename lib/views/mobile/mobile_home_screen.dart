@@ -29,6 +29,7 @@ import '../common/admin_edit_mode_bar.dart';
 import '../common/quick_menu_manager_dialog.dart';
 import '../common/field_work_dialog.dart';
 import '../vehicle/vehicle_request_screen.dart';
+import '../enterprise/enterprise_hub_screen.dart';
 import '../../models/page_customization.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -705,6 +706,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                 break;
                               case 'vehicle_request':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
+                                break;
+                              case 'enterprise_hub':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));
                                 break;
                               case 'settings':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));

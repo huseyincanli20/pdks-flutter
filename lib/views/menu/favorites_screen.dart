@@ -20,6 +20,7 @@ import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../common/firebase_config_dialog.dart';
 import '../vehicle/vehicle_request_screen.dart';
+import '../enterprise/enterprise_hub_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -214,6 +215,9 @@ class FavoritesScreen extends StatelessWidget {
                         break;
                       case 'vehicle_request':
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
+                        break;
+                      case 'enterprise_hub':
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));
                         break;
                       case 'settings':
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));

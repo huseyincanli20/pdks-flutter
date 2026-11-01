@@ -13,6 +13,17 @@ import '../../models/quick_menu_item.dart';
 import '../../models/page_customization.dart';
 import '../../models/vehicle_request.dart';
 import '../../models/payroll_slip.dart';
+import '../../models/shift_swap_request.dart';
+import '../../models/helpdesk_ticket.dart';
+import '../../models/company_announcement.dart';
+import '../../models/personnel_file.dart';
+import '../../models/training_and_skill.dart';
+import '../../models/performance_goal.dart';
+import '../../models/visitor_record.dart';
+import '../../models/hybrid_booking.dart';
+import '../../models/organization_branch.dart';
+import '../../models/integration_and_sync.dart';
+import '../../models/employee_feedback.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -41,6 +52,24 @@ class DatabaseService {
   static const String _keyActiveCompanyId = 'pdks_db_active_company_id_v1';
   static const String _keyThemeMode = 'pdks_db_theme_mode_v1';
 
+  // Kurumsal Ek Modüller (Enterprise Extended Keys)
+  static const String _keyShiftSwaps = 'pdks_db_shift_swaps_v1';
+  static const String _keyOpenShiftSlots = 'pdks_db_open_shifts_v1';
+  static const String _keyHelpdeskTickets = 'pdks_db_helpdesk_v1';
+  static const String _keyAnnouncements = 'pdks_db_announcements_v1';
+  static const String _keyDocuments = 'pdks_db_documents_v1';
+  static const String _keyOnboardingTasks = 'pdks_db_onboarding_v1';
+  static const String _keyTrainingCourses = 'pdks_db_training_courses_v1';
+  static const String _keyTrainingRecords = 'pdks_db_training_records_v1';
+  static const String _keyPerformanceGoals = 'pdks_db_performance_goals_v1';
+  static const String _keyVisitorRecords = 'pdks_db_visitors_v1';
+  static const String _keyHybridBookings = 'pdks_db_hybrid_bookings_v1';
+  static const String _keyCompanyBranches = 'pdks_db_branches_v1';
+  static const String _keyApprovalDelegations = 'pdks_db_delegations_v1';
+  static const String _keyIntegrations = 'pdks_db_integrations_v1';
+  static const String _keyOfflineQueue = 'pdks_db_offline_queue_v1';
+  static const String _keyFeedbacks = 'pdks_db_feedbacks_v1';
+
   SharedPreferences? _prefs;
   bool _isInitialized = false;
 
@@ -62,6 +91,24 @@ class DatabaseService {
   CafeteriaMenu? _todayMenu;
   String? _activeCompanyId;
   String? _themeType;
+
+  // Kurumsal Ek Modüller Önbellek Listeleri
+  final List<ShiftSwapRequest> _shiftSwaps = [];
+  final List<OpenShiftSlot> _openShiftSlots = [];
+  final List<HelpdeskTicket> _helpdeskTickets = [];
+  final List<CompanyAnnouncement> _announcements = [];
+  final List<EmployeeDocument> _documents = [];
+  final List<OnboardingTask> _onboardingTasks = [];
+  final List<TrainingCourse> _trainingCourses = [];
+  final List<EmployeeTrainingRecord> _trainingRecords = [];
+  final List<PerformanceGoal> _performanceGoals = [];
+  final List<VisitorRecord> _visitorRecords = [];
+  final List<HybridBooking> _hybridBookings = [];
+  final List<CompanyBranch> _branches = [];
+  final List<ApprovalDelegation> _delegations = [];
+  final List<IntegrationEndpoint> _integrations = [];
+  final List<OfflineSyncItem> _offlineQueue = [];
+  final List<EmployeeFeedback> _feedbacks = [];
 
   bool get isInitialized => _isInitialized;
 
@@ -85,6 +132,22 @@ class DatabaseService {
       _roles.clear();
       _twoWeekMenus.clear();
       _pageCustomizations.clear();
+      _shiftSwaps.clear();
+      _openShiftSlots.clear();
+      _helpdeskTickets.clear();
+      _announcements.clear();
+      _documents.clear();
+      _onboardingTasks.clear();
+      _trainingCourses.clear();
+      _trainingRecords.clear();
+      _performanceGoals.clear();
+      _visitorRecords.clear();
+      _hybridBookings.clear();
+      _branches.clear();
+      _delegations.clear();
+      _integrations.clear();
+      _offlineQueue.clear();
+      _feedbacks.clear();
       _todayMenu = null;
       _activeCompanyId = null;
       _themeType = null;
@@ -324,6 +387,192 @@ class DatabaseService {
     // 16. Kullanıcı Tercihleri (Active Company & Theme)
     _activeCompanyId = prefs.getString(_keyActiveCompanyId);
     _themeType = prefs.getString(_keyThemeMode);
+
+    // 17. Vardiya Takas & Açık Vardiyalar
+    final shiftSwapsRaw = prefs.getString(_keyShiftSwaps);
+    if (shiftSwapsRaw != null && shiftSwapsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(shiftSwapsRaw);
+        _shiftSwaps.clear();
+        _shiftSwaps.addAll(list.map((i) => ShiftSwapRequest.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Vardiya takasları yüklenirken hata: $e');
+      }
+    }
+    final openShiftsRaw = prefs.getString(_keyOpenShiftSlots);
+    if (openShiftsRaw != null && openShiftsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(openShiftsRaw);
+        _openShiftSlots.clear();
+        _openShiftSlots.addAll(list.map((i) => OpenShiftSlot.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Açık vardiyalar yüklenirken hata: $e');
+      }
+    }
+
+    // 18. Teknik Destek & Arıza Talepleri (Helpdesk)
+    final helpdeskRaw = prefs.getString(_keyHelpdeskTickets);
+    if (helpdeskRaw != null && helpdeskRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(helpdeskRaw);
+        _helpdeskTickets.clear();
+        _helpdeskTickets.addAll(list.map((i) => HelpdeskTicket.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Destek talepleri yüklenirken hata: $e');
+      }
+    }
+
+    // 19. Duyurular & Okundu Onayları
+    final announcementsRaw = prefs.getString(_keyAnnouncements);
+    if (announcementsRaw != null && announcementsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(announcementsRaw);
+        _announcements.clear();
+        _announcements.addAll(list.map((i) => CompanyAnnouncement.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Duyurular yüklenirken hata: $e');
+      }
+    }
+
+    // 20. Özlük Dosyası Evrakları & İşe Giriş/Çıkış
+    final docsRaw = prefs.getString(_keyDocuments);
+    if (docsRaw != null && docsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(docsRaw);
+        _documents.clear();
+        _documents.addAll(list.map((i) => EmployeeDocument.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Özlük belgeleri yüklenirken hata: $e');
+      }
+    }
+    final onboardingRaw = prefs.getString(_keyOnboardingTasks);
+    if (onboardingRaw != null && onboardingRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(onboardingRaw);
+        _onboardingTasks.clear();
+        _onboardingTasks.addAll(list.map((i) => OnboardingTask.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ İşe giriş/çıkış görevleri yüklenirken hata: $e');
+      }
+    }
+
+    // 21. Eğitim & Yetkinlikler
+    final coursesRaw = prefs.getString(_keyTrainingCourses);
+    if (coursesRaw != null && coursesRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(coursesRaw);
+        _trainingCourses.clear();
+        _trainingCourses.addAll(list.map((i) => TrainingCourse.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Eğitim kursları yüklenirken hata: $e');
+      }
+    }
+    final recordsTrainingRaw = prefs.getString(_keyTrainingRecords);
+    if (recordsTrainingRaw != null && recordsTrainingRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(recordsTrainingRaw);
+        _trainingRecords.clear();
+        _trainingRecords.addAll(list.map((i) => EmployeeTrainingRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Eğitim kayıtları yüklenirken hata: $e');
+      }
+    }
+
+    // 22. Performans & Hedefler (OKRs)
+    final goalsRaw = prefs.getString(_keyPerformanceGoals);
+    if (goalsRaw != null && goalsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(goalsRaw);
+        _performanceGoals.clear();
+        _performanceGoals.addAll(list.map((i) => PerformanceGoal.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Performans hedefleri yüklenirken hata: $e');
+      }
+    }
+
+    // 23. Ziyaretçi & Taşeron Kayıtları
+    final visitorsRaw = prefs.getString(_keyVisitorRecords);
+    if (visitorsRaw != null && visitorsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(visitorsRaw);
+        _visitorRecords.clear();
+        _visitorRecords.addAll(list.map((i) => VisitorRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Ziyaretçi kayıtları yüklenirken hata: $e');
+      }
+    }
+
+    // 24. Hibrit Rezervasyonlar (Masa, Oda, Otopark)
+    final bookingsRaw = prefs.getString(_keyHybridBookings);
+    if (bookingsRaw != null && bookingsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(bookingsRaw);
+        _hybridBookings.clear();
+        _hybridBookings.addAll(list.map((i) => HybridBooking.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Rezervasyonlar yüklenirken hata: $e');
+      }
+    }
+
+    // 25. Şubeler & Onay Vekaletleri
+    final branchesRaw = prefs.getString(_keyCompanyBranches);
+    if (branchesRaw != null && branchesRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(branchesRaw);
+        _branches.clear();
+        _branches.addAll(list.map((i) => CompanyBranch.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Şubeler yüklenirken hata: $e');
+      }
+    }
+    final delegationsRaw = prefs.getString(_keyApprovalDelegations);
+    if (delegationsRaw != null && delegationsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(delegationsRaw);
+        _delegations.clear();
+        _delegations.addAll(list.map((i) => ApprovalDelegation.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Vekaletler yüklenirken hata: $e');
+      }
+    }
+
+    // 26. Entegrasyonlar & Çevrimdışı Kuyruk
+    final integrationsRaw = prefs.getString(_keyIntegrations);
+    if (integrationsRaw != null && integrationsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(integrationsRaw);
+        _integrations.clear();
+        _integrations.addAll(list.map((i) => IntegrationEndpoint.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Entegrasyonlar yüklenirken hata: $e');
+      }
+    }
+    final offlineRaw = prefs.getString(_keyOfflineQueue);
+    if (offlineRaw != null && offlineRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(offlineRaw);
+        _offlineQueue.clear();
+        _offlineQueue.addAll(list.map((i) => OfflineSyncItem.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Çevrimdışı kuyruk yüklenirken hata: $e');
+      }
+    }
+
+    // 27. Çalışan Geri Bildirimleri & Anketler
+    final feedbacksRaw = prefs.getString(_keyFeedbacks);
+    if (feedbacksRaw != null && feedbacksRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(feedbacksRaw);
+        _feedbacks.clear();
+        _feedbacks.addAll(list.map((i) => EmployeeFeedback.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Geri bildirimler yüklenirken hata: $e');
+      }
+    }
+
+    if (_helpdeskTickets.isEmpty || _announcements.isEmpty || _trainingCourses.isEmpty) {
+      await _seedDefaultEnterpriseModules();
+    }
 
     // Mevcut veritabanında yeni demo roller (Teknisyen, Doktor, Servis, Araç Kiralama) eksikse ekle
     await _ensureNewDemoEmployees();
@@ -1271,6 +1520,15 @@ class DatabaseService {
       actionType: 'vehicle_request',
     ),
     QuickMenuItem(
+      id: 'qm_enterprise_hub',
+      title: 'Kurumsal Modüller (15 Modül)',
+      subtitle: 'Vardiya takası, hibrit masa, helpdesk, onay & hedefler',
+      iconCode: 0xf05a1,
+      colorValue: 0xFF6366F1,
+      isVisible: true,
+      actionType: 'enterprise_hub',
+    ),
+    QuickMenuItem(
       id: 'qm_settings',
       title: 'Ayarlar',
       subtitle: 'Tema, bildirim ve sistem tercihleri',
@@ -1670,7 +1928,7 @@ class DatabaseService {
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
         'records', 'field_work', 'overtime', 'vehicle_request',
-        'settings', 'about',
+        'enterprise_hub', 'settings', 'about',
       ],
     ),
     AppRoleItem(
@@ -1686,7 +1944,7 @@ class DatabaseService {
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
         'records', 'field_work', 'overtime', 'vehicle_request',
-        'settings', 'about',
+        'enterprise_hub', 'settings', 'about',
       ],
     ),
     AppRoleItem(
@@ -1702,7 +1960,7 @@ class DatabaseService {
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
         'records', 'field_work', 'overtime', 'vehicle_request',
-        'settings', 'about', 'cloud_db',
+        'enterprise_hub', 'settings', 'about', 'cloud_db',
       ],
     ),
     AppRoleItem(
@@ -1718,7 +1976,7 @@ class DatabaseService {
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
         'records', 'field_work', 'overtime', 'vehicle_request',
-        'settings', 'about', 'cloud_db',
+        'enterprise_hub', 'settings', 'about', 'cloud_db',
       ],
     ),
     AppRoleItem(
@@ -1747,7 +2005,7 @@ class DatabaseService {
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
         'records', 'field_work', 'overtime', 'vehicle_request',
-        'settings', 'about',
+        'enterprise_hub', 'settings', 'about',
       ],
     ),
     AppRoleItem(
@@ -1762,7 +2020,7 @@ class DatabaseService {
       allowedPageIds: [
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
-        'records', 'vehicle_request', 'settings', 'about',
+        'records', 'vehicle_request', 'enterprise_hub', 'settings', 'about',
       ],
     ),
     AppRoleItem(
@@ -1777,7 +2035,7 @@ class DatabaseService {
       allowedPageIds: [
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
-        'records', 'vehicle_request', 'settings', 'about',
+        'records', 'vehicle_request', 'enterprise_hub', 'settings', 'about',
       ],
     ),
     AppRoleItem(
@@ -1792,7 +2050,7 @@ class DatabaseService {
       allowedPageIds: [
         'profile', 'payroll', 'chat', 'contacts', 'notifications',
         'cafeteria', 'business_card', 'favorites', 'leave',
-        'records', 'vehicle_request', 'settings', 'about',
+        'records', 'vehicle_request', 'enterprise_hub', 'settings', 'about',
       ],
     ),
   ];
@@ -1868,6 +2126,844 @@ class DatabaseService {
   Future<void> saveThemeType(String theme) async {
     _themeType = theme;
     await _prefs?.setString(_keyThemeMode, theme);
+  }
+
+  // ==========================================
+  // KURUMSAL EK MODÜLLER (15 ENTERPRISE MODULES)
+  // ==========================================
+
+  // 1. Vardiya Takas & Açık Vardiya
+  List<ShiftSwapRequest> getAllShiftSwaps() => List.unmodifiable(_shiftSwaps);
+  Future<void> insertShiftSwap(ShiftSwapRequest req) async {
+    _shiftSwaps.insert(0, req);
+    await _persistShiftSwaps();
+  }
+  Future<void> updateShiftSwapStatus(String id, String status, String approvedBy) async {
+    final idx = _shiftSwaps.indexWhere((s) => s.id == id);
+    if (idx != -1) {
+      _shiftSwaps[idx] = _shiftSwaps[idx].copyWith(status: status, approvedBy: approvedBy);
+      await _persistShiftSwaps();
+    }
+  }
+  List<OpenShiftSlot> getAllOpenShiftSlots() => List.unmodifiable(_openShiftSlots);
+  Future<void> insertOpenShiftSlot(OpenShiftSlot slot) async {
+    _openShiftSlots.add(slot);
+    await _persistOpenShifts();
+  }
+  Future<void> applyToOpenShiftSlot(String slotId, int employeeId) async {
+    final idx = _openShiftSlots.indexWhere((s) => s.id == slotId);
+    if (idx != -1) {
+      final cur = _openShiftSlots[idx];
+      if (!cur.appliedEmployeeIds.contains(employeeId)) {
+        final updatedList = List<int>.from(cur.appliedEmployeeIds)..add(employeeId);
+        _openShiftSlots[idx] = OpenShiftSlot(
+          id: cur.id,
+          companyId: cur.companyId,
+          shiftId: cur.shiftId,
+          shiftTitle: cur.shiftTitle,
+          date: cur.date,
+          requiredHeadcount: cur.requiredHeadcount,
+          appliedEmployeeIds: updatedList,
+          assignedEmployeeIds: cur.assignedEmployeeIds,
+        );
+        await _persistOpenShifts();
+      }
+    }
+  }
+  Future<void> _persistShiftSwaps() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyShiftSwaps, jsonEncode(_shiftSwaps.map((s) => s.toJson()).toList()));
+    } catch (_) {}
+  }
+  Future<void> _persistOpenShifts() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyOpenShiftSlots, jsonEncode(_openShiftSlots.map((s) => s.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 2. Teknik Destek & Arıza Bakım (Helpdesk)
+  List<HelpdeskTicket> getAllHelpdeskTickets() => List.unmodifiable(_helpdeskTickets);
+  Future<void> insertHelpdeskTicket(HelpdeskTicket ticket) async {
+    _helpdeskTickets.insert(0, ticket);
+    await _persistHelpdeskTickets();
+  }
+  Future<void> updateHelpdeskTicket(HelpdeskTicket ticket) async {
+    final idx = _helpdeskTickets.indexWhere((t) => t.id == ticket.id);
+    if (idx != -1) {
+      _helpdeskTickets[idx] = ticket;
+      await _persistHelpdeskTickets();
+    }
+  }
+  Future<void> assignTechnicianToTicket(String ticketId, int techId, String techName) async {
+    final idx = _helpdeskTickets.indexWhere((t) => t.id == ticketId);
+    if (idx != -1) {
+      _helpdeskTickets[idx] = _helpdeskTickets[idx].copyWith(
+        assignedTechnicianId: techId,
+        assignedTechnicianName: techName,
+        status: 'in_progress',
+      );
+      await _persistHelpdeskTickets();
+    }
+  }
+  Future<void> resolveHelpdeskTicket(String ticketId, String solutionNotes) async {
+    final idx = _helpdeskTickets.indexWhere((t) => t.id == ticketId);
+    if (idx != -1) {
+      _helpdeskTickets[idx] = _helpdeskTickets[idx].copyWith(
+        solutionNotes: solutionNotes,
+        status: 'resolved',
+        resolvedAt: DateTime.now(),
+      );
+      await _persistHelpdeskTickets();
+    }
+  }
+  Future<void> _persistHelpdeskTickets() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyHelpdeskTickets, jsonEncode(_helpdeskTickets.map((t) => t.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 3. Duyurular & Okundu Onayı
+  List<CompanyAnnouncement> getAllAnnouncements() => List.unmodifiable(_announcements);
+  Future<void> insertAnnouncement(CompanyAnnouncement announcement) async {
+    _announcements.insert(0, announcement);
+    await _persistAnnouncements();
+  }
+  Future<void> markAnnouncementRead(String id, int employeeId) async {
+    final idx = _announcements.indexWhere((a) => a.id == id);
+    if (idx != -1 && !_announcements[idx].readEmployeeIds.contains(employeeId)) {
+      final updated = List<int>.from(_announcements[idx].readEmployeeIds)..add(employeeId);
+      _announcements[idx] = _announcements[idx].copyWith(readEmployeeIds: updated);
+      await _persistAnnouncements();
+    }
+  }
+  Future<void> confirmAnnouncement(String id, int employeeId) async {
+    final idx = _announcements.indexWhere((a) => a.id == id);
+    if (idx != -1 && !_announcements[idx].confirmedEmployeeIds.contains(employeeId)) {
+      final updatedReads = List<int>.from(_announcements[idx].readEmployeeIds);
+      if (!updatedReads.contains(employeeId)) updatedReads.add(employeeId);
+      final updatedConfs = List<int>.from(_announcements[idx].confirmedEmployeeIds)..add(employeeId);
+      _announcements[idx] = _announcements[idx].copyWith(
+        readEmployeeIds: updatedReads,
+        confirmedEmployeeIds: updatedConfs,
+      );
+      await _persistAnnouncements();
+    }
+  }
+  Future<void> deleteAnnouncement(String id) async {
+    _announcements.removeWhere((a) => a.id == id);
+    await _persistAnnouncements();
+  }
+  Future<void> _persistAnnouncements() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyAnnouncements, jsonEncode(_announcements.map((a) => a.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 4. Personel Özlük Dosyası & İşe Giriş / Çıkış
+  List<EmployeeDocument> getAllDocuments() => List.unmodifiable(_documents);
+  Future<void> insertDocument(EmployeeDocument doc) async {
+    _documents.insert(0, doc);
+    await _persistDocuments();
+  }
+  Future<void> deleteDocument(String id) async {
+    _documents.removeWhere((d) => d.id == id);
+    await _persistDocuments();
+  }
+  List<OnboardingTask> getAllOnboardingTasks() => List.unmodifiable(_onboardingTasks);
+  Future<void> insertOnboardingTask(OnboardingTask task) async {
+    _onboardingTasks.add(task);
+    await _persistOnboardingTasks();
+  }
+  Future<void> toggleOnboardingTask(String id, bool isCompleted) async {
+    final idx = _onboardingTasks.indexWhere((t) => t.id == id);
+    if (idx != -1) {
+      _onboardingTasks[idx] = _onboardingTasks[idx].copyWith(
+        isCompleted: isCompleted,
+        completedAt: isCompleted ? DateTime.now() : null,
+      );
+      await _persistOnboardingTasks();
+    }
+  }
+  Future<void> _persistDocuments() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyDocuments, jsonEncode(_documents.map((d) => d.toJson()).toList()));
+    } catch (_) {}
+  }
+  Future<void> _persistOnboardingTasks() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyOnboardingTasks, jsonEncode(_onboardingTasks.map((t) => t.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 5. Eğitim & Yetkinlik Takibi
+  List<TrainingCourse> getAllTrainingCourses() => List.unmodifiable(_trainingCourses);
+  List<EmployeeTrainingRecord> getAllTrainingRecords() => List.unmodifiable(_trainingRecords);
+  Future<void> insertTrainingCourse(TrainingCourse course) async {
+    _trainingCourses.add(course);
+    await _persistTrainingCourses();
+  }
+  Future<void> assignTrainingCourse(String courseId, String courseTitle, int employeeId, String companyId) async {
+    final newRec = EmployeeTrainingRecord(
+      id: 'tr_${DateTime.now().millisecondsSinceEpoch}_$employeeId',
+      companyId: companyId,
+      employeeId: employeeId,
+      courseId: courseId,
+      courseTitle: courseTitle,
+      status: 'assigned',
+      score: 0,
+    );
+    _trainingRecords.add(newRec);
+    await _persistTrainingRecords();
+  }
+  Future<void> completeTrainingCourse(String recordId, int score) async {
+    final idx = _trainingRecords.indexWhere((r) => r.id == recordId);
+    if (idx != -1) {
+      _trainingRecords[idx] = _trainingRecords[idx].copyWith(
+        status: 'completed',
+        score: score,
+        completedDate: DateTime.now(),
+        certificateExpiry: DateTime.now().add(const Duration(days: 365)),
+      );
+      await _persistTrainingRecords();
+    }
+  }
+  Future<void> _persistTrainingCourses() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyTrainingCourses, jsonEncode(_trainingCourses.map((c) => c.toJson()).toList()));
+    } catch (_) {}
+  }
+  Future<void> _persistTrainingRecords() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyTrainingRecords, jsonEncode(_trainingRecords.map((r) => r.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 6. Performans & Hedef Yönetimi (OKRs)
+  List<PerformanceGoal> getAllPerformanceGoals() => List.unmodifiable(_performanceGoals);
+  Future<void> insertPerformanceGoal(PerformanceGoal goal) async {
+    _performanceGoals.insert(0, goal);
+    await _persistPerformanceGoals();
+  }
+  Future<void> updatePerformanceGoal(PerformanceGoal goal) async {
+    final idx = _performanceGoals.indexWhere((g) => g.id == goal.id);
+    if (idx != -1) {
+      _performanceGoals[idx] = goal;
+      await _persistPerformanceGoals();
+    }
+  }
+  Future<void> _persistPerformanceGoals() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyPerformanceGoals, jsonEncode(_performanceGoals.map((g) => g.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 7. Ziyaretçi & Taşeron Yönetimi
+  List<VisitorRecord> getAllVisitorRecords() => List.unmodifiable(_visitorRecords);
+  Future<void> insertVisitorRecord(VisitorRecord visitor) async {
+    _visitorRecords.insert(0, visitor);
+    await _persistVisitorRecords();
+  }
+  Future<void> checkInVisitor(String id) async {
+    final idx = _visitorRecords.indexWhere((v) => v.id == id);
+    if (idx != -1) {
+      _visitorRecords[idx] = _visitorRecords[idx].copyWith(
+        status: 'inside',
+        checkInTime: DateTime.now(),
+      );
+      await _persistVisitorRecords();
+    }
+  }
+  Future<void> checkOutVisitor(String id) async {
+    final idx = _visitorRecords.indexWhere((v) => v.id == id);
+    if (idx != -1) {
+      _visitorRecords[idx] = _visitorRecords[idx].copyWith(
+        status: 'completed',
+        checkOutTime: DateTime.now(),
+      );
+      await _persistVisitorRecords();
+    }
+  }
+  Future<void> _persistVisitorRecords() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyVisitorRecords, jsonEncode(_visitorRecords.map((v) => v.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 8. Hibrit Çalışma & Rezervasyon (Masa, Oda, Otopark)
+  List<HybridBooking> getAllHybridBookings() => List.unmodifiable(_hybridBookings);
+  Future<void> insertHybridBooking(HybridBooking booking) async {
+    _hybridBookings.insert(0, booking);
+    await _persistHybridBookings();
+  }
+  Future<void> cancelHybridBooking(String id) async {
+    final idx = _hybridBookings.indexWhere((b) => b.id == id);
+    if (idx != -1) {
+      _hybridBookings[idx] = _hybridBookings[idx].copyWith(status: 'cancelled');
+      await _persistHybridBookings();
+    }
+  }
+  Future<void> _persistHybridBookings() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyHybridBookings, jsonEncode(_hybridBookings.map((b) => b.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 9. Şubeler & Onay Süreçleri / Vekalet
+  List<CompanyBranch> getAllCompanyBranches() => List.unmodifiable(_branches);
+  Future<void> insertCompanyBranch(CompanyBranch branch) async {
+    _branches.add(branch);
+    await _persistCompanyBranches();
+  }
+  List<ApprovalDelegation> getAllApprovalDelegations() => List.unmodifiable(_delegations);
+  Future<void> insertApprovalDelegation(ApprovalDelegation delegation) async {
+    _delegations.insert(0, delegation);
+    await _persistApprovalDelegations();
+  }
+  Future<void> toggleApprovalDelegation(String id, bool isActive) async {
+    final idx = _delegations.indexWhere((d) => d.id == id);
+    if (idx != -1) {
+      _delegations[idx] = _delegations[idx].copyWith(isActive: isActive);
+      await _persistApprovalDelegations();
+    }
+  }
+  Future<void> _persistCompanyBranches() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyCompanyBranches, jsonEncode(_branches.map((b) => b.toJson()).toList()));
+    } catch (_) {}
+  }
+  Future<void> _persistApprovalDelegations() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyApprovalDelegations, jsonEncode(_delegations.map((d) => d.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 10. Entegrasyon Merkezi & Çevrimdışı Çalışma Kuyruğu
+  List<IntegrationEndpoint> getAllIntegrationEndpoints() => List.unmodifiable(_integrations);
+  Future<void> insertIntegrationEndpoint(IntegrationEndpoint ep) async {
+    _integrations.add(ep);
+    await _persistIntegrations();
+  }
+  Future<void> updateIntegrationEndpoint(IntegrationEndpoint ep) async {
+    final idx = _integrations.indexWhere((e) => e.id == ep.id);
+    if (idx != -1) {
+      _integrations[idx] = ep;
+      await _persistIntegrations();
+    }
+  }
+  List<OfflineSyncItem> getAllOfflineSyncItems() => List.unmodifiable(_offlineQueue);
+  Future<void> enqueueOfflineItem(OfflineSyncItem item) async {
+    _offlineQueue.add(item);
+    await _persistOfflineQueue();
+  }
+  Future<void> clearOfflineQueue() async {
+    _offlineQueue.clear();
+    await _persistOfflineQueue();
+  }
+  Future<void> _persistIntegrations() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyIntegrations, jsonEncode(_integrations.map((e) => e.toJson()).toList()));
+    } catch (_) {}
+  }
+  Future<void> _persistOfflineQueue() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyOfflineQueue, jsonEncode(_offlineQueue.map((i) => i.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 11. Çalışan Geri Bildirimleri & Anketler
+  List<EmployeeFeedback> getAllEmployeeFeedbacks() => List.unmodifiable(_feedbacks);
+  Future<void> insertEmployeeFeedback(EmployeeFeedback fb) async {
+    _feedbacks.insert(0, fb);
+    await _persistFeedbacks();
+  }
+  Future<void> respondToFeedback(String id, String response) async {
+    final idx = _feedbacks.indexWhere((f) => f.id == id);
+    if (idx != -1) {
+      _feedbacks[idx] = _feedbacks[idx].copyWith(status: 'resolved', hrResponse: response);
+      await _persistFeedbacks();
+    }
+  }
+  Future<void> _persistFeedbacks() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyFeedbacks, jsonEncode(_feedbacks.map((f) => f.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 12. Varsayılan Kurumsal Tohumlama (Seed Data for 15 Modules)
+  Future<void> _seedDefaultEnterpriseModules() async {
+    // Vardiya Takas & Açık Vardiya
+    if (_shiftSwaps.isEmpty) {
+      _shiftSwaps.add(ShiftSwapRequest(
+        id: 'swap_01',
+        companyId: 'cmp_acme',
+        requesterEmployeeId: 1,
+        requesterName: 'Ahmet Yılmaz',
+        targetEmployeeId: 2,
+        targetName: 'Zeynep Kaya',
+        shiftId: 1,
+        shiftTitle: 'Standart Ofis Vardiyası',
+        targetDate: DateTime.now().add(const Duration(days: 3)),
+        reason: 'Şahsi randevu nedeniyle cuma günü takas ricası.',
+        status: 'pending',
+      ));
+      await _persistShiftSwaps();
+    }
+    if (_openShiftSlots.isEmpty) {
+      _openShiftSlots.add(OpenShiftSlot(
+        id: 'openshift_01',
+        companyId: 'cmp_acme',
+        shiftId: 3,
+        shiftTitle: 'Hafta Sonu Nöbetçi Ekip',
+        date: DateTime.now().add(const Duration(days: 5)),
+        requiredHeadcount: 2,
+        appliedEmployeeIds: [1],
+      ));
+      await _persistOpenShifts();
+    }
+
+    // Teknik Destek Talepleri
+    if (_helpdeskTickets.isEmpty) {
+      _helpdeskTickets.addAll([
+        HelpdeskTicket(
+          id: 'ticket_01',
+          companyId: 'cmp_acme',
+          requesterId: 1,
+          requesterName: 'Ahmet Yılmaz',
+          title: '3. Kat Toplantı Odası Projeksiyon Açılmıyor',
+          description: 'HDMI kablosu ve güç adaptörü kontrol edildi, sinyal gelmiyor.',
+          category: 'it',
+          priority: 'high',
+          status: 'in_progress',
+          assignedTechnicianId: 8,
+          assignedTechnicianName: 'Murat Usta (Teknisyen)',
+        ),
+        HelpdeskTicket(
+          id: 'ticket_02',
+          companyId: 'cmp_acme',
+          requesterId: 2,
+          requesterName: 'Zeynep Kaya',
+          title: 'Ar-Ge Ofisi Klima Bakım İhtiyacı',
+          description: 'Klima soğutma modunda yeterli üflemiyor, filtre temizliği gerekebilir.',
+          category: 'facility',
+          priority: 'medium',
+          status: 'open',
+        ),
+      ]);
+      await _persistHelpdeskTickets();
+    }
+
+    // Duyurular
+    if (_announcements.isEmpty) {
+      _announcements.addAll([
+        CompanyAnnouncement(
+          id: 'ann_01',
+          companyId: 'cmp_acme',
+          title: '📢 2026 Hibrit Çalışma ve Masa Rezervasyonu Başladı',
+          content: 'Haftalık 2 gün ofis, 3 gün uzaktan çalışma politikamız devreye girmiştir. Ofise geleceğiniz günlerde Hızlı Menü > Hibrit Rezervasyon üzerinden masanızı ayırtmayı unutmayınız.',
+          category: 'genel',
+          isMandatory: true,
+          readEmployeeIds: [1, 2],
+          confirmedEmployeeIds: [1],
+        ),
+        CompanyAnnouncement(
+          id: 'ann_02',
+          companyId: 'cmp_acme',
+          title: '🩺 Yıllık Periyodik Sağlık Muayeneleri Hakkında',
+          content: 'İşyeri Hekimimiz Dr. Selin Erdem tarafından revirde yıllık sağlık taramaları başlatılmıştır. Randevu saatlerinizi e-posta üzerinden kontrol edebilirsiniz.',
+          category: 'isg',
+          isMandatory: false,
+          readEmployeeIds: [1],
+        ),
+      ]);
+      await _persistAnnouncements();
+    }
+
+    // Özlük Dosyası & İşe Giriş/Çıkış
+    if (_documents.isEmpty) {
+      _documents.addAll([
+        EmployeeDocument(
+          id: 'doc_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          title: 'Belirsiz Süreli İş Sözleşmesi',
+          documentType: 'contract',
+          fileName: 'ahmet_yilmaz_sozlesme_2022.pdf',
+          status: 'valid',
+        ),
+        EmployeeDocument(
+          id: 'doc_02',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          title: 'İleri Düzey Mobil Mimari Sertifikası',
+          documentType: 'certificate',
+          fileName: 'flutter_certified_eng.pdf',
+          expiryDate: DateTime.now().add(const Duration(days: 400)),
+          status: 'valid',
+        ),
+        EmployeeDocument(
+          id: 'doc_03',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          title: 'Ağır ve Tehlikeli İşler Sağlık Raporu',
+          documentType: 'health_report',
+          fileName: 'saglik_raporu_2025.pdf',
+          expiryDate: DateTime.now().add(const Duration(days: 25)),
+          status: 'expiring_soon',
+        ),
+      ]);
+      await _persistDocuments();
+    }
+    if (_onboardingTasks.isEmpty) {
+      _onboardingTasks.addAll([
+        OnboardingTask(
+          id: 'onb_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          processType: 'onboarding',
+          title: 'Nüfus Cüzdanı & Diploma Fotokopisi Teslimi',
+          category: 'evrak',
+          isCompleted: true,
+          completedAt: DateTime(2022, 3, 15),
+        ),
+        OnboardingTask(
+          id: 'onb_02',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          processType: 'onboarding',
+          title: 'Kurumsal E-posta & Slack / Teams Tanımlaması',
+          category: 'yetki_hesap',
+          isCompleted: true,
+          completedAt: DateTime(2022, 3, 15),
+        ),
+        OnboardingTask(
+          id: 'onb_03',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          processType: 'onboarding',
+          title: 'Dizüstü Bilgisayar & Güvenlik Kartı Teslimi',
+          category: 'it_donanim',
+          isCompleted: true,
+          completedAt: DateTime(2022, 3, 16),
+        ),
+        OnboardingTask(
+          id: 'onb_04',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          processType: 'onboarding',
+          title: 'Kurumsal Kültür & İK Oryantasyon Eğitimi',
+          category: 'oryantasyon',
+          isCompleted: true,
+          completedAt: DateTime(2022, 3, 18),
+        ),
+      ]);
+      await _persistOnboardingTasks();
+    }
+
+    // Eğitim & Yetkinlikler
+    if (_trainingCourses.isEmpty) {
+      _trainingCourses.addAll([
+        TrainingCourse(
+          id: 'course_isg',
+          companyId: 'cmp_acme',
+          title: 'Temel İş Sağlığı ve Güvenliği (İSG) Eğitimi',
+          description: '6331 sayılı kanun gereği zorunlu genel iş sağlığı, ilk yardım ve tahliye eğitimi.',
+          category: 'isg',
+          durationMinutes: 120,
+          passingScore: 70,
+          validityMonths: 12,
+        ),
+        TrainingCourse(
+          id: 'course_kvkk',
+          companyId: 'cmp_acme',
+          title: 'KVKK & Bilgi Güvenliği Farkındalık Eğitimi',
+          description: 'Kişisel verilerin korunması, parola güvenliği ve phishing saldırılarına karşı önlemler.',
+          category: 'kvkk',
+          durationMinutes: 45,
+          passingScore: 80,
+          validityMonths: 24,
+        ),
+      ]);
+      await _persistTrainingCourses();
+    }
+    if (_trainingRecords.isEmpty) {
+      _trainingRecords.addAll([
+        EmployeeTrainingRecord(
+          id: 'tr_rec_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          courseId: 'course_isg',
+          courseTitle: 'Temel İş Sağlığı ve Güvenliği (İSG) Eğitimi',
+          status: 'completed',
+          score: 95,
+          completedDate: DateTime.now().subtract(const Duration(days: 60)),
+          certificateExpiry: DateTime.now().add(const Duration(days: 305)),
+        ),
+        EmployeeTrainingRecord(
+          id: 'tr_rec_02',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          courseId: 'course_kvkk',
+          courseTitle: 'KVKK & Bilgi Güvenliği Farkındalık Eğitimi',
+          status: 'assigned',
+          score: 0,
+        ),
+      ]);
+      await _persistTrainingRecords();
+    }
+
+    // Performans & Hedefler
+    if (_performanceGoals.isEmpty) {
+      _performanceGoals.addAll([
+        PerformanceGoal(
+          id: 'goal_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          period: '2026 Q1',
+          title: 'Mobil PDKS Çevrimdışı ve Veritabanı Mimarisi',
+          description: 'İnternet kesintilerinde veri kaybını önleyen yerel SQLite/IndexedDB kuyruk sistemini devreye alma.',
+          weightPercentage: 50.0,
+          currentProgress: 90.0,
+          selfRating: 4.8,
+          managerRating: 5.0,
+          managerFeedback: 'Saha testlerinde mükemmel sonuç alındı, performansı tebrik ederim.',
+          status: 'reviewed',
+        ),
+        PerformanceGoal(
+          id: 'goal_02',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          period: '2026 Q1',
+          title: 'Kiosk Biyometrik ve QR Doğrulama Entegrasyonu',
+          description: 'Tablet kiosk üzerinde 1 saniyenin altında QR kod ve temassız okutma tepki süresi yakalama.',
+          weightPercentage: 50.0,
+          currentProgress: 75.0,
+          status: 'active',
+        ),
+      ]);
+      await _persistPerformanceGoals();
+    }
+
+    // Ziyaretçi & Taşeron Kayıtları
+    if (_visitorRecords.isEmpty) {
+      _visitorRecords.addAll([
+        VisitorRecord(
+          id: 'vis_01',
+          companyId: 'cmp_acme',
+          visitorFullName: 'Murat Arslan',
+          visitorCompany: 'Nova Savunma Teknolojileri',
+          visitorPhone: '0533 111 22 33',
+          hostEmployeeId: 1,
+          hostEmployeeName: 'Ahmet Yılmaz',
+          purpose: 'Kurumsal Entegrasyon & API İnceleme Toplantısı',
+          expectedDate: DateTime.now(),
+          qrPassCode: 'PASS-ACME-4455',
+          status: 'inside',
+          checkInTime: DateTime.now().subtract(const Duration(minutes: 45)),
+        ),
+        VisitorRecord(
+          id: 'vis_02',
+          companyId: 'cmp_acme',
+          visitorFullName: 'Kemal Güneş',
+          visitorCompany: 'TeknoBakım Elektrik Ltd.',
+          visitorPhone: '0542 999 88 77',
+          hostEmployeeId: 8,
+          hostEmployeeName: 'Murat Usta (Teknisyen)',
+          purpose: 'Trafo ve Kesintisiz Güç Kaynağı Periyodik Bakımı',
+          expectedDate: DateTime.now().add(const Duration(days: 1)),
+          qrPassCode: 'PASS-ACME-8899',
+          status: 'pre_registered',
+          isContractor: true,
+          hasSafetyBriefing: true,
+        ),
+      ]);
+      await _persistVisitorRecords();
+    }
+
+    // Hibrit Rezervasyonlar
+    if (_hybridBookings.isEmpty) {
+      _hybridBookings.addAll([
+        HybridBooking(
+          id: 'res_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          resourceType: 'desk',
+          resourceCode: 'Masa A-14 (Monitörlü Çalışma İstasyonu)',
+          date: DateTime.now(),
+          timeSlot: 'Tam Gün (08:30 - 18:00)',
+          status: 'confirmed',
+        ),
+        HybridBooking(
+          id: 'res_02',
+          companyId: 'cmp_acme',
+          employeeId: 2,
+          employeeName: 'Zeynep Kaya',
+          resourceType: 'meeting_room',
+          resourceCode: 'Toplantı Odası Orion (10 Kişilik)',
+          date: DateTime.now().add(const Duration(days: 1)),
+          timeSlot: '14:00 - 15:30',
+          status: 'confirmed',
+        ),
+      ]);
+      await _persistHybridBookings();
+    }
+
+    // Şubeler & Onay Vekaleti
+    if (_branches.isEmpty) {
+      _branches.addAll([
+        CompanyBranch(
+          id: 'br_ank',
+          companyId: 'cmp_acme',
+          name: 'Ankara Ar-Ge & İnovasyon Kampüsü',
+          code: 'ANK-01',
+          city: 'Ankara',
+          address: 'ODTÜ Teknokent Silikon Blok No: 4',
+          managerId: 3,
+          managerName: 'Mehmet Demir',
+          departments: ['Yazılım & Ar-Ge', 'İnsan Kaynakları', 'Sistem Yönetimi'],
+          employeeCount: 42,
+        ),
+        CompanyBranch(
+          id: 'br_ist',
+          companyId: 'cmp_acme',
+          name: 'İstanbul Finans & Satış Ofisi',
+          code: 'IST-02',
+          city: 'İstanbul',
+          address: 'Büyükdere Cd. Levent Plaza No: 18',
+          managerId: 4,
+          managerName: 'Canan Can',
+          departments: ['Finans & Muhasebe', 'Kurumsal Satış', 'Müşteri Başarısı'],
+          employeeCount: 28,
+        ),
+      ]);
+      await _persistCompanyBranches();
+    }
+    if (_delegations.isEmpty) {
+      _delegations.add(ApprovalDelegation(
+        id: 'del_01',
+        companyId: 'cmp_acme',
+        managerId: 2,
+        managerName: 'Zeynep Kaya (İK Direktörü)',
+        delegateEmployeeId: 1,
+        delegateEmployeeName: 'Ahmet Yılmaz',
+        startDate: DateTime.now().subtract(const Duration(days: 2)),
+        endDate: DateTime.now().add(const Duration(days: 5)),
+        scope: 'leave',
+        isActive: false,
+      ));
+      await _persistApprovalDelegations();
+    }
+
+    // Entegrasyonlar & Çevrimdışı Kuyruk
+    if (_integrations.isEmpty) {
+      _integrations.addAll([
+        IntegrationEndpoint(
+          id: 'int_logo',
+          companyId: 'cmp_acme',
+          name: 'Logo Tiger ERP Muhasebe Aktarımı',
+          systemType: 'erp',
+          status: 'active',
+          syncedRecordsCount: 2450,
+          failedRecordsCount: 0,
+          apiEndpoint: 'https://erp.acmeteknoloji.com/api/v2/pdks',
+        ),
+        IntegrationEndpoint(
+          id: 'int_zk',
+          companyId: 'cmp_acme',
+          name: 'ZKTeco Turnike & Kart Okuyucu Gateway',
+          systemType: 'turnstile',
+          status: 'active',
+          syncedRecordsCount: 4890,
+          failedRecordsCount: 1,
+          apiEndpoint: 'tcp://192.168.1.100:4370',
+        ),
+        IntegrationEndpoint(
+          id: 'int_sap',
+          companyId: 'cmp_acme',
+          name: 'SAP SuccessFactors İK & Bordro Köprüsü',
+          systemType: 'payroll',
+          status: 'active',
+          syncedRecordsCount: 1120,
+          failedRecordsCount: 0,
+          apiEndpoint: 'https://api.successfactors.eu/odata/v2',
+        ),
+      ]);
+      await _persistIntegrations();
+    }
+    if (_offlineQueue.isEmpty) {
+      _offlineQueue.add(OfflineSyncItem(
+        id: 'off_01',
+        companyId: 'cmp_acme',
+        actionType: 'field_work',
+        payload: {'employeeId': 1, 'note': 'Müşteri sahası kontrolü tamamlandı'},
+        syncStatus: 'synced',
+      ));
+      await _persistOfflineQueue();
+    }
+
+    // Çalışan Geri Bildirimleri & Anketler
+    if (_feedbacks.isEmpty) {
+      _feedbacks.addAll([
+        EmployeeFeedback(
+          id: 'fb_01',
+          companyId: 'cmp_acme',
+          category: 'suggestion',
+          title: 'Yemekhanede Sağlıklı Atıştırmalık & Meyve Günleri',
+          content: 'Haftanın iki günü ara öğünlerde elma, muz ve kuruyemiş ikramı yapılabilirse çalışma enerjimiz artacaktır.',
+          isAnonymous: false,
+          submitterEmployeeId: 1,
+          submitterName: 'Ahmet Yılmaz',
+          rating: 5,
+          status: 'resolved',
+          hrResponse: 'Harika bir öneri! Önümüzdeki pazartesiden itibaren her salı ve perşembe taze meyve sepetleri ofis katlarına dağıtılacaktır.',
+        ),
+        EmployeeFeedback(
+          id: 'fb_02',
+          companyId: 'cmp_acme',
+          category: 'survey',
+          title: '2026 Çalışma Alanı & Esnek Mesai Memnuniyeti',
+          content: 'Ofis içi sessiz odaklanma kabinleri ve ergonomik sandalyeler çalışmayı çok keyifli kılıyor.',
+          isAnonymous: true,
+          rating: 5,
+          status: 'submitted',
+        ),
+      ]);
+      await _persistFeedbacks();
+    }
   }
 
   // ==========================================

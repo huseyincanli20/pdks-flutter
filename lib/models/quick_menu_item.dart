@@ -33,6 +33,9 @@ class QuickMenuItem {
         code == 0xf689) {
       return Icons.directions_car_rounded;
     }
+    if (code == Icons.hub_rounded.codePoint || code == 0xf05a1) {
+      return Icons.hub_rounded;
+    }
     switch (code) {
       case 0xe156:
         return Icons.beach_access_rounded;

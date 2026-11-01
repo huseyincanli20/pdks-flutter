@@ -12,6 +12,17 @@ import '../models/page_customization.dart';
 import '../models/chat_message.dart';
 import '../models/quick_menu_item.dart';
 import '../models/vehicle_request.dart';
+import '../models/shift_swap_request.dart';
+import '../models/helpdesk_ticket.dart';
+import '../models/company_announcement.dart';
+import '../models/personnel_file.dart';
+import '../models/training_and_skill.dart';
+import '../models/performance_goal.dart';
+import '../models/visitor_record.dart';
+import '../models/hybrid_booking.dart';
+import '../models/organization_branch.dart';
+import '../models/integration_and_sync.dart';
+import '../models/employee_feedback.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
@@ -42,6 +53,24 @@ class PdksState extends ChangeNotifier {
   List<LeaveRequest> _leaves = [];
   final List<ShiftSchedule> _shifts = [];
   final List<PayrollSlip> _payrolls = [];
+
+  // Kurumsal Ek Modüller (15 Enterprise Modules)
+  final List<ShiftSwapRequest> _shiftSwaps = [];
+  final List<OpenShiftSlot> _openShiftSlots = [];
+  final List<HelpdeskTicket> _helpdeskTickets = [];
+  final List<CompanyAnnouncement> _announcements = [];
+  final List<EmployeeDocument> _documents = [];
+  final List<OnboardingTask> _onboardingTasks = [];
+  final List<TrainingCourse> _trainingCourses = [];
+  final List<EmployeeTrainingRecord> _trainingRecords = [];
+  final List<PerformanceGoal> _performanceGoals = [];
+  final List<VisitorRecord> _visitorRecords = [];
+  final List<HybridBooking> _hybridBookings = [];
+  final List<CompanyBranch> _branches = [];
+  final List<ApprovalDelegation> _delegations = [];
+  final List<IntegrationEndpoint> _integrations = [];
+  final List<OfflineSyncItem> _offlineQueue = [];
+  final List<EmployeeFeedback> _feedbacks = [];
 
   // Bildirimler
   List<AppNotification> _notifications = [];
@@ -228,6 +257,75 @@ class PdksState extends ChangeNotifier {
       _payrolls.where((p) => p.employeeId == _currentUser.id).toList();
   PayrollSlip? get latestUserPayroll =>
       currentUserPayrolls.isNotEmpty ? currentUserPayrolls.first : null;
+
+  // Kurumsal Ek Modüller Getters (15 Enterprise Modules)
+  List<ShiftSwapRequest> get shiftSwaps =>
+      _shiftSwaps.where((s) => s.companyId == _activeCompanyId).toList();
+  List<OpenShiftSlot> get openShiftSlots =>
+      _openShiftSlots.where((s) => s.companyId == _activeCompanyId).toList();
+  List<HelpdeskTicket> get helpdeskTickets =>
+      _helpdeskTickets.where((t) => t.companyId == _activeCompanyId).toList();
+  List<CompanyAnnouncement> get announcements =>
+      _announcements.where((a) => a.companyId == _activeCompanyId).toList();
+  List<EmployeeDocument> get documents =>
+      _documents.where((d) => d.companyId == _activeCompanyId).toList();
+  List<OnboardingTask> get onboardingTasks =>
+      _onboardingTasks.where((o) => o.companyId == _activeCompanyId).toList();
+  List<TrainingCourse> get trainingCourses =>
+      _trainingCourses.where((c) => c.companyId == _activeCompanyId).toList();
+  List<EmployeeTrainingRecord> get trainingRecords =>
+      _trainingRecords.where((r) => r.companyId == _activeCompanyId).toList();
+  List<PerformanceGoal> get performanceGoals =>
+      _performanceGoals.where((g) => g.companyId == _activeCompanyId).toList();
+  List<VisitorRecord> get visitorRecords =>
+      _visitorRecords.where((v) => v.companyId == _activeCompanyId).toList();
+  List<HybridBooking> get hybridBookings =>
+      _hybridBookings.where((h) => h.companyId == _activeCompanyId).toList();
+  List<CompanyBranch> get branches =>
+      _branches.where((b) => b.companyId == _activeCompanyId).toList();
+  List<ApprovalDelegation> get delegations =>
+      _delegations.where((d) => d.companyId == _activeCompanyId).toList();
+  List<IntegrationEndpoint> get integrations =>
+      _integrations.where((i) => i.companyId == _activeCompanyId).toList();
+  List<OfflineSyncItem> get offlineQueue =>
+      _offlineQueue.where((o) => o.companyId == _activeCompanyId).toList();
+  List<EmployeeFeedback> get feedbacks =>
+      _feedbacks.where((f) => f.companyId == _activeCompanyId).toList();
+
+  ExecutiveDashboardStats get executiveDashboardStats {
+    final compEmps = employees;
+    final total = compEmps.length;
+    final activeIn = compEmps.where((e) => records.any((r) => r.employeeId == e.id && r.type == AttendanceType.checkIn)).length;
+    final rate = total > 0 ? ((activeIn / total) * 100) : 0.0;
+    double otHours = 0.0;
+    double otCost = 0.0;
+    for (final p in payrolls) {
+      otHours += p.overtimeHours;
+      otCost += p.overtimePay;
+    }
+    final pendingLeaves = leaves.where((l) => l.status == LeaveStatus.pending).length;
+    final openTickets = helpdeskTickets.where((t) => t.status != 'resolved' && t.status != 'closed').length;
+    final insideVisitors = visitorRecords.where((v) => v.status == 'inside').length;
+    final branchCount = branches.length;
+    double satisfaction = 4.8;
+    if (feedbacks.isNotEmpty) {
+      final sum = feedbacks.fold<int>(0, (prev, f) => prev + f.rating);
+      satisfaction = sum / feedbacks.length;
+    }
+
+    return ExecutiveDashboardStats(
+      totalEmployees: total,
+      activeCheckedInToday: activeIn,
+      attendanceRatePercent: rate,
+      totalOvertimeHours: otHours,
+      estimatedOvertimeCost: otCost,
+      pendingLeavesCount: pendingLeaves,
+      openHelpdeskTicketsCount: openTickets,
+      insideVisitorsCount: insideVisitors,
+      activeBranchesCount: branchCount,
+      employeeSatisfactionScore: satisfaction,
+    );
+  }
 
   void switchCompany(String companyId) {
     if (_companies.any((c) => c.id == companyId)) {
@@ -1903,6 +2001,40 @@ class PdksState extends ChangeNotifier {
     _pageCustomizations.clear();
     _pageCustomizations.addAll(_db.getAllPageCustomizations());
 
+    // 14. Kurumsal Ek Modüller (15 Enterprise Modules)
+    _shiftSwaps.clear();
+    _shiftSwaps.addAll(_db.getAllShiftSwaps());
+    _openShiftSlots.clear();
+    _openShiftSlots.addAll(_db.getAllOpenShiftSlots());
+    _helpdeskTickets.clear();
+    _helpdeskTickets.addAll(_db.getAllHelpdeskTickets());
+    _announcements.clear();
+    _announcements.addAll(_db.getAllAnnouncements());
+    _documents.clear();
+    _documents.addAll(_db.getAllDocuments());
+    _onboardingTasks.clear();
+    _onboardingTasks.addAll(_db.getAllOnboardingTasks());
+    _trainingCourses.clear();
+    _trainingCourses.addAll(_db.getAllTrainingCourses());
+    _trainingRecords.clear();
+    _trainingRecords.addAll(_db.getAllTrainingRecords());
+    _performanceGoals.clear();
+    _performanceGoals.addAll(_db.getAllPerformanceGoals());
+    _visitorRecords.clear();
+    _visitorRecords.addAll(_db.getAllVisitorRecords());
+    _hybridBookings.clear();
+    _hybridBookings.addAll(_db.getAllHybridBookings());
+    _branches.clear();
+    _branches.addAll(_db.getAllCompanyBranches());
+    _delegations.clear();
+    _delegations.addAll(_db.getAllApprovalDelegations());
+    _integrations.clear();
+    _integrations.addAll(_db.getAllIntegrationEndpoints());
+    _offlineQueue.clear();
+    _offlineQueue.addAll(_db.getAllOfflineSyncItems());
+    _feedbacks.clear();
+    _feedbacks.addAll(_db.getAllEmployeeFeedbacks());
+
     _isCheckedIn = false;
     _lastCheckInTime = null;
     _workedToday = Duration.zero;
@@ -3215,6 +3347,312 @@ class PdksState extends ChangeNotifier {
   }
 
   // ==========================================
+  // KURUMSAL EK MODÜL İŞLEMLERİ (15 ENTERPRISE MODULES)
+  // ==========================================
+
+  // 1. Vardiya Takas & Açık Vardiya
+  void addShiftSwapRequest(ShiftSwapRequest req) {
+    _shiftSwaps.insert(0, req);
+    _db.insertShiftSwap(req);
+    notifyListeners();
+  }
+
+  void updateShiftSwapStatus(String id, String status) {
+    final idx = _shiftSwaps.indexWhere((s) => s.id == id);
+    if (idx != -1) {
+      final updated = _shiftSwaps[idx].copyWith(status: status, approvedBy: _currentUser.fullName);
+      _shiftSwaps[idx] = updated;
+      _db.updateShiftSwapStatus(id, status, _currentUser.fullName);
+      notifyListeners();
+    }
+  }
+
+  void applyToOpenShift(String slotId) {
+    final idx = _openShiftSlots.indexWhere((s) => s.id == slotId);
+    if (idx != -1) {
+      _db.applyToOpenShiftSlot(slotId, _currentUser.id);
+      final cur = _openShiftSlots[idx];
+      if (!cur.appliedEmployeeIds.contains(_currentUser.id)) {
+        final list = List<int>.from(cur.appliedEmployeeIds)..add(_currentUser.id);
+        _openShiftSlots[idx] = OpenShiftSlot(
+          id: cur.id,
+          companyId: cur.companyId,
+          shiftId: cur.shiftId,
+          shiftTitle: cur.shiftTitle,
+          date: cur.date,
+          requiredHeadcount: cur.requiredHeadcount,
+          appliedEmployeeIds: list,
+          assignedEmployeeIds: cur.assignedEmployeeIds,
+        );
+      }
+      notifyListeners();
+    }
+  }
+
+  // 2. Teknik Destek (Helpdesk)
+  void createHelpdeskTicket(HelpdeskTicket ticket) {
+    _helpdeskTickets.insert(0, ticket);
+    _db.insertHelpdeskTicket(ticket);
+    notifyListeners();
+  }
+
+  void assignTechnician(String ticketId, int techId, String techName) {
+    final idx = _helpdeskTickets.indexWhere((t) => t.id == ticketId);
+    if (idx != -1) {
+      final updated = _helpdeskTickets[idx].copyWith(
+        assignedTechnicianId: techId,
+        assignedTechnicianName: techName,
+        status: 'in_progress',
+      );
+      _helpdeskTickets[idx] = updated;
+      _db.assignTechnicianToTicket(ticketId, techId, techName);
+      notifyListeners();
+    }
+  }
+
+  void resolveHelpdeskTicket(String ticketId, String solutionNotes) {
+    final idx = _helpdeskTickets.indexWhere((t) => t.id == ticketId);
+    if (idx != -1) {
+      final updated = _helpdeskTickets[idx].copyWith(
+        solutionNotes: solutionNotes,
+        status: 'resolved',
+        resolvedAt: DateTime.now(),
+      );
+      _helpdeskTickets[idx] = updated;
+      _db.resolveHelpdeskTicket(ticketId, solutionNotes);
+      notifyListeners();
+    }
+  }
+
+  // 3. Duyurular & Okundu Onayı
+  void publishAnnouncement(CompanyAnnouncement announcement) {
+    _announcements.insert(0, announcement);
+    _db.insertAnnouncement(announcement);
+    notifyListeners();
+  }
+
+  void markAnnouncementRead(String id) {
+    final idx = _announcements.indexWhere((a) => a.id == id);
+    if (idx != -1 && !_announcements[idx].readEmployeeIds.contains(_currentUser.id)) {
+      final updated = List<int>.from(_announcements[idx].readEmployeeIds)..add(_currentUser.id);
+      _announcements[idx] = _announcements[idx].copyWith(readEmployeeIds: updated);
+      _db.markAnnouncementRead(id, _currentUser.id);
+      notifyListeners();
+    }
+  }
+
+  void confirmAnnouncement(String id) {
+    final idx = _announcements.indexWhere((a) => a.id == id);
+    if (idx != -1 && !_announcements[idx].confirmedEmployeeIds.contains(_currentUser.id)) {
+      final updatedReads = List<int>.from(_announcements[idx].readEmployeeIds);
+      if (!updatedReads.contains(_currentUser.id)) updatedReads.add(_currentUser.id);
+      final updatedConfs = List<int>.from(_announcements[idx].confirmedEmployeeIds)..add(_currentUser.id);
+      _announcements[idx] = _announcements[idx].copyWith(
+        readEmployeeIds: updatedReads,
+        confirmedEmployeeIds: updatedConfs,
+      );
+      _db.confirmAnnouncement(id, _currentUser.id);
+      notifyListeners();
+    }
+  }
+
+  // 4. Özlük Dosyası & İşe Giriş/Çıkış
+  void addEmployeeDocument(EmployeeDocument doc) {
+    _documents.insert(0, doc);
+    _db.insertDocument(doc);
+    notifyListeners();
+  }
+
+  void deleteEmployeeDocument(String id) {
+    _documents.removeWhere((d) => d.id == id);
+    _db.deleteDocument(id);
+    notifyListeners();
+  }
+
+  void toggleOnboardingTask(String id, bool isCompleted) {
+    final idx = _onboardingTasks.indexWhere((t) => t.id == id);
+    if (idx != -1) {
+      final updated = _onboardingTasks[idx].copyWith(
+        isCompleted: isCompleted,
+        completedAt: isCompleted ? DateTime.now() : null,
+      );
+      _onboardingTasks[idx] = updated;
+      _db.toggleOnboardingTask(id, isCompleted);
+      notifyListeners();
+    }
+  }
+
+  // 5. Eğitim & Yetkinlikler
+  void addTrainingCourse(TrainingCourse course) {
+    _trainingCourses.add(course);
+    _db.insertTrainingCourse(course);
+    notifyListeners();
+  }
+
+  void assignTraining(String courseId, String title, int employeeId) {
+    _db.assignTrainingCourse(courseId, title, employeeId, _activeCompanyId);
+    _trainingRecords.add(EmployeeTrainingRecord(
+      id: 'tr_${DateTime.now().millisecondsSinceEpoch}_$employeeId',
+      companyId: _activeCompanyId,
+      employeeId: employeeId,
+      courseId: courseId,
+      courseTitle: title,
+      status: 'assigned',
+      score: 0,
+    ));
+    notifyListeners();
+  }
+
+  void completeTraining(String recordId, int score) {
+    final idx = _trainingRecords.indexWhere((r) => r.id == recordId);
+    if (idx != -1) {
+      final updated = _trainingRecords[idx].copyWith(
+        status: 'completed',
+        score: score,
+        completedDate: DateTime.now(),
+        certificateExpiry: DateTime.now().add(const Duration(days: 365)),
+      );
+      _trainingRecords[idx] = updated;
+      _db.completeTrainingCourse(recordId, score);
+      notifyListeners();
+    }
+  }
+
+  // 6. Performans & Hedefler
+  void addPerformanceGoal(PerformanceGoal goal) {
+    _performanceGoals.insert(0, goal);
+    _db.insertPerformanceGoal(goal);
+    notifyListeners();
+  }
+
+  void updatePerformanceGoal(PerformanceGoal goal) {
+    final idx = _performanceGoals.indexWhere((g) => g.id == goal.id);
+    if (idx != -1) {
+      _performanceGoals[idx] = goal;
+      _db.updatePerformanceGoal(goal);
+      notifyListeners();
+    }
+  }
+
+  // 7. Ziyaretçi & Taşeron
+  void registerVisitor(VisitorRecord visitor) {
+    _visitorRecords.insert(0, visitor);
+    _db.insertVisitorRecord(visitor);
+    notifyListeners();
+  }
+
+  void checkInVisitor(String id) {
+    final idx = _visitorRecords.indexWhere((v) => v.id == id);
+    if (idx != -1) {
+      final updated = _visitorRecords[idx].copyWith(
+        status: 'inside',
+        checkInTime: DateTime.now(),
+      );
+      _visitorRecords[idx] = updated;
+      _db.checkInVisitor(id);
+      notifyListeners();
+    }
+  }
+
+  void checkOutVisitor(String id) {
+    final idx = _visitorRecords.indexWhere((v) => v.id == id);
+    if (idx != -1) {
+      final updated = _visitorRecords[idx].copyWith(
+        status: 'completed',
+        checkOutTime: DateTime.now(),
+      );
+      _visitorRecords[idx] = updated;
+      _db.checkOutVisitor(id);
+      notifyListeners();
+    }
+  }
+
+  // 8. Hibrit Rezervasyon
+  void createHybridBooking(HybridBooking booking) {
+    _hybridBookings.insert(0, booking);
+    _db.insertHybridBooking(booking);
+    notifyListeners();
+  }
+
+  void cancelHybridBooking(String id) {
+    final idx = _hybridBookings.indexWhere((b) => b.id == id);
+    if (idx != -1) {
+      final updated = _hybridBookings[idx].copyWith(status: 'cancelled');
+      _hybridBookings[idx] = updated;
+      _db.cancelHybridBooking(id);
+      notifyListeners();
+    }
+  }
+
+  // 9. Şubeler & Onay Vekaleti
+  void addBranch(CompanyBranch branch) {
+    _branches.add(branch);
+    _db.insertCompanyBranch(branch);
+    notifyListeners();
+  }
+
+  void addApprovalDelegation(ApprovalDelegation delegation) {
+    _delegations.insert(0, delegation);
+    _db.insertApprovalDelegation(delegation);
+    notifyListeners();
+  }
+
+  void toggleApprovalDelegation(String id, bool isActive) {
+    final idx = _delegations.indexWhere((d) => d.id == id);
+    if (idx != -1) {
+      final updated = _delegations[idx].copyWith(isActive: isActive);
+      _delegations[idx] = updated;
+      _db.toggleApprovalDelegation(id, isActive);
+      notifyListeners();
+    }
+  }
+
+  // 10. Entegrasyonlar & Çevrimdışı Kuyruk
+  void addIntegration(IntegrationEndpoint endpoint) {
+    _integrations.add(endpoint);
+    _db.insertIntegrationEndpoint(endpoint);
+    notifyListeners();
+  }
+
+  void enqueueOfflineRecord(String actionType, Map<String, dynamic> payload) {
+    final item = OfflineSyncItem(
+      id: 'off_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      actionType: actionType,
+      payload: payload,
+      syncStatus: 'queued',
+    );
+    _offlineQueue.add(item);
+    _db.enqueueOfflineItem(item);
+    notifyListeners();
+  }
+
+  void syncOfflineRecords() {
+    for (int i = 0; i < _offlineQueue.length; i++) {
+      _offlineQueue[i] = _offlineQueue[i].copyWith(syncStatus: 'synced');
+    }
+    _db.clearOfflineQueue();
+    notifyListeners();
+  }
+
+  // 11. Geri Bildirimler & Anketler
+  void submitFeedback(EmployeeFeedback feedback) {
+    _feedbacks.insert(0, feedback);
+    _db.insertEmployeeFeedback(feedback);
+    notifyListeners();
+  }
+
+  void respondToFeedback(String id, String response) {
+    final idx = _feedbacks.indexWhere((f) => f.id == id);
+    if (idx != -1) {
+      final updated = _feedbacks[idx].copyWith(status: 'resolved', hrResponse: response);
+      _feedbacks[idx] = updated;
+      _db.respondToFeedback(id, response);
+      notifyListeners();
+    }
+  }
+
+  // ==========================================
   // VERİTABANI YENİDEN YÜKLEME VE SENKRONİZASYON
   // ==========================================
 
@@ -3240,4 +3678,30 @@ class PdksState extends ChangeNotifier {
     _cloudSyncTimer?.cancel();
     super.dispose();
   }
+}
+
+class ExecutiveDashboardStats {
+  final int totalEmployees;
+  final int activeCheckedInToday;
+  final double attendanceRatePercent;
+  final double totalOvertimeHours;
+  final double estimatedOvertimeCost;
+  final int pendingLeavesCount;
+  final int openHelpdeskTicketsCount;
+  final int insideVisitorsCount;
+  final int activeBranchesCount;
+  final double employeeSatisfactionScore;
+
+  ExecutiveDashboardStats({
+    required this.totalEmployees,
+    required this.activeCheckedInToday,
+    required this.attendanceRatePercent,
+    required this.totalOvertimeHours,
+    required this.estimatedOvertimeCost,
+    required this.pendingLeavesCount,
+    required this.openHelpdeskTicketsCount,
+    required this.insideVisitorsCount,
+    required this.activeBranchesCount,
+    required this.employeeSatisfactionScore,
+  });
 }
