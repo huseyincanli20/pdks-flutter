@@ -40,8 +40,8 @@ class PdksState extends ChangeNotifier {
   List<Employee> _employees = [];
   List<AttendanceRecord> _records = [];
   List<LeaveRequest> _leaves = [];
-  List<ShiftSchedule> _shifts = [];
-  List<PayrollSlip> _payrolls = [];
+  final List<ShiftSchedule> _shifts = [];
+  final List<PayrollSlip> _payrolls = [];
 
   // Bildirimler
   List<AppNotification> _notifications = [];
@@ -124,285 +124,10 @@ class PdksState extends ChangeNotifier {
   }
 
   // Sistem Rolleri ve Patron/Admin tarafından eklenen roller
-  final List<AppRoleItem> _roles = [
-    const AppRoleItem(
-      id: 'role_employee',
-      name: 'Personel',
-      description: 'Standart mobil devam takip ve QR okuma yetkisi',
-      baseRole: UserRole.employee,
-      color: Color(0xFF2563EB),
-      icon: Icons.badge_outlined,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'field_work',
-        'overtime',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_hr',
-      name: 'İnsan Kaynakları (İK)',
-      description: 'Personel, puantaj, vardiya ve izin yönetimi yetkileri',
-      baseRole: UserRole.hr,
-      color: Color(0xFF0284C7),
-      icon: Icons.people_alt_outlined,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'field_work',
-        'overtime',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_boss',
-      name: 'Patron (Yönetim)',
-      description: 'Şirket maliyetleri, devam istatistikleri ve rol ekleme yetkisi',
-      baseRole: UserRole.boss,
-      color: Color(0xFFD97706),
-      icon: Icons.workspace_premium_outlined,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'field_work',
-        'overtime',
-        'vehicle_request',
-        'settings',
-        'about',
-        'cloud_db',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_admin',
-      name: 'Sistem Yöneticisi (Admin)',
-      description: 'En yüksek güvenlikli teknik sistem yapılandırma yetkisi',
-      baseRole: UserRole.admin,
-      color: Color(0xFF9333EA),
-      icon: Icons.admin_panel_settings_outlined,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'field_work',
-        'overtime',
-        'vehicle_request',
-        'settings',
-        'about',
-        'cloud_db',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_cafeteria',
-      name: 'Yemekhane Personeli',
-      description: 'Yemekhane menüsü düzenleme, yayınlama ve porsiyon takibi yetkileri',
-      baseRole: UserRole.cafeteria,
-      color: Color(0xFFEA580C),
-      icon: Icons.restaurant_menu_rounded,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'cafeteria',
-        'profile',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_technician',
-      name: 'Teknisyen',
-      description: 'Saha teknik bakım, arıza müdahalesi, cihaz kalibrasyonu ve araç talep yetkisi',
-      baseRole: UserRole.technician,
-      color: Color(0xFF0D9488),
-      icon: Icons.build_rounded,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'field_work',
-        'overtime',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_doctor',
-      name: 'İşyeri Hekimi (Doktor)',
-      description: 'İş sağlığı ve güvenliği, periyodik muayene, vizite kontrolleri ve araç talep yetkisi',
-      baseRole: UserRole.doctor,
-      color: Color(0xFFE11D48),
-      icon: Icons.medical_services_rounded,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_service_manager',
-      name: 'Servis Sorumlusu',
-      description: 'Personel servis güzergahları, vardiya servis çizelgesi ve ulaşım koordinasyonu',
-      baseRole: UserRole.serviceManager,
-      color: Color(0xFF4F46E5),
-      icon: Icons.airport_shuttle_rounded,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-    const AppRoleItem(
-      id: 'role_vehicle_rental_manager',
-      name: 'Araç Kiralama Sorumlusu',
-      description: 'Şirket araç filosu, filo kiralama sözleşmeleri ve araç talep onay & tahsis yönetimi',
-      baseRole: UserRole.vehicleRentalManager,
-      color: Color(0xFF059669),
-      icon: Icons.car_rental_rounded,
-      isSystemRole: true,
-      createdBy: 'Sistem',
-      allowedPageIds: [
-        'profile',
-        'payroll',
-        'chat',
-        'contacts',
-        'notifications',
-        'cafeteria',
-        'business_card',
-        'favorites',
-        'leave',
-        'records',
-        'vehicle_request',
-        'settings',
-        'about',
-      ],
-    ),
-  ];
+  final List<AppRoleItem> _roles = [];
 
   // Multi-Company (Çoklu Şirket / SaaS Desteği)
-  final List<Company> _companies = [
-    Company(
-      id: 'cmp_acme',
-      code: 'ACME',
-      name: 'ACME Teknoloji ve Bilişim A.Ş.',
-      sector: 'Yazılım & Bilişim Ar-Ge',
-      address: 'Fırat Cd. 14, 06946 Sincan Ankara, Türkiye',
-      officeLat: 40.01461,
-      officeLng: 32.51520,
-      allowedRadiusMeters: 150.0,
-      allowedWifiSsid: 'Sirket_Personel',
-      taxNumber: '0123456789',
-      phone: '+90 312 444 01 02',
-      email: 'iletisim@acmeteknoloji.com',
-      primaryColor: const Color(0xFF2563EB),
-    ),
-    Company(
-      id: 'cmp_nova',
-      code: 'NOVA',
-      name: 'Nova Savunma ve Havacılık A.Ş.',
-      sector: 'Savunma Sanayii & Aviyonik',
-      address: 'ODTÜ Teknokent Silikon Blok No: 4, Çankaya Ankara',
-      officeLat: 39.89160,
-      officeLng: 32.78250,
-      allowedRadiusMeters: 200.0,
-      allowedWifiSsid: 'Nova_Secure_Wifi',
-      taxNumber: '9876543210',
-      phone: '+90 312 210 99 88',
-      email: 'info@novasavunma.com.tr',
-      primaryColor: const Color(0xFF0D9488),
-    ),
-    Company(
-      id: 'cmp_ozdemir',
-      code: 'OZDEMIR',
-      name: 'Özdemir Holding & Lojistik A.Ş.',
-      sector: 'Uluslararası Taşımacılık & Depolama',
-      address: 'Büyükdere Cd. Maslak No: 122, Sarıyer İstanbul',
-      officeLat: 41.11050,
-      officeLng: 29.02030,
-      allowedRadiusMeters: 250.0,
-      allowedWifiSsid: 'Holding_Corporate_Net',
-      taxNumber: '5544332211',
-      phone: '+90 212 333 44 55',
-      email: 'merkez@ozdemirholding.com.tr',
-      primaryColor: const Color(0xFFD97706),
-    ),
-  ];
+  final List<Company> _companies = [];
 
   String _activeCompanyId = 'cmp_acme';
 
@@ -444,6 +169,7 @@ class PdksState extends ChangeNotifier {
     } else {
       _themeMode = ThemeMode.dark;
     }
+    _db.saveThemeType(theme.name);
     notifyListeners();
   }
 
@@ -456,6 +182,7 @@ class PdksState extends ChangeNotifier {
     } else {
       _currentTheme = AppThemeType.dark;
     }
+    _db.saveThemeType(_currentTheme.name);
     notifyListeners();
   }
 
@@ -505,6 +232,7 @@ class PdksState extends ChangeNotifier {
   void switchCompany(String companyId) {
     if (_companies.any((c) => c.id == companyId)) {
       _activeCompanyId = companyId;
+      _db.saveActiveCompanyId(companyId);
       // Aktif şirkete ait bir kullanıcıya otomatik geçiş yap
       final compEmps = _employees.where((e) => e.companyId == companyId).toList();
       if (compEmps.isNotEmpty) {
@@ -559,6 +287,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _companies.add(newCompany);
+    _db.insertCompany(newCompany);
 
     // Yeni şirket için varsayılan Admin ve Patron hesabı oluştur
     final newAdmin = Employee(
@@ -584,7 +313,10 @@ class PdksState extends ChangeNotifier {
     );
 
     _employees.addAll([newAdmin, newBoss]);
+    _db.insertEmployee(newAdmin);
+    _db.insertEmployee(newBoss);
     _activeCompanyId = newCompanyId;
+    _db.saveActiveCompanyId(newCompanyId);
     _currentUser = newAdmin;
     notifyListeners();
 
@@ -657,6 +389,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _companies.add(newCompany);
+    _db.insertCompany(newCompany);
 
     final newId = (_employees.isNotEmpty ? _employees.map((e) => e.id).reduce((a, b) => a > b ? a : b) : 0) + 1;
     final newAdmin = Employee(
@@ -714,6 +447,7 @@ class PdksState extends ChangeNotifier {
 
     // Otomatik olarak yeni şirkete geçiş yap
     _activeCompanyId = newCompanyId;
+    _db.saveActiveCompanyId(newCompanyId);
 
     notifyListeners();
 
@@ -744,6 +478,7 @@ class PdksState extends ChangeNotifier {
         address: address ?? _companies[idx].address,
         name: name ?? _companies[idx].name,
       );
+      _db.updateCompany(_companies[idx]);
       notifyListeners();
     }
   }
@@ -756,17 +491,20 @@ class PdksState extends ChangeNotifier {
     final idx = _notifications.indexWhere((n) => n.id == id);
     if (idx != -1 && !_notifications[idx].isRead) {
       _notifications[idx] = _notifications[idx].copyWith(isRead: true);
+      _db.markNotificationAsRead(id);
       notifyListeners();
     }
   }
 
   void markAllNotificationsAsRead() {
     _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+    _db.markAllNotificationsAsRead();
     notifyListeners();
   }
 
   void clearAllNotifications() {
     _notifications.clear();
+    _db.clearAllNotifications();
     notifyListeners();
   }
 
@@ -775,6 +513,7 @@ class PdksState extends ChangeNotifier {
 
   void addNotification(AppNotification notif) {
     _notifications.insert(0, notif);
+    _db.insertNotification(notif);
     notifyListeners();
   }
 
@@ -1013,6 +752,7 @@ class PdksState extends ChangeNotifier {
       }
     }
     if (changed) {
+      _db.markChannelMessagesAsRead(channelId, _currentUser.id);
       notifyListeners();
     }
   }
@@ -1111,6 +851,7 @@ class PdksState extends ChangeNotifier {
 
   void updateTodayMenu(CafeteriaMenu menu) {
     _todayMenu = menu;
+    _db.saveMenu(menu);
     // Otomatik olarak tüm personele bildirim gönder
     addNotification(AppNotification(
       id: 'menu_${DateTime.now().millisecondsSinceEpoch}',
@@ -1127,12 +868,14 @@ class PdksState extends ChangeNotifier {
 
   void setTwoWeekMenus(List<CafeteriaMenu> menus, {bool publishNotification = true}) {
     _twoWeekMenus = List.from(menus);
+    _db.saveTwoWeekMenus(_twoWeekMenus);
 
     // Eğer bugünün tarihine denk gelen gün varsa günün menüsünü de senkronize et
     final now = DateTime.now();
     for (final m in _twoWeekMenus) {
       if (m.isSameDay(now) && m.isCompleted) {
         _todayMenu = m;
+        _db.saveMenu(m);
         break;
       }
     }
@@ -1155,8 +898,10 @@ class PdksState extends ChangeNotifier {
   void updateTwoWeekDay(int index, CafeteriaMenu menu) {
     if (index >= 0 && index < _twoWeekMenus.length) {
       _twoWeekMenus[index] = menu;
+      _db.saveTwoWeekMenus(_twoWeekMenus);
       if (menu.isSameDay(DateTime.now())) {
         _todayMenu = menu;
+        _db.saveMenu(menu);
       }
       notifyListeners();
     }
@@ -1164,6 +909,7 @@ class PdksState extends ChangeNotifier {
 
   void resetTwoWeekMenuToTemplate() {
     _twoWeekMenus = buildDefaultTwoWeekMenu();
+    _db.saveTwoWeekMenus(_twoWeekMenus);
     notifyListeners();
   }
 
@@ -1182,6 +928,7 @@ class PdksState extends ChangeNotifier {
         updatedBy: currentUser.fullName,
       );
     });
+    _db.saveTwoWeekMenus(_twoWeekMenus);
     notifyListeners();
   }
 
@@ -1450,6 +1197,7 @@ class PdksState extends ChangeNotifier {
     final idx = _payrolls.indexWhere((p) => p.id == id);
     if (idx != -1) {
       _payrolls[idx].status = newStatus;
+      _db.updatePayroll(_payrolls[idx]);
       notifyListeners();
     }
   }
@@ -1460,6 +1208,7 @@ class PdksState extends ChangeNotifier {
         p.status = PayrollStatus.approved;
       }
     }
+    _db.bulkUpdatePayrollStatus(month, year, _activeCompanyId, PayrollStatus.approved);
     notifyListeners();
   }
 
@@ -1469,6 +1218,7 @@ class PdksState extends ChangeNotifier {
         p.status = PayrollStatus.paid;
       }
     }
+    _db.bulkUpdatePayrollStatus(month, year, _activeCompanyId, PayrollStatus.paid);
     notifyListeners();
   }
 
@@ -1546,6 +1296,8 @@ class PdksState extends ChangeNotifier {
         _payrolls.insert(0, newSlip);
       }
     }
+
+    _db.saveAllPayrolls(_payrolls);
 
     addNotification(AppNotification(
       id: 'payroll_${DateTime.now().millisecondsSinceEpoch}',
@@ -2040,7 +1792,38 @@ class PdksState extends ChangeNotifier {
       usedLeaveDays: 0,
     );
 
-    // Veritabanı Servisinden Verileri Yükle
+    // Veritabanı Servisinden Tüm Tabloları Yükle (Database Retrieval)
+    // 1. Şirketler
+    _companies.clear();
+    _companies.addAll(_db.getAllCompanies());
+    _activeCompanyId = _db.getActiveCompanyId() ?? (_companies.isNotEmpty ? _companies.first.id : 'cmp_acme');
+
+    // 2. Tercih Edilen Tema
+    final savedTheme = _db.getThemeType();
+    if (savedTheme != null) {
+      try {
+        final t = AppThemeType.values.firstWhere((e) => e.name == savedTheme);
+        _currentTheme = t;
+        if (t == AppThemeType.system) {
+          _themeMode = ThemeMode.system;
+        } else if (t == AppThemeType.light) {
+          _themeMode = ThemeMode.light;
+        } else {
+          _themeMode = ThemeMode.dark;
+        }
+      } catch (_) {}
+    }
+
+    // 3. Roller ve İzinler
+    _roles.clear();
+    if (_db.getAllRoles().isNotEmpty) {
+      _roles.addAll(_db.getAllRoles());
+    } else {
+      _roles.addAll(DatabaseService.defaultRoles());
+      _db.saveAllRoles(_roles);
+    }
+
+    // 4. Personeller
     if (_db.getAllEmployees().isNotEmpty) {
       _employees = List.from(_db.getAllEmployees());
       for (final demo in [teknisyen, doktor, servisSorumlusu, aracKiralamaSorumlusu]) {
@@ -2062,85 +1845,35 @@ class PdksState extends ChangeNotifier {
       }
     }
 
+    // 5. Araç Talepleri
     if (_db.getAllVehicleRequests().isNotEmpty) {
       _vehicleRequests.clear();
       _vehicleRequests.addAll(_db.getAllVehicleRequests());
     }
 
+    // 6. Devam & Yoklama Kayıtları
     if (_db.getAllRecords().isNotEmpty) {
       _records = List.from(_db.getAllRecords());
     } else {
       _records = [];
     }
 
+    // 7. İzin Talepleri
     if (_db.getAllLeaves().isNotEmpty) {
       _leaves = List.from(_db.getAllLeaves());
     } else {
       _leaves = [];
     }
 
-    _payrolls = [];
+    // 8. Bordrolar (Veritabanından Yükle)
+    _payrolls.clear();
+    _payrolls.addAll(_db.getAllPayrolls());
 
-    if (_db.getAllShifts().isNotEmpty) {
-      _shifts = List.from(_db.getAllShifts());
-    } else {
-      _shifts = [
-        ShiftSchedule(
-          id: 1,
-          companyId: 'cmp_acme',
-          title: 'Standart Ofis Vardiyası',
-          startTime: '08:30',
-          endTime: '17:30',
-          breakMinutes: 60,
-          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-          assignedEmployeeCount: 0,
-        ),
-        ShiftSchedule(
-          id: 2,
-          companyId: 'cmp_acme',
-          title: 'Geç / Esnek Vardiya',
-          startTime: '10:00',
-          endTime: '19:00',
-          breakMinutes: 60,
-          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-          assignedEmployeeCount: 0,
-        ),
-        ShiftSchedule(
-          id: 3,
-          companyId: 'cmp_acme',
-          title: 'Hafta Sonu Nöbetçi Ekip',
-          startTime: '09:00',
-          endTime: '15:00',
-          breakMinutes: 45,
-          activeDays: ['Cumartesi'],
-          assignedEmployeeCount: 0,
-        ),
-        ShiftSchedule(
-          id: 4,
-          companyId: 'cmp_nova',
-          title: 'Savunma Ar-Ge Mühendislik Vardiyası',
-          startTime: '08:00',
-          endTime: '17:00',
-          breakMinutes: 60,
-          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'],
-          assignedEmployeeCount: 0,
-        ),
-        ShiftSchedule(
-          id: 5,
-          companyId: 'cmp_ozdemir',
-          title: 'Lojistik & Operasyon Vardiyası',
-          startTime: '07:30',
-          endTime: '16:30',
-          breakMinutes: 60,
-          activeDays: ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
-          assignedEmployeeCount: 0,
-        ),
-      ];
-      for (final s in _shifts) {
-        _db.insertShift(s);
-      }
-    }
+    // 9. Vardiyalar (Veritabanından Yükle)
+    _shifts.clear();
+    _shifts.addAll(_db.getAllShifts());
 
+    // 10. Grup Kanalları & Mesajlar
     if (_db.getCustomChannels().isNotEmpty) {
       _customGroupChannels.clear();
       _customGroupChannels.addAll(_db.getCustomChannels());
@@ -2151,15 +1884,21 @@ class PdksState extends ChangeNotifier {
       _chatMessages.addAll(_db.getAllMessages());
     }
 
+    // 11. Bildirimler
     if (_db.getAllNotifications().isNotEmpty) {
       _notifications.clear();
       _notifications.addAll(_db.getAllNotifications());
     }
 
+    // 12. Yemekhane Menüleri (Günün Menüsü & 2 Haftalık Çizelge)
+    if (_db.getTwoWeekMenus().isNotEmpty) {
+      _twoWeekMenus = List.from(_db.getTwoWeekMenus());
+    }
     if (_db.getTodayMenu() != null) {
       _todayMenu = _db.getTodayMenu()!;
     }
 
+    // 13. Hızlı Menü & Sayfa Düzenlemeleri
     _quickMenuItems = List.from(_db.getAllQuickMenuItems());
     _pageCustomizations.clear();
     _pageCustomizations.addAll(_db.getAllPageCustomizations());
@@ -2543,6 +2282,7 @@ class PdksState extends ChangeNotifier {
     );
 
     _roles.add(newRole);
+    _db.insertRole(newRole);
     notifyListeners();
     return (success: true, message: '"$trimmedName" rolü başarıyla oluşturuldu.');
   }
@@ -2553,6 +2293,7 @@ class PdksState extends ChangeNotifier {
     if (index == -1) return (success: false, message: 'Rol bulunamadı.');
 
     _roles[index] = _roles[index].copyWith(allowedPageIds: allowedPageIds);
+    _db.updateRole(_roles[index]);
     notifyListeners();
     return (success: true, message: 'Rolün sayfa erişim yetkileri güncellendi.');
   }
@@ -2589,11 +2330,14 @@ class PdksState extends ChangeNotifier {
     // Bu role sahip personellerin özel rol kaydını temizle
     for (int i = 0; i < _employees.length; i++) {
       if (_employees[i].customRoleId == roleId) {
-        _employees[i] = _employees[i].copyWith(clearCustomRole: true);
+        final cleared = _employees[i].copyWith(clearCustomRole: true);
+        _employees[i] = cleared;
+        _db.updateEmployee(cleared);
       }
     }
 
     _roles.removeAt(index);
+    _db.deleteRole(roleId);
     notifyListeners();
     return (success: true, message: '"${role.name}" rolü başarıyla silindi.');
   }
@@ -3443,6 +3187,42 @@ class PdksState extends ChangeNotifier {
 
     notifyListeners();
     return (success: true, message: 'Talep durumu güncellendi: ${newStatus.label}');
+  }
+
+  // ==========================================
+  // VARDİYA İŞLEMLERİ (SHIFTS)
+  // ==========================================
+
+  void addShift(ShiftSchedule shift) {
+    _shifts.add(shift);
+    _db.insertShift(shift);
+    notifyListeners();
+  }
+
+  void updateShift(ShiftSchedule shift) {
+    final idx = _shifts.indexWhere((s) => s.id == shift.id);
+    if (idx != -1) {
+      _shifts[idx] = shift;
+      _db.updateShift(shift);
+      notifyListeners();
+    }
+  }
+
+  void deleteShift(int shiftId) {
+    _shifts.removeWhere((s) => s.id == shiftId);
+    _db.deleteShift(shiftId);
+    notifyListeners();
+  }
+
+  // ==========================================
+  // VERİTABANI YENİDEN YÜKLEME VE SENKRONİZASYON
+  // ==========================================
+
+  /// Veritabanındaki tüm tabloları ve kayıtları yeniden belleğe çeker
+  Future<void> reloadAllFromDatabase() async {
+    await _db.reloadAll();
+    _initializeSeedData();
+    notifyListeners();
   }
 
   bool _isDisposed = false;

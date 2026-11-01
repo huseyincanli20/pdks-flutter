@@ -104,6 +104,21 @@ extension UserRoleExtension on UserRole {
         return Icons.badge_outlined;
     }
   }
+
+  static UserRole fromString(String val) {
+    final r = val.trim().toLowerCase();
+    if (r == 'hr' || r == 'hradmin') return UserRole.hr;
+    if (r == 'boss' || r == 'patron' || r == 'ceo') return UserRole.boss;
+    if (r == 'admin') return UserRole.admin;
+    if (r == 'cafeteria' || r == 'yemekhane') return UserRole.cafeteria;
+    if (r == 'technician' || r == 'teknisyen') return UserRole.technician;
+    if (r == 'doctor' || r == 'doktor') return UserRole.doctor;
+    if (r == 'servicemanager' || r == 'servis' || r == 'servis_sorumlusu') return UserRole.serviceManager;
+    if (r == 'vehiclerentalmanager' || r == 'arackiralama' || r == 'arac_kiralama' || r == 'arac_kiralama_sorumlusu') {
+      return UserRole.vehicleRentalManager;
+    }
+    return UserRole.employee;
+  }
 }
 
 class AppPageDefinition {
@@ -189,6 +204,32 @@ class AppRoleItem {
       isSystemRole: isSystemRole ?? this.isSystemRole,
       createdBy: createdBy ?? this.createdBy,
       allowedPageIds: allowedPageIds ?? this.allowedPageIds,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'baseRole': baseRole.name,
+    'color': color.value,
+    'iconCode': icon.codePoint,
+    'isSystemRole': isSystemRole,
+    'createdBy': createdBy,
+    'allowedPageIds': allowedPageIds,
+  };
+
+  factory AppRoleItem.fromJson(Map<String, dynamic> json) {
+    return AppRoleItem(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      baseRole: UserRoleExtension.fromString(json['baseRole'] ?? 'employee'),
+      color: Color(json['color'] ?? 0xFF2563EB),
+      icon: IconData(json['iconCode'] ?? 0xe491, fontFamily: 'MaterialIcons'),
+      isSystemRole: json['isSystemRole'] ?? false,
+      createdBy: json['createdBy'] ?? 'Sistem',
+      allowedPageIds: (json['allowedPageIds'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 }
