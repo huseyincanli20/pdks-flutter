@@ -12,6 +12,7 @@ import '../notifications/notifications_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
+import '../movement_management/employee_movement_management_screen.dart';
 
 class HrShell extends StatefulWidget {
   const HrShell({super.key});
@@ -56,6 +57,18 @@ class _HrShellState extends State<HrShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_vert_circle_rounded, color: Color(0xFF0D9488)),
+            tooltip: 'Çalışan Hareket Yönetimi',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const EmployeeMovementManagementScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,

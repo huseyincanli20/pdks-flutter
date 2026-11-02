@@ -31,6 +31,7 @@ import '../../models/face_kiosk_and_turnstile.dart';
 import '../../models/digital_signature_and_export.dart';
 import '../../models/occupational_safety_and_nearmiss.dart';
 import '../../models/push_to_talk_and_media.dart';
+import '../../models/employee_movement.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -100,6 +101,13 @@ class DatabaseService {
   static const String _keyPttChannels = 'pdks_db_ptt_channels_v1';
   static const String _keyPttBursts = 'pdks_db_ptt_bursts_v1';
 
+  // Çalışan Hareket Yönetimi (PDKS Movement Management) Anahtarları
+  static const String _keyEmployeeMovements = 'pdks_db_employee_movements_v1';
+  static const String _keyPdksShiftDefs = 'pdks_db_pdks_shift_defs_v1';
+  static const String _keyEmployeeShiftMap = 'pdks_db_employee_shift_map_v1';
+  static const String _keyAnomalyResolutions = 'pdks_db_anomaly_resolutions_v1';
+  static const String _keyIncludeDutyNetWork = 'pdks_db_include_duty_net_work_v1';
+
   SharedPreferences? _prefs;
   bool _isInitialized = false;
 
@@ -109,6 +117,11 @@ class DatabaseService {
   final List<AttendanceRecord> _records = [];
   final List<LeaveRequest> _leaves = [];
   final List<ShiftSchedule> _shifts = [];
+  final List<EmployeeMovementRecord> _employeeMovements = [];
+  final List<PdksShiftDefinition> _pdksShiftDefs = [];
+  final Map<int, int> _employeeShiftMap = {};
+  final List<AnomalyResolutionRecord> _anomalyResolutions = [];
+  bool _includeDutyInNetWork = true;
   final List<ChatMessage> _messages = [];
   final List<ChatChannel> _customChannels = [];
   final List<AppNotification> _notifications = [];
@@ -796,8 +809,71 @@ class DatabaseService {
       await _seedDefaultEnterpriseModules();
     }
 
-    // Mevcut veritabanında yeni demo roller (Teknisyen, Doktor, Servis, Araç Kiralama) eksikse ekle
+    // Mevcut veritabanında yeni demo roller (Teknisyen, Doktor, Servis, Araç Kiralama ve Ek Personeller) eksikse ekle
     await _ensureNewDemoEmployees();
+
+    // 41. Çalışan Hareket Yönetimi (PDKS Vardiyalar, Vardiya Atamaları, Hareketler ve Anomali Kararları)
+    final pdksShiftsRaw = prefs.getString(_keyPdksShiftDefs);
+    if (pdksShiftsRaw != null && pdksShiftsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(pdksShiftsRaw);
+        _pdksShiftDefs.clear();
+        _pdksShiftDefs.addAll(
+          list.map((i) => PdksShiftDefinition.fromJson(Map<String, dynamic>.from(i))),
+        );
+      } catch (e) {
+        debugPrint('⚠️ PDKS vardiyaları yüklenirken hata: $e');
+      }
+    }
+
+    final shiftMapRaw = prefs.getString(_keyEmployeeShiftMap);
+    if (shiftMapRaw != null && shiftMapRaw.isNotEmpty) {
+      try {
+        final Map<String, dynamic> map = jsonDecode(shiftMapRaw);
+        _employeeShiftMap.clear();
+        map.forEach((k, v) {
+          final empId = int.tryParse(k);
+          final shId = (v as num?)?.toInt();
+          if (empId != null && shId != null) {
+            _employeeShiftMap[empId] = shId;
+          }
+        });
+      } catch (e) {
+        debugPrint('⚠️ Personel vardiya atamaları yüklenirken hata: $e');
+      }
+    }
+
+    final movementsRaw = prefs.getString(_keyEmployeeMovements);
+    if (movementsRaw != null && movementsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(movementsRaw);
+        _employeeMovements.clear();
+        _employeeMovements.addAll(
+          list.map((i) => EmployeeMovementRecord.fromJson(Map<String, dynamic>.from(i))),
+        );
+      } catch (e) {
+        debugPrint('⚠️ Çalışan hareketleri yüklenirken hata: $e');
+      }
+    }
+
+    final resolutionsRaw = prefs.getString(_keyAnomalyResolutions);
+    if (resolutionsRaw != null && resolutionsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(resolutionsRaw);
+        _anomalyResolutions.clear();
+        _anomalyResolutions.addAll(
+          list.map((i) => AnomalyResolutionRecord.fromJson(Map<String, dynamic>.from(i))),
+        );
+      } catch (e) {
+        debugPrint('⚠️ Anomali kararları yüklenirken hata: $e');
+      }
+    }
+
+    _includeDutyInNetWork = prefs.getBool(_keyIncludeDutyNetWork) ?? true;
+
+    if (_pdksShiftDefs.isEmpty || _employeeMovements.isEmpty) {
+      await _seedMovementManagementData();
+    }
   }
 
   /// Varsayılan Veritabanı Tohumlama (Seed Data)
@@ -1145,6 +1221,55 @@ class DatabaseService {
         usedLeaveDays: 0,
         isApproved: true,
         hireDate: DateTime(2022, 1, 20),
+        sicilNo: 'SIC-0011',
+      ),
+      Employee(
+        id: 31,
+        companyId: 'cmp_acme',
+        fullName: 'Ayşe Aydın',
+        email: 'ayse.aydin@sirket.com',
+        phone: '05381112244',
+        department: 'Üretim & Operasyon',
+        title: 'Kalite Kontrol Uzmanı',
+        pinCode: '1234',
+        role: UserRole.employee,
+        annualLeaveAllowance: 14,
+        usedLeaveDays: 2,
+        isApproved: true,
+        hireDate: DateTime(2023, 1, 12),
+        sicilNo: 'SIC-0012',
+      ),
+      Employee(
+        id: 32,
+        companyId: 'cmp_acme',
+        fullName: 'Burak Koç',
+        email: 'burak.koc@sirket.com',
+        phone: '05392223355',
+        department: 'Üretim & Operasyon',
+        title: 'CNC Operatörü',
+        pinCode: '1234',
+        role: UserRole.employee,
+        annualLeaveAllowance: 14,
+        usedLeaveDays: 1,
+        isApproved: true,
+        hireDate: DateTime(2022, 9, 5),
+        sicilNo: 'SIC-0013',
+      ),
+      Employee(
+        id: 33,
+        companyId: 'cmp_acme',
+        fullName: 'Selin Demirci',
+        email: 'selin.demirci@sirket.com',
+        phone: '05413334466',
+        department: 'Yazılım & Ar-Ge',
+        title: 'Önyüz Geliştirici',
+        pinCode: '1234',
+        role: UserRole.employee,
+        annualLeaveAllowance: 14,
+        usedLeaveDays: 0,
+        isApproved: true,
+        hireDate: DateTime(2024, 2, 19),
+        sicilNo: 'SIC-0014',
       ),
     ];
 
@@ -4033,6 +4158,811 @@ class DatabaseService {
           waveformPoints: [0.2, 0.6, 0.9, 0.8, 0.4, 0.7, 0.9, 0.5, 0.2],
         ),
       ]);
+    }
+
+    _seedMovementManagementDataSync();
+  }
+
+  // ==========================================
+  // ÇALIŞAN HAREKET YÖNETİMİ (PDKS MOVEMENT MANAGEMENT)
+  // ==========================================
+
+  List<PdksShiftDefinition> getAllPdksShifts() {
+    if (_pdksShiftDefs.isEmpty) {
+      _seedMovementManagementDataSync();
+    }
+    return List.unmodifiable(_pdksShiftDefs);
+  }
+
+  Map<int, int> getEmployeeShiftMap() {
+    if (_employeeShiftMap.isEmpty) {
+      _seedMovementManagementDataSync();
+    }
+    return Map.unmodifiable(_employeeShiftMap);
+  }
+
+  List<EmployeeMovementRecord> getAllEmployeeMovements() {
+    if (_employeeMovements.isEmpty) {
+      _seedMovementManagementDataSync();
+    }
+    return List.unmodifiable(_employeeMovements);
+  }
+
+  List<AnomalyResolutionRecord> getAllAnomalyResolutions() => List.unmodifiable(_anomalyResolutions);
+
+  bool getIncludeDutyInNetWork() => _includeDutyInNetWork;
+
+  Future<void> setIncludeDutyInNetWork(bool val) async {
+    _includeDutyInNetWork = val;
+    final prefs = _prefs;
+    if (prefs != null) {
+      await prefs.setBool(_keyIncludeDutyNetWork, val);
+    }
+  }
+
+  Future<void> savePdksShift(PdksShiftDefinition shift) async {
+    final idx = _pdksShiftDefs.indexWhere((s) => s.id == shift.id);
+    if (idx != -1) {
+      _pdksShiftDefs[idx] = shift;
+    } else {
+      _pdksShiftDefs.add(shift);
+    }
+    await _persistPdksShifts();
+  }
+
+  Future<void> deletePdksShift(int shiftId) async {
+    _pdksShiftDefs.removeWhere((s) => s.id == shiftId);
+    await _persistPdksShifts();
+  }
+
+  Future<void> assignShiftToEmployeeDb(int employeeId, int shiftId) async {
+    _employeeShiftMap[employeeId] = shiftId;
+    await _persistEmployeeShiftMap();
+  }
+
+  Future<void> saveEmployeeMovement(EmployeeMovementRecord record) async {
+    final idx = _employeeMovements.indexWhere((m) => m.id == record.id);
+    if (idx != -1) {
+      _employeeMovements[idx] = record;
+    } else {
+      _employeeMovements.insert(0, record);
+    }
+    await _persistEmployeeMovements();
+  }
+
+  Future<void> saveAllEmployeeMovements(List<EmployeeMovementRecord> records) async {
+    _employeeMovements
+      ..clear()
+      ..addAll(records);
+    await _persistEmployeeMovements();
+  }
+
+  Future<void> saveAnomalyResolution(AnomalyResolutionRecord record) async {
+    final idx = _anomalyResolutions.indexWhere((r) => r.anomalyId == record.anomalyId);
+    if (idx != -1) {
+      _anomalyResolutions[idx] = record;
+    } else {
+      _anomalyResolutions.add(record);
+    }
+    await _persistAnomalyResolutions();
+  }
+
+  Future<void> _persistPdksShifts() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(
+        _keyPdksShiftDefs,
+        jsonEncode(_pdksShiftDefs.map((s) => s.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('⚠️ PDKS vardiyaları kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> _persistEmployeeShiftMap() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      final stringKeyMap = _employeeShiftMap.map((k, v) => MapEntry(k.toString(), v));
+      await prefs.setString(_keyEmployeeShiftMap, jsonEncode(stringKeyMap));
+    } catch (e) {
+      debugPrint('⚠️ Vardiya atamaları kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> _persistEmployeeMovements() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(
+        _keyEmployeeMovements,
+        jsonEncode(_employeeMovements.map((m) => m.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('⚠️ Çalışan hareketleri kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> _persistAnomalyResolutions() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(
+        _keyAnomalyResolutions,
+        jsonEncode(_anomalyResolutions.map((r) => r.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('⚠️ Anomali kararları kaydedilemedi: $e');
+    }
+  }
+
+  Future<void> _seedMovementManagementData() async {
+    _seedMovementManagementDataSync();
+    await _persistPdksShifts();
+    await _persistEmployeeShiftMap();
+    await _persistEmployeeMovements();
+  }
+
+  void _seedMovementManagementDataSync() {
+    if (_pdksShiftDefs.isEmpty) {
+      _pdksShiftDefs.addAll(const [
+        PdksShiftDefinition(
+          id: 1,
+          companyId: 'cmp_acme',
+          name: 'Gündüz Vardiyası (08:30 - 17:30)',
+          startTime: '08:30',
+          endTime: '17:30',
+          plannedBreakMinutes: 60,
+          lateToleranceMinutes: 15,
+          workDays: [1, 2, 3, 4, 5, 6, 7],
+        ),
+        PdksShiftDefinition(
+          id: 2,
+          companyId: 'cmp_acme',
+          name: 'Esnek Gündüz Vardiyası (09:00 - 18:00)',
+          startTime: '09:00',
+          endTime: '18:00',
+          plannedBreakMinutes: 60,
+          lateToleranceMinutes: 10,
+          workDays: [1, 2, 3, 4, 5, 6, 7],
+        ),
+        PdksShiftDefinition(
+          id: 3,
+          companyId: 'cmp_acme',
+          name: 'Gece Vardiyası (22:00 - 06:00)',
+          startTime: '22:00',
+          endTime: '06:00',
+          plannedBreakMinutes: 45,
+          lateToleranceMinutes: 15,
+          workDays: [1, 2, 3, 4, 5, 6, 7],
+        ),
+        PdksShiftDefinition(
+          id: 4,
+          companyId: 'cmp_acme',
+          name: 'İdari Hafta İçi Vardiyası (08:30 - 17:30)',
+          startTime: '08:30',
+          endTime: '17:30',
+          plannedBreakMinutes: 60,
+          lateToleranceMinutes: 15,
+          workDays: [1, 2, 3, 4, 5],
+        ),
+      ]);
+    }
+
+    if (_employeeShiftMap.isEmpty) {
+      _employeeShiftMap.addAll({
+        1: 1,  // Ahmet Yılmaz -> Gündüz
+        2: 1,  // Zeynep Kaya -> Gündüz
+        3: 2,  // Kemal Özdemir -> Esnek Gündüz
+        4: 1,  // Serkan Arslan -> Gündüz
+        5: 1,  // Mehmet Demir -> Gündüz
+        6: 1,  // Elif Şahin -> Gündüz
+        7: 1,  // Hasan Usta -> Gündüz
+        8: 1,  // Serkan Usta -> Gündüz
+        9: 2,  // Dr. Elif Çetin -> Esnek Gündüz
+        10: 3, // Murat Şen -> Gece Vardiyası (22:00 - 06:00)
+        11: 1, // Cenk Vural -> Gündüz (İzinli)
+        20: 1, // Cenk Vural -> Gündüz (İzinli)
+        31: 3, // Ayşe Aydın -> Gece Vardiyası (22:00 - 06:00)
+        32: 1, // Burak Koç -> Gündüz (Raporlu)
+        33: 1, // Selin Demirci -> Gündüz (Devamsız / Eksik)
+      });
+    }
+
+    if (_employeeMovements.isEmpty) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final tomorrow = today.add(const Duration(days: 1));
+
+      EmployeeMovementRecord makeMov({
+        required String id,
+        required int empId,
+        required String sicil,
+        required String name,
+        required String dept,
+        required int shiftId,
+        required String shiftName,
+        required MovementType type,
+        required DateTime ts,
+        required String door,
+        MovementSource source = MovementSource.device,
+        String note = '',
+        List<MovementCorrectionRecord> corrections = const [],
+        RawDeviceMovementSnapshot? rawSnap,
+      }) {
+        return EmployeeMovementRecord(
+          id: id,
+          companyId: 'cmp_acme',
+          employeeId: empId,
+          sicilNo: sicil,
+          employeeName: name,
+          department: dept,
+          shiftId: shiftId,
+          shiftName: shiftName,
+          type: type,
+          timestamp: ts,
+          deviceDoor: door,
+          source: source,
+          note: note,
+          rawDeviceSnapshot: rawSnap ??
+              RawDeviceMovementSnapshot(
+                type: type,
+                timestamp: ts,
+                deviceDoor: door,
+                source: source,
+                note: note,
+              ),
+          correctionHistory: corrections,
+        );
+      }
+
+      const s1Name = 'Gündüz Vardiyası (08:30 - 17:30)';
+      const s2Name = 'Esnek Gündüz Vardiyası (09:00 - 18:00)';
+      const s3Name = 'Gece Vardiyası (22:00 - 06:00)';
+
+      _employeeMovements.addAll([
+        // 1. Ahmet Yılmaz (SIC-0001) - Bugün: Zamanında giriş + öğle molası tamamlandı + şu an İçeride (Çalışıyor)
+        makeMov(
+          id: 'mov_101',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 26),
+          door: 'Ana Giriş Turnike 1',
+          note: 'Kartlı geçiş doğrulandı',
+        ),
+        makeMov(
+          id: 'mov_102',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakStart,
+          ts: DateTime(today.year, today.month, today.day, 12, 30),
+          door: 'Yemekhane Turnike 1',
+          note: 'Öğle yemeği molası',
+        ),
+        makeMov(
+          id: 'mov_103',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakEnd,
+          ts: DateTime(today.year, today.month, today.day, 13, 15),
+          door: 'Yemekhane Turnike 1',
+          note: 'Mola dönüşü',
+        ),
+
+        // 2. Zeynep Kaya (SIC-0002) - Bugün: Giriş + Görev Çıkışı/Dönüşü + Öğle Molası + İçeride (Çalışıyor)
+        makeMov(
+          id: 'mov_104',
+          empId: 2,
+          sicil: 'SIC-0002',
+          name: 'Zeynep Kaya',
+          dept: 'İnsan Kaynakları',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 28),
+          door: 'Ana Giriş Turnike 2',
+          note: 'Normal mesai girişi',
+        ),
+        makeMov(
+          id: 'mov_105',
+          empId: 2,
+          sicil: 'SIC-0002',
+          name: 'Zeynep Kaya',
+          dept: 'İnsan Kaynakları',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.dutyOut,
+          ts: DateTime(today.year, today.month, today.day, 10, 0),
+          door: 'Nizamiye Araç Kapısı',
+          source: MovementSource.manual,
+          note: 'SGK İl Müdürlüğü resmi evrak teslim görevi',
+        ),
+        makeMov(
+          id: 'mov_106',
+          empId: 2,
+          sicil: 'SIC-0002',
+          name: 'Zeynep Kaya',
+          dept: 'İnsan Kaynakları',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.dutyIn,
+          ts: DateTime(today.year, today.month, today.day, 11, 30),
+          door: 'Nizamiye Araç Kapısı',
+          source: MovementSource.manual,
+          note: 'Dış görevden dönüş',
+        ),
+
+        // 3. Kemal Özdemir (SIC-0003) - Bugün: Tamamlandı (Birden fazla giriş-çıkış aralığı + mola)
+        makeMov(
+          id: 'mov_107',
+          empId: 3,
+          sicil: 'SIC-0003',
+          name: 'Kemal Özdemir',
+          dept: 'Yönetim Kurulu',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 55),
+          door: 'VIP Otopark Turnike',
+          note: 'Sabah girişi',
+        ),
+        makeMov(
+          id: 'mov_108',
+          empId: 3,
+          sicil: 'SIC-0003',
+          name: 'Kemal Özdemir',
+          dept: 'Yönetim Kurulu',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.breakStart,
+          ts: DateTime(today.year, today.month, today.day, 12, 30),
+          door: 'Yönetim Katı Kapısı',
+          note: 'Öğle arası',
+        ),
+        makeMov(
+          id: 'mov_109',
+          empId: 3,
+          sicil: 'SIC-0003',
+          name: 'Kemal Özdemir',
+          dept: 'Yönetim Kurulu',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.breakEnd,
+          ts: DateTime(today.year, today.month, today.day, 13, 30),
+          door: 'Yönetim Katı Kapısı',
+          note: 'Öğle arası dönüşü',
+        ),
+        makeMov(
+          id: 'mov_110',
+          empId: 3,
+          sicil: 'SIC-0003',
+          name: 'Kemal Özdemir',
+          dept: 'Yönetim Kurulu',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.checkOut,
+          ts: DateTime(today.year, today.month, today.day, 18, 5),
+          door: 'VIP Otopark Turnike',
+          note: 'Mesai bitişi çıkışı',
+        ),
+
+        // 4. Serkan Arslan (SIC-0004) - Bugün: Geç Kalan (09:12 giriş, 42 dk gecikme) + İçeride + Onay Bekleyen Manuel Düzeltme
+        makeMov(
+          id: 'mov_111',
+          empId: 4,
+          sicil: 'SIC-0004',
+          name: 'Serkan Arslan',
+          dept: 'Bilgi İşlem & IT',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 9, 12),
+          door: 'Ana Giriş Turnike 1',
+          source: MovementSource.manual,
+          note: 'Sunucu odası kart okuyucu gecikmesi düzeltmesi',
+          rawSnap: RawDeviceMovementSnapshot(
+            type: MovementType.checkIn,
+            timestamp: DateTime(today.year, today.month, today.day, 9, 28),
+            deviceDoor: 'B Blok Sistem Odası Kapısı',
+            source: MovementSource.device,
+            note: 'Ham turnike geçiş kaydı',
+          ),
+          corrections: [
+            MovementCorrectionRecord(
+              id: 'corr_seed_1',
+              movementId: 'mov_111',
+              previousType: MovementType.checkIn,
+              previousTimestamp: DateTime(today.year, today.month, today.day, 9, 28),
+              previousDeviceDoor: 'B Blok Sistem Odası Kapısı',
+              previousNote: 'Ham turnike geçiş kaydı',
+              newType: MovementType.checkIn,
+              newTimestamp: DateTime(today.year, today.month, today.day, 9, 12),
+              newDeviceDoor: 'Ana Giriş Turnike 1',
+              newNote: 'Sunucu odası kart okuyucu gecikmesi düzeltmesi',
+              reason: 'Personel 09:12\'de binaya girdi ancak kartını 09:28\'de sistem odasında okuttu.',
+              actorName: 'Zeynep Kaya (İK Direktörü)',
+              actorRole: 'İnsan Kaynakları',
+              correctedAt: DateTime(today.year, today.month, today.day, 9, 45),
+              approvalStatus: CorrectionApprovalStatus.pending,
+            ),
+          ],
+        ),
+
+        // 5. Mehmet Demir (SIC-0005) - Bugün: Molada (Açık mola başlangıcı var)
+        makeMov(
+          id: 'mov_112',
+          empId: 5,
+          sicil: 'SIC-0005',
+          name: 'Mehmet Demir',
+          dept: 'Satış & Pazarlama',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 34),
+          door: 'Ana Giriş Turnike 2',
+          note: 'Tolerans süresi içinde giriş',
+        ),
+        makeMov(
+          id: 'mov_113',
+          empId: 5,
+          sicil: 'SIC-0005',
+          name: 'Mehmet Demir',
+          dept: 'Satış & Pazarlama',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakStart,
+          ts: DateTime(today.year, today.month, today.day, 13, 10),
+          door: 'Yemekhane Turnike 2',
+          note: 'Öğle ve dinlenme molası',
+        ),
+
+        // 6. Elif Şahin (SIC-0006) - Bugün: Geç Kalan (09:05 giriş) + Molada
+        makeMov(
+          id: 'mov_114',
+          empId: 6,
+          sicil: 'SIC-0006',
+          name: 'Elif Şahin',
+          dept: 'Mali İşler',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 9, 5),
+          door: 'Ana Giriş Turnike 1',
+          note: 'Trafik yoğunluğu nedeniyle gecikmeli giriş',
+        ),
+        makeMov(
+          id: 'mov_115',
+          empId: 6,
+          sicil: 'SIC-0006',
+          name: 'Elif Şahin',
+          dept: 'Mali İşler',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakStart,
+          ts: DateTime(today.year, today.month, today.day, 13, 20),
+          door: 'Kafeterya Kapısı',
+          note: 'Çay / Kahve molası',
+        ),
+
+        // 7. Hasan Usta (SIC-0007) - Bugün: Eksik Hareket (Eksik Çıkış)
+        makeMov(
+          id: 'mov_116',
+          empId: 7,
+          sicil: 'SIC-0007',
+          name: 'Hasan Usta',
+          dept: 'İdari İşler & Mutfak',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 7, 15),
+          door: 'Mutfak Mal Kabul Kapısı',
+          note: 'Sabah hazırlık girişi - vardiya sonu çıkış unutuldu (eksik çıkış)',
+        ),
+
+        // 8. Serkan Usta (SIC-0008) - Bugün: Eksik Hareket (Art Arda Aynı Türde Hareket: İki Giriş)
+        makeMov(
+          id: 'mov_117',
+          empId: 8,
+          sicil: 'SIC-0008',
+          name: 'Serkan Usta',
+          dept: 'Teknik Hizmetler & Bakım',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 22),
+          door: 'Ana Giriş Turnike 1',
+          note: 'Sabah ilk giriş',
+        ),
+        makeMov(
+          id: 'mov_118',
+          empId: 8,
+          sicil: 'SIC-0008',
+          name: 'Serkan Usta',
+          dept: 'Teknik Hizmetler & Bakım',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 41),
+          door: 'Atölye B Blok Turnike',
+          note: 'Çıkış kaydı olmadan ikinci kez giriş okutuldu',
+        ),
+
+        // 9. Dr. Elif Çetin (SIC-0009) - Bugün: Eksik Hareket (Eşleşmeyen Mola Hareketi: Mola bitişi olmadan çıkış)
+        makeMov(
+          id: 'mov_119',
+          empId: 9,
+          sicil: 'SIC-0009',
+          name: 'Dr. Elif Çetin',
+          dept: 'İş Sağlığı ve Güvenliği',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 8, 56),
+          door: 'Revir & İSG Girişi',
+          note: 'Poliklinik mesai başlangıcı',
+        ),
+        makeMov(
+          id: 'mov_120',
+          empId: 9,
+          sicil: 'SIC-0009',
+          name: 'Dr. Elif Çetin',
+          dept: 'İş Sağlığı ve Güvenliği',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.breakStart,
+          ts: DateTime(today.year, today.month, today.day, 12, 15),
+          door: 'Yemekhane Turnike 1',
+          note: 'Öğle molası başlangıcı (dönüş okutulmadı)',
+        ),
+        makeMov(
+          id: 'mov_121',
+          empId: 9,
+          sicil: 'SIC-0009',
+          name: 'Dr. Elif Çetin',
+          dept: 'İş Sağlığı ve Güvenliği',
+          shiftId: 2,
+          shiftName: s2Name,
+          type: MovementType.checkOut,
+          ts: DateTime(today.year, today.month, today.day, 17, 10),
+          door: 'Revir & İSG Girişi',
+          note: 'Erken çıkış / kurum hekimliği toplantısı',
+        ),
+
+        // 10. Murat Şen (SIC-0010) - Gece Vardiyası (22:00 - 06:00) Ertesi Güne Geçen Çıkış Örneği!
+        makeMov(
+          id: 'mov_122',
+          empId: 10,
+          sicil: 'SIC-0010',
+          name: 'Murat Şen',
+          dept: 'Ulaşım & Lojistik',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 21, 55),
+          door: 'Lojistik Nizamiye Turnike',
+          note: 'Gece vardiyası girişi',
+        ),
+        makeMov(
+          id: 'mov_123',
+          empId: 10,
+          sicil: 'SIC-0010',
+          name: 'Murat Şen',
+          dept: 'Ulaşım & Lojistik',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.breakStart,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 1, 30),
+          door: 'Gece Yemekhane Kapısı',
+          note: 'Gece vardiyası yemek molası',
+        ),
+        makeMov(
+          id: 'mov_124',
+          empId: 10,
+          sicil: 'SIC-0010',
+          name: 'Murat Şen',
+          dept: 'Ulaşım & Lojistik',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.breakEnd,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 2, 15),
+          door: 'Gece Yemekhane Kapısı',
+          note: 'Gece molası bitişi',
+        ),
+        makeMov(
+          id: 'mov_125',
+          empId: 10,
+          sicil: 'SIC-0010',
+          name: 'Murat Şen',
+          dept: 'Ulaşım & Lojistik',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.checkOut,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 6, 5),
+          door: 'Lojistik Nizamiye Turnike',
+          note: 'Gece vardiyası sabah çıkışı',
+        ),
+
+        // 12. Ayşe Aydın (SIC-0012, ID: 31) - Gece Vardiyası + İnceleme Bekleyen Fazla Süre (21:50 - 06:45)
+        makeMov(
+          id: 'mov_126',
+          empId: 31,
+          sicil: 'SIC-0012',
+          name: 'Ayşe Aydın',
+          dept: 'Üretim & Operasyon',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.checkIn,
+          ts: DateTime(today.year, today.month, today.day, 21, 50),
+          door: 'Üretim B Blok Turnike',
+          source: MovementSource.imported,
+          note: 'CSV toplu cihaz aktarımı - gece vardiyası',
+        ),
+        makeMov(
+          id: 'mov_127',
+          empId: 31,
+          sicil: 'SIC-0012',
+          name: 'Ayşe Aydın',
+          dept: 'Üretim & Operasyon',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.breakStart,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 1, 0),
+          door: 'Üretim Dinlenme Alanı',
+          source: MovementSource.imported,
+          note: 'Gece ara molası',
+        ),
+        makeMov(
+          id: 'mov_128',
+          empId: 31,
+          sicil: 'SIC-0012',
+          name: 'Ayşe Aydın',
+          dept: 'Üretim & Operasyon',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.breakEnd,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 1, 45),
+          door: 'Üretim Dinlenme Alanı',
+          source: MovementSource.imported,
+          note: 'Mola dönüşü',
+        ),
+        makeMov(
+          id: 'mov_129',
+          empId: 31,
+          sicil: 'SIC-0012',
+          name: 'Ayşe Aydın',
+          dept: 'Üretim & Operasyon',
+          shiftId: 3,
+          shiftName: s3Name,
+          type: MovementType.checkOut,
+          ts: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 6, 45),
+          door: 'Üretim B Blok Turnike',
+          source: MovementSource.imported,
+          note: 'Parti kalite kontrolü nedeniyle geç çıkış (fazla süre incelemede)',
+        ),
+
+        // DÜNÜN ÖRNEK HAREKETLERİ (Tarih filtresi ve personel geçmişi için)
+        makeMov(
+          id: 'mov_130',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkIn,
+          ts: DateTime(yesterday.year, yesterday.month, yesterday.day, 8, 25),
+          door: 'Ana Giriş Turnike 1',
+          note: 'Dün sabah girişi',
+        ),
+        makeMov(
+          id: 'mov_131',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakStart,
+          ts: DateTime(yesterday.year, yesterday.month, yesterday.day, 12, 30),
+          door: 'Yemekhane Turnike 1',
+          note: 'Öğle molası',
+        ),
+        makeMov(
+          id: 'mov_132',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.breakEnd,
+          ts: DateTime(yesterday.year, yesterday.month, yesterday.day, 13, 30),
+          door: 'Yemekhane Turnike 1',
+          note: 'Mola bitişi',
+        ),
+        makeMov(
+          id: 'mov_133',
+          empId: 1,
+          sicil: 'SIC-0001',
+          name: 'Ahmet Yılmaz',
+          dept: 'Yazılım & Ar-Ge',
+          shiftId: 1,
+          shiftName: s1Name,
+          type: MovementType.checkOut,
+          ts: DateTime(yesterday.year, yesterday.month, yesterday.day, 17, 35),
+          door: 'Ana Giriş Turnike 1',
+          note: 'Dün akşam çıkışı',
+        ),
+      ]);
+    }
+
+    // İzinli (Cenk Vural) ve Raporlu (Burak Koç) örneklerinin LeaveRequest listesinde bulunmasını sağla
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (!_leaves.any((l) => (l.employeeId == 11 || l.employeeId == 20) && l.status == LeaveStatus.approved)) {
+      _leaves.add(
+        LeaveRequest(
+          id: 901,
+          companyId: 'cmp_acme',
+          employeeId: 11,
+          employeeName: 'Cenk Vural',
+          type: LeaveType.annual,
+          startDate: today.subtract(const Duration(days: 1)),
+          endDate: today.add(const Duration(days: 2)),
+          totalDays: 4,
+          reason: 'Planlı yıllık izin kullanımı',
+          status: LeaveStatus.approved,
+          createdAt: today.subtract(const Duration(days: 3)),
+        ),
+      );
+      _leaves.add(
+        LeaveRequest(
+          id: 902,
+          companyId: 'cmp_acme',
+          employeeId: 20,
+          employeeName: 'Cenk Vural',
+          type: LeaveType.annual,
+          startDate: today.subtract(const Duration(days: 1)),
+          endDate: today.add(const Duration(days: 2)),
+          totalDays: 4,
+          reason: 'Planlı yıllık izin kullanımı',
+          status: LeaveStatus.approved,
+          createdAt: today.subtract(const Duration(days: 3)),
+        ),
+      );
+    }
+    if (!_leaves.any((l) => l.employeeId == 32 && l.status == LeaveStatus.approved)) {
+      _leaves.add(
+        LeaveRequest(
+          id: 903,
+          companyId: 'cmp_acme',
+          employeeId: 32,
+          employeeName: 'Burak Koç',
+          type: LeaveType.medical,
+          startDate: today,
+          endDate: today.add(const Duration(days: 1)),
+          totalDays: 2,
+          reason: 'İşyeri hekimi onaylı istirahat raporu',
+          status: LeaveStatus.approved,
+          documentName: 'istirahat_raporu_burak_koc.pdf',
+          createdAt: today,
+        ),
+      );
     }
   }
 

@@ -9,6 +9,7 @@ import '../chat/chat_list_screen.dart';
 import '../common/admin_edit_mode_bar.dart';
 import '../../models/page_customization.dart';
 import '../common/firebase_config_dialog.dart';
+import '../movement_management/employee_movement_management_screen.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -77,6 +78,16 @@ class _AdminShellState extends State<AdminShell> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fact_check_rounded, color: Color(0xFF0D9488)),
+            tooltip: 'Çalışan Hareket Yönetimi',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EmployeeMovementManagementScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               Icons.local_fire_department_rounded,

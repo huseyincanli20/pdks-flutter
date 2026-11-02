@@ -30,7 +30,9 @@ import '../models/face_kiosk_and_turnstile.dart';
 import '../models/digital_signature_and_export.dart';
 import '../models/occupational_safety_and_nearmiss.dart';
 import '../models/push_to_talk_and_media.dart';
+import '../models/employee_movement.dart';
 import '../core/utils/labor_law_rule_engine.dart';
+import '../core/utils/movement_calculation_engine.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
@@ -2388,7 +2390,53 @@ class PdksState extends ChangeNotifier {
       role: UserRole.vehicleRentalManager,
       annualLeaveAllowance: 16,
       usedLeaveDays: 0,
+      sicilNo: 'SIC-0011',
       avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
+    );
+
+    final uretimPersonel1 = Employee(
+      id: 31,
+      companyId: 'cmp_acme',
+      fullName: 'Ayşe Aydın',
+      email: 'ayse.aydin@sirket.com',
+      phone: '+90 538 111 22 44',
+      department: 'Üretim & Operasyon',
+      title: 'Kalite Kontrol Uzmanı',
+      pinCode: '1234',
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 2,
+      sicilNo: 'SIC-0012',
+    );
+
+    final uretimPersonel2 = Employee(
+      id: 32,
+      companyId: 'cmp_acme',
+      fullName: 'Burak Koç',
+      email: 'burak.koc@sirket.com',
+      phone: '+90 539 222 33 55',
+      department: 'Üretim & Operasyon',
+      title: 'CNC Operatörü',
+      pinCode: '1234',
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 1,
+      sicilNo: 'SIC-0013',
+    );
+
+    final yazilimPersonel2 = Employee(
+      id: 33,
+      companyId: 'cmp_acme',
+      fullName: 'Selin Demirci',
+      email: 'selin.demirci@sirket.com',
+      phone: '+90 541 333 44 66',
+      department: 'Yazılım & Ar-Ge',
+      title: 'Önyüz Geliştirici',
+      pinCode: '1234',
+      role: UserRole.employee,
+      annualLeaveAllowance: 14,
+      usedLeaveDays: 0,
+      sicilNo: 'SIC-0014',
     );
 
     // NOVA Savunma Personelleri
@@ -2539,7 +2587,15 @@ class PdksState extends ChangeNotifier {
     // 4. Personeller
     if (_db.getAllEmployees().isNotEmpty) {
       _employees = List.from(_db.getAllEmployees());
-      for (final demo in [teknisyen, doktor, servisSorumlusu, aracKiralamaSorumlusu]) {
+      for (final demo in [
+        teknisyen,
+        doktor,
+        servisSorumlusu,
+        aracKiralamaSorumlusu,
+        uretimPersonel1,
+        uretimPersonel2,
+        yazilimPersonel2,
+      ]) {
         if (!_employees.any((e) => e.email.toLowerCase() == demo.email.toLowerCase())) {
           _employees.add(demo);
         }
@@ -2550,6 +2606,7 @@ class PdksState extends ChangeNotifier {
       _employees = [
         personel, ik, patron, admin, diger1, diger2, yemekhane,
         teknisyen, doktor, servisSorumlusu, aracKiralamaSorumlusu,
+        uretimPersonel1, uretimPersonel2, yazilimPersonel2,
         novaPersonel, novaIk, novaPatron, novaAdmin,
         ozdemirPersonel, ozdemirIk, ozdemirPatron, ozdemirAdmin,
       ];
@@ -5252,6 +5309,446 @@ class PdksState extends ChangeNotifier {
       await _db.updatePttChannel(ch);
 
       notifyListeners();
+    }
+  }
+
+  // ==========================================
+  // ÇALIŞAN HAREKET YÖNETİMİ (PDKS MOVEMENT MANAGEMENT)
+  // ==========================================
+
+  List<PdksShiftDefinition> get pdksShiftDefinitions => _db.getAllPdksShifts();
+
+  Map<int, int> get employeeShiftMap => _db.getEmployeeShiftMap();
+
+  List<EmployeeMovementRecord> get employeeMovements => _db.getAllEmployeeMovements();
+
+  List<AnomalyResolutionRecord> get anomalyResolutions => _db.getAllAnomalyResolutions();
+
+  bool get includeFieldDutyInNetWork => _db.getIncludeDutyInNetWork();
+
+  Future<void> setIncludeFieldDutyInNetWork(bool val) async {
+    await _db.setIncludeDutyInNetWork(val);
+    notifyListeners();
+  }
+
+  /// Personelin atanmış vardiyasını döndürür (yoksa varsayılan Gündüz Vardiyası)
+  PdksShiftDefinition getShiftForEmployee(int employeeId) {
+    final map = _db.getEmployeeShiftMap();
+    final shifts = _db.getAllPdksShifts();
+    final shiftId = map[employeeId] ?? 1;
+    return shifts.firstWhere(
+      (s) => s.id == shiftId,
+      orElse: () => shifts.isNotEmpty
+          ? shifts.first
+          : const PdksShiftDefinition(
+              id: 1,
+              name: 'Gündüz Vardiyası (08:30 - 17:30)',
+              startTime: '08:30',
+              endTime: '17:30',
+            ),
+    );
+  }
+
+  /// Seçili tarihe göre tüm aktif şirket personellerinin günlük devam özetini dinamik hesaplar
+  List<DailyAttendanceSummary> getDailySummariesForDate(
+    DateTime date, {
+    DateTime? referenceNow,
+  }) {
+    final compEmployees = employees;
+    final allMovs = _db.getAllEmployeeMovements();
+    final compLeaves = leaves;
+    final includeDuty = _db.getIncludeDutyInNetWork();
+    final resolutions = _db.getAllAnomalyResolutions();
+
+    final summaries = <DailyAttendanceSummary>[];
+    for (final emp in compEmployees) {
+      final shift = getShiftForEmployee(emp.id);
+      final rawSummary = MovementCalculationEngine.calculateDailySummary(
+        employee: emp,
+        date: date,
+        shift: shift,
+        allMovements: allMovs,
+        leaves: compLeaves,
+        includeFieldDutyInNetWork: includeDuty,
+        referenceNow: referenceNow,
+      );
+
+      // Yönetici tarafından onaylanmış/reddedilmiş anomali kararlarını eşleştir
+      final updatedAnomalies = rawSummary.anomalies.map((anom) {
+        final res = resolutions.where((r) => r.anomalyId == anom.id).firstOrNull;
+        if (res != null) {
+          return MovementAnomalyItem(
+            id: anom.id,
+            category: anom.category,
+            employeeId: anom.employeeId,
+            sicilNo: anom.sicilNo,
+            employeeName: anom.employeeName,
+            department: anom.department,
+            shiftName: anom.shiftName,
+            date: anom.date,
+            title: anom.title,
+            description: anom.description,
+            relatedMovementId: anom.relatedMovementId,
+            correctionId: anom.correctionId,
+            approvalStatus: res.status,
+            reviewedBy: res.reviewedBy,
+            reviewedAt: res.reviewedAt,
+            rejectionReason: res.reason,
+          );
+        }
+        return anom;
+      }).toList();
+
+      summaries.add(
+        DailyAttendanceSummary(
+          employeeId: rawSummary.employeeId,
+          sicilNo: rawSummary.sicilNo,
+          employeeName: rawSummary.employeeName,
+          department: rawSummary.department,
+          title: rawSummary.title,
+          isEmployeeActive: rawSummary.isEmployeeActive,
+          date: rawSummary.date,
+          plannedShift: rawSummary.plannedShift,
+          firstCheckIn: rawSummary.firstCheckIn,
+          lastCheckOut: rawSummary.lastCheckOut,
+          totalBreakDuration: rawSummary.totalBreakDuration,
+          dutyDuration: rawSummary.dutyDuration,
+          netWorkDuration: rawSummary.netWorkDuration,
+          lateDuration: rawSummary.lateDuration,
+          earlyLeaveDuration: rawSummary.earlyLeaveDuration,
+          pendingExtraDuration: rawSummary.pendingExtraDuration,
+          status: rawSummary.status,
+          anomalies: updatedAnomalies,
+          dayMovements: rawSummary.dayMovements,
+        ),
+      );
+    }
+
+    return summaries;
+  }
+
+  /// Seçili tarihe göre kontrol bekleyen tüm kayıtları döndürür
+  List<MovementAnomalyItem> getAnomaliesForDate(
+    DateTime date, {
+    DateTime? referenceNow,
+  }) {
+    final summaries = getDailySummariesForDate(date, referenceNow: referenceNow);
+    final list = <MovementAnomalyItem>[];
+    for (final s in summaries) {
+      list.addAll(s.anomalies);
+    }
+    return list;
+  }
+
+  /// Yeni çalışan hareketi ekler
+  Future<({bool success, String message})> addEmployeeMovement({
+    required int employeeId,
+    required MovementType type,
+    required DateTime timestamp,
+    required String deviceDoor,
+    MovementSource source = MovementSource.manual,
+    required String note,
+  }) async {
+    final emp = _employees.where((e) => e.id == employeeId).firstOrNull;
+    if (emp == null) {
+      return (success: false, message: 'Seçilen personel bulunamadı.');
+    }
+
+    final shift = getShiftForEmployee(emp.id);
+    final cleanDoor = deviceDoor.trim().isEmpty ? 'Manuel Kayıt / İK Paneli' : deviceDoor.trim();
+    final cleanNote = note.trim();
+
+    final record = EmployeeMovementRecord(
+      id: 'mov_${DateTime.now().microsecondsSinceEpoch}',
+      companyId: emp.companyId,
+      employeeId: emp.id,
+      sicilNo: emp.displaySicilNo,
+      employeeName: emp.fullName,
+      department: emp.department,
+      shiftId: shift.id,
+      shiftName: shift.name,
+      type: type,
+      timestamp: timestamp,
+      deviceDoor: cleanDoor,
+      source: source,
+      note: cleanNote,
+      rawDeviceSnapshot: RawDeviceMovementSnapshot(
+        type: type,
+        timestamp: timestamp,
+        deviceDoor: cleanDoor,
+        source: source,
+        note: cleanNote,
+      ),
+    );
+
+    await _db.saveEmployeeMovement(record);
+    notifyListeners();
+    return (
+      success: true,
+      message: '${emp.fullName} için "${type.label}" hareketi başarıyla eklendi.',
+    );
+  }
+
+  /// Mevcut hareketi düzeltir (Ham cihaz kaydını korur ve izlenebilir düzeltme geçmişi ekler)
+  Future<({bool success, String message})> correctEmployeeMovement({
+    required String movementId,
+    required MovementType newType,
+    required DateTime newTimestamp,
+    required String newDeviceDoor,
+    required String newNote,
+    required String reason,
+  }) async {
+    final cleanReason = reason.trim();
+    if (cleanReason.isEmpty) {
+      return (success: false, message: 'Manuel düzeltmelerde gerekçe alanı zorunludur.');
+    }
+
+    final existing = _db.getAllEmployeeMovements().where((m) => m.id == movementId).firstOrNull;
+    if (existing == null) {
+      return (success: false, message: 'Düzeltilecek hareket kaydı bulunamadı.');
+    }
+
+    final cleanDoor = newDeviceDoor.trim().isEmpty ? existing.deviceDoor : newDeviceDoor.trim();
+    final correction = MovementCorrectionRecord(
+      id: 'corr_${DateTime.now().microsecondsSinceEpoch}',
+      movementId: existing.id,
+      previousType: existing.type,
+      previousTimestamp: existing.timestamp,
+      previousDeviceDoor: existing.deviceDoor,
+      previousNote: existing.note,
+      newType: newType,
+      newTimestamp: newTimestamp,
+      newDeviceDoor: cleanDoor,
+      newNote: newNote.trim(),
+      reason: cleanReason,
+      actorName: _currentUser.fullName,
+      actorRole: _currentUser.roleDisplayName,
+      correctedAt: DateTime.now(),
+      approvalStatus: CorrectionApprovalStatus.pending,
+    );
+
+    final updated = existing.copyWith(
+      type: newType,
+      timestamp: newTimestamp,
+      deviceDoor: cleanDoor,
+      source: MovementSource.manual,
+      note: newNote.trim(),
+      // rawDeviceSnapshot ASLA değiştirilmez (ham cihaz kaydı korunur)
+      correctionHistory: [...existing.correctionHistory, correction],
+    );
+
+    await _db.saveEmployeeMovement(updated);
+    notifyListeners();
+    return (
+      success: true,
+      message: 'Hareket düzeltmesi kaydedildi ve yönetici onayına sunuldu.',
+    );
+  }
+
+  /// Kontrol bekleyen kaydı veya manuel düzeltmeyi onaylar
+  Future<({bool success, String message})> approveAnomalyOrCorrection(
+    MovementAnomalyItem anomaly,
+  ) async {
+    if (anomaly.category == AnomalyCategory.pendingManualCorrection &&
+        anomaly.relatedMovementId != null &&
+        anomaly.correctionId != null) {
+      final mov = _db
+          .getAllEmployeeMovements()
+          .where((m) => m.id == anomaly.relatedMovementId)
+          .firstOrNull;
+      if (mov != null) {
+        final updatedHistory = mov.correctionHistory.map((c) {
+          if (c.id == anomaly.correctionId) {
+            return c.copyWith(
+              approvalStatus: CorrectionApprovalStatus.approved,
+              reviewedBy: _currentUser.fullName,
+              reviewedAt: DateTime.now(),
+            );
+          }
+          return c;
+        }).toList();
+        await _db.saveEmployeeMovement(mov.copyWith(correctionHistory: updatedHistory));
+      }
+    }
+
+    await _db.saveAnomalyResolution(
+      AnomalyResolutionRecord(
+        anomalyId: anomaly.id,
+        status: CorrectionApprovalStatus.approved,
+        reviewedBy: _currentUser.fullName,
+        reviewedAt: DateTime.now(),
+        reason: 'Yönetici tarafından incelendi ve onaylandı.',
+      ),
+    );
+    notifyListeners();
+    return (success: true, message: '"${anomaly.title}" kaydı onaylandı.');
+  }
+
+  /// Kontrol bekleyen kaydı veya manuel düzeltmeyi gerekçe ile reddeder
+  Future<({bool success, String message})> rejectAnomalyOrCorrection({
+    required MovementAnomalyItem anomaly,
+    required String rejectionReason,
+  }) async {
+    final cleanReason = rejectionReason.trim();
+    if (cleanReason.isEmpty) {
+      return (success: false, message: 'Reddetme işlemi için gerekçe girilmesi zorunludur.');
+    }
+
+    if (anomaly.category == AnomalyCategory.pendingManualCorrection &&
+        anomaly.relatedMovementId != null &&
+        anomaly.correctionId != null) {
+      final mov = _db
+          .getAllEmployeeMovements()
+          .where((m) => m.id == anomaly.relatedMovementId)
+          .firstOrNull;
+      if (mov != null) {
+        MovementCorrectionRecord? targetCorr;
+        final updatedHistory = mov.correctionHistory.map((c) {
+          if (c.id == anomaly.correctionId) {
+            targetCorr = c;
+            return c.copyWith(
+              approvalStatus: CorrectionApprovalStatus.rejected,
+              reviewedBy: _currentUser.fullName,
+              reviewedAt: DateTime.now(),
+              rejectionReason: cleanReason,
+            );
+          }
+          return c;
+        }).toList();
+
+        // Reddedilen manuel düzeltmede hareketi önceki değerine geri döndür
+        final reverted = targetCorr != null
+            ? mov.copyWith(
+                type: targetCorr!.previousType,
+                timestamp: targetCorr!.previousTimestamp,
+                deviceDoor: targetCorr!.previousDeviceDoor,
+                note: targetCorr!.previousNote,
+                correctionHistory: updatedHistory,
+              )
+            : mov.copyWith(correctionHistory: updatedHistory);
+
+        await _db.saveEmployeeMovement(reverted);
+      }
+    }
+
+    await _db.saveAnomalyResolution(
+      AnomalyResolutionRecord(
+        anomalyId: anomaly.id,
+        status: CorrectionApprovalStatus.rejected,
+        reviewedBy: _currentUser.fullName,
+        reviewedAt: DateTime.now(),
+        reason: cleanReason,
+      ),
+    );
+    notifyListeners();
+    return (success: true, message: '"${anomaly.title}" kaydı gerekçe ile reddedildi.');
+  }
+
+  /// Yeni PDKS Vardiya tanımı ekler veya mevcut vardiyayı günceller
+  Future<({bool success, String message})> savePdksShiftDefinition(
+    PdksShiftDefinition shift,
+  ) async {
+    if (shift.name.trim().isEmpty) {
+      return (success: false, message: 'Vardiya adı zorunludur.');
+    }
+    await _db.savePdksShift(shift);
+    notifyListeners();
+    return (success: true, message: '"${shift.name}" vardiyası kaydedildi.');
+  }
+
+  /// Personele vardiya atar
+  Future<({bool success, String message})> assignShiftToEmployee({
+    required int employeeId,
+    required int shiftId,
+  }) async {
+    final emp = _employees.where((e) => e.id == employeeId).firstOrNull;
+    final shift = _db.getAllPdksShifts().where((s) => s.id == shiftId).firstOrNull;
+    if (emp == null || shift == null) {
+      return (success: false, message: 'Personel veya vardiya bulunamadı.');
+    }
+    await _db.assignShiftToEmployeeDb(employeeId, shiftId);
+    notifyListeners();
+    return (
+      success: true,
+      message: '${emp.fullName} personeline "${shift.name}" vardiyası atandı.',
+    );
+  }
+
+  /// Sicil numarası benzersizlik kontrolü ile personel ekler veya düzenler
+  Future<({bool success, String message})> saveEmployeeFromMovementPanel({
+    int? existingId,
+    required String sicilNo,
+    required String fullName,
+    required String department,
+    required String title,
+    required int shiftId,
+    required bool isActive,
+  }) async {
+    final cleanSicil = sicilNo.trim().toUpperCase();
+    final cleanName = fullName.trim();
+    final cleanDept = department.trim();
+    final cleanTitle = title.trim();
+
+    if (cleanSicil.isEmpty) {
+      return (success: false, message: 'Sicil numarası zorunludur.');
+    }
+    if (cleanName.isEmpty) {
+      return (success: false, message: 'Ad soyad alanı zorunludur.');
+    }
+
+    // Benzersiz sicil numarası kontrolü
+    final duplicate = employees.any(
+      (e) =>
+          e.id != existingId &&
+          e.displaySicilNo.trim().toUpperCase() == cleanSicil,
+    );
+    if (duplicate) {
+      return (
+        success: false,
+        message: '"$cleanSicil" sicil numarası başka bir personele aittir. Sicil numarası benzersiz olmalıdır.',
+      );
+    }
+
+    if (existingId != null) {
+      final idx = _employees.indexWhere((e) => e.id == existingId);
+      if (idx == -1) {
+        return (success: false, message: 'Düzenlenecek personel bulunamadı.');
+      }
+      final updated = _employees[idx].copyWith(
+        sicilNo: cleanSicil,
+        fullName: cleanName,
+        department: cleanDept.isEmpty ? 'Genel' : cleanDept,
+        title: cleanTitle.isEmpty ? 'Uzman' : cleanTitle,
+        isActive: isActive,
+      );
+      _employees[idx] = updated;
+      await _db.updateEmployee(updated);
+      await _db.assignShiftToEmployeeDb(existingId, shiftId);
+      notifyListeners();
+      return (success: true, message: '${updated.fullName} bilgileri güncellendi.');
+    } else {
+      final newId = (_employees.isNotEmpty
+              ? _employees.map((e) => e.id).reduce((a, b) => a > b ? a : b)
+              : 100) +
+          1;
+      final newEmp = Employee(
+        id: newId,
+        companyId: _activeCompanyId,
+        sicilNo: cleanSicil,
+        fullName: cleanName,
+        email: '${cleanSicil.toLowerCase().replaceAll('-', '')}@sirket.com',
+        department: cleanDept.isEmpty ? 'Genel' : cleanDept,
+        title: cleanTitle.isEmpty ? 'Uzman' : cleanTitle,
+        pinCode: '1234',
+        isActive: isActive,
+        isApproved: true,
+        hireDate: DateTime.now(),
+      );
+      _employees.add(newEmp);
+      await _db.insertEmployee(newEmp);
+      await _db.assignShiftToEmployeeDb(newId, shiftId);
+      notifyListeners();
+      return (success: true, message: '${newEmp.fullName} ($cleanSicil) başarıyla eklendi.');
     }
   }
 

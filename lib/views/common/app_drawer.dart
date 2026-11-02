@@ -19,6 +19,7 @@ import '../vehicle/vehicle_request_screen.dart';
 import '../kiosk/kiosk_terminal_screen.dart';
 import '../enterprise/enterprise_hub_screen.dart';
 import '../mobile/leave_request_screen.dart';
+import '../movement_management/employee_movement_management_screen.dart';
 import 'field_work_dialog.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
@@ -74,7 +75,12 @@ class AppDrawer extends StatelessWidget {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
         break;
       case 'records':
-        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const EmployeeMovementManagementScreen(),
+          ),
+        );
         break;
       case 'field_work':
         FieldWorkDialog.show(context);
@@ -579,6 +585,21 @@ class AppDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                 children: [
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.swap_vert_circle_rounded,
+                    color: const Color(0xFF0D9488),
+                    title: 'Çalışan Hareket Yönetimi',
+                    subtitle: 'Giriş, çıkış, mola, devam özeti & kontrol bekleyenler',
+                    onTapCustom: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmployeeMovementManagementScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   // 1. Hızlı İşlemler (Kullanıcının Seçtiği 5 Temel Modül)
                   ...pdks.visibleQuickMenuItems.map((item) {
                     int? badge;

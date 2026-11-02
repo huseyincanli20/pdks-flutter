@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/attendance_record.dart';
 import '../../state/pdks_state.dart';
+import '../movement_management/employee_movement_management_screen.dart';
 
 class DashboardTab extends StatelessWidget {
   const DashboardTab({super.key});
@@ -23,6 +24,65 @@ class DashboardTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Çalışan Hareket Yönetimi Hızlı Geçiş Kartı
+          Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF0D9488)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.fact_check_rounded, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Çalışan Hareket Yönetimi (PDKS Panel)',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Giriş-çıkış, mola, gece vardiyası, günlük devam özeti ve kontrol bekleyen kayıtları yönetin',
+                        style: TextStyle(color: Color(0xFFCCFBF1), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EmployeeMovementManagementScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: const Text('Paneli Aç', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                ),
+              ],
+            ),
+          ),
           // 4 KPI Sayaç Kartı - Mobilde 2x2, Geniş ekranda 4'lü yan yana
           if (isMobile)
             Column(
