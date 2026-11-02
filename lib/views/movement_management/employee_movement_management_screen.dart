@@ -229,6 +229,8 @@ class _EmployeeMovementManagementScreenState
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
+    final canManageAll = pdks.canManageAllEmployeeMovements;
+    final effectiveTab = canManageAll ? _selectedTab : 1;
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 960;
 
@@ -264,13 +266,19 @@ class _EmployeeMovementManagementScreenState
                             Expanded(
                               child: _buildActiveScreenContent(panelCtx, pdks),
                             ),
-                            if (_selectedMovementForDetail != null && _selectedTab == 1)
+                            if (_selectedMovementForDetail != null &&
+                                effectiveTab == 1 &&
+                                (canManageAll ||
+                                    _selectedMovementForDetail!.employeeId ==
+                                        pdks.currentUser.id))
                               _buildMovementDetailSidePanel(
                                 panelCtx,
                                 pdks,
                                 _selectedMovementForDetail!,
                               ),
-                            if (_selectedEmployeeForDetail != null && _selectedTab == 2)
+                            if (canManageAll &&
+                                _selectedEmployeeForDetail != null &&
+                                effectiveTab == 2)
                               _buildEmployeeDetailSidePanel(
                                 panelCtx,
                                 pdks,
@@ -294,24 +302,33 @@ class _EmployeeMovementManagementScreenState
   // SOL MENÜ (KOYU LACİVERT MENÜ & TURKUAZ VURGU)
   // ===========================================================================
   Widget _buildSidebarMenu(PdksState pdks, {required bool isInDrawer}) {
-    final anomalies = pdks
-        .getAnomaliesForDate(_selectedDate)
-        .where((a) => a.approvalStatus == CorrectionApprovalStatus.pending)
-        .toList();
+    final canManageAll = pdks.canManageAllEmployeeMovements;
+    final effectiveTab = canManageAll ? _selectedTab : 1;
 
-    final navItems = [
-      (index: 0, icon: Icons.dashboard_rounded, label: 'Genel Bakış', badge: null),
-      (index: 1, icon: Icons.swap_vert_circle_rounded, label: 'Çalışan Hareketleri', badge: null),
-      (index: 2, icon: Icons.badge_rounded, label: 'Personeller', badge: '${pdks.employees.length}'),
-      (index: 3, icon: Icons.fact_check_rounded, label: 'Günlük Devam Özeti', badge: null),
-      (index: 4, icon: Icons.schedule_rounded, label: 'Vardiyalar', badge: '${pdks.pdksShiftDefinitions.length}'),
-      (
-        index: 5,
-        icon: Icons.warning_amber_rounded,
-        label: 'Kontrol Bekleyenler',
-        badge: anomalies.isNotEmpty ? '${anomalies.length}' : null,
-      ),
-    ];
+    final anomalies = canManageAll
+        ? pdks
+            .getAnomaliesForDate(_selectedDate)
+            .where((a) => a.approvalStatus == CorrectionApprovalStatus.pending)
+            .toList()
+        : const <MovementAnomalyItem>[];
+
+    final navItems = canManageAll
+        ? [
+            (index: 0, icon: Icons.dashboard_rounded, label: 'Genel Bakış', badge: null),
+            (index: 1, icon: Icons.swap_vert_circle_rounded, label: 'Çalışan Hareketleri', badge: null),
+            (index: 2, icon: Icons.badge_rounded, label: 'Personeller', badge: '${pdks.employees.length}'),
+            (index: 3, icon: Icons.fact_check_rounded, label: 'Günlük Devam Özeti', badge: null),
+            (index: 4, icon: Icons.schedule_rounded, label: 'Vardiyalar', badge: '${pdks.pdksShiftDefinitions.length}'),
+            (
+              index: 5,
+              icon: Icons.warning_amber_rounded,
+              label: 'Kontrol Bekleyenler',
+              badge: anomalies.isNotEmpty ? '${anomalies.length}' : null,
+            ),
+          ]
+        : [
+            (index: 1, icon: Icons.swap_vert_circle_rounded, label: 'Çalışan Hareketleri', badge: null),
+          ];
 
     return Container(
       color: kNavySidebar,
@@ -383,7 +400,7 @@ class _EmployeeMovementManagementScreenState
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
-                            color: _selectedTab == item.index
+                            color: effectiveTab == item.index
                                 ? kTurquoise
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
@@ -393,7 +410,7 @@ class _EmployeeMovementManagementScreenState
                               Icon(
                                 item.icon,
                                 size: 20,
-                                color: _selectedTab == item.index
+                                color: effectiveTab == item.index
                                     ? Colors.white
                                     : const Color(0xFFCBD5E1),
                               ),
@@ -402,10 +419,10 @@ class _EmployeeMovementManagementScreenState
                                 child: Text(
                                   item.label,
                                   style: TextStyle(
-                                    color: _selectedTab == item.index
+                                    color: effectiveTab == item.index
                                         ? Colors.white
                                         : const Color(0xFFE2E8F0),
-                                    fontWeight: _selectedTab == item.index
+                                    fontWeight: effectiveTab == item.index
                                         ? FontWeight.bold
                                         : FontWeight.w500,
                                     fontSize: 13.5,
@@ -482,6 +499,8 @@ class _EmployeeMovementManagementScreenState
   // ÜST ARAÇ ÇUBUĞU (TOP TOOLBAR)
   // ===========================================================================
   Widget _buildTopToolbar(BuildContext context, PdksState pdks, {required bool isDesktop}) {
+    final canManageAll = pdks.canManageAllEmployeeMovements;
+    final effectiveTab = canManageAll ? _selectedTab : 1;
     final titles = [
       'Genel Bakış',
       'Çalışan Hareketleri',
@@ -523,7 +542,7 @@ class _EmployeeMovementManagementScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    titles[_selectedTab],
+                    titles[effectiveTab],
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
@@ -625,22 +644,23 @@ class _EmployeeMovementManagementScreenState
                 ),
               ),
 
-              // Yeni Hareket Ekle Butonu
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kTurquoise,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              // Yeni Hareket Ekle Butonu (Yalnızca İK, Yönetici ve Admin)
+              if (canManageAll)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kTurquoise,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text(
+                    'Yeni Hareket Ekle',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  onPressed: () => _showMovementFormDialog(context, pdks),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text(
-                  'Yeni Hareket Ekle',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                onPressed: () => _showMovementFormDialog(context, pdks),
-              ),
             ],
           ),
         ],
@@ -649,7 +669,8 @@ class _EmployeeMovementManagementScreenState
   }
 
   Widget _buildActiveScreenContent(BuildContext context, PdksState pdks) {
-    switch (_selectedTab) {
+    final effectiveTab = pdks.canManageAllEmployeeMovements ? _selectedTab : 1;
+    switch (effectiveTab) {
       case 0:
         return _buildOverviewScreen(context, pdks);
       case 1:
@@ -1144,19 +1165,27 @@ class _EmployeeMovementManagementScreenState
   // 2. EKRAN: ÇALIŞAN HAREKETLERİ
   // ===========================================================================
   List<EmployeeMovementRecord> _getFilteredAndSortedMovements(PdksState pdks) {
+    final canManageAll = pdks.canManageAllEmployeeMovements;
     final query = _movSearchCtrl.text.trim().toLowerCase();
-    final all = pdks.employeeMovements;
+    final all = pdks.visibleEmployeeMovements;
 
     final filtered = all.where((m) {
-      if (query.isNotEmpty) {
+      if (!canManageAll && m.employeeId != pdks.currentUser.id) {
+        return false;
+      }
+      if (canManageAll && query.isNotEmpty) {
         final matchName = m.employeeName.toLowerCase().contains(query);
         final matchSicil = m.sicilNo.toLowerCase().contains(query);
         if (!matchName && !matchSicil) return false;
       }
-      if (_movFilterDepartment != 'Tümü' && m.department != _movFilterDepartment) {
+      if (canManageAll &&
+          _movFilterDepartment != 'Tümü' &&
+          m.department != _movFilterDepartment) {
         return false;
       }
-      if (_movFilterEmployeeId != null && m.employeeId != _movFilterEmployeeId) {
+      if (canManageAll &&
+          _movFilterEmployeeId != null &&
+          m.employeeId != _movFilterEmployeeId) {
         return false;
       }
       if (_movFilterType != null && m.type != _movFilterType) {
@@ -1208,6 +1237,7 @@ class _EmployeeMovementManagementScreenState
   }
 
   Widget _buildMovementsScreen(BuildContext context, PdksState pdks) {
+    final canManageAll = pdks.canManageAllEmployeeMovements;
     final departments = <String>{
       'Tümü',
       ...pdks.employees.map((e) => e.department),
@@ -1240,79 +1270,105 @@ class _EmployeeMovementManagementScreenState
                   runSpacing: 12,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    // Ad, soyad veya sicil numarası ile arama
-                    SizedBox(
-                      width: 260,
-                      child: TextField(
-                        controller: _movSearchCtrl,
-                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
-                        decoration: const InputDecoration(
-                          labelText: 'Ad, Soyad veya Sicil No Ara',
-                          prefixIcon: Icon(Icons.search_rounded, size: 18),
+                    if (!canManageAll)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: kTurquoiseLight.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: kTurquoise.withOpacity(0.4)),
                         ),
-                        onChanged: (_) => setState(() => _movCurrentPage = 1),
-                      ),
-                    ),
-
-                    // Departman Filtresi
-                    SizedBox(
-                      width: 190,
-                      child: DropdownButtonFormField<String>(
-                        value: departments.contains(_movFilterDepartment)
-                            ? _movFilterDepartment
-                            : 'Tümü',
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(labelText: 'Departman'),
-                        items: departments
-                            .map((d) => DropdownMenuItem(
-                                  value: d,
-                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
-                                ))
-                            .toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _movFilterDepartment = val ?? 'Tümü';
-                            _movCurrentPage = 1;
-                          });
-                        },
-                      ),
-                    ),
-
-                    // Personel Filtresi
-                    SizedBox(
-                      width: 210,
-                      child: DropdownButtonFormField<int?>(
-                        value: _movFilterEmployeeId,
-                        isExpanded: true,
-                        dropdownColor: Colors.white,
-                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(labelText: 'Personel'),
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text('Tüm Personeller', style: TextStyle(fontSize: 13, color: kTextPrimary)),
-                          ),
-                          ...pdks.employees.map(
-                            (e) => DropdownMenuItem<int?>(
-                              value: e.id,
-                              child: Text(
-                                '${e.fullName} (${e.displaySicilNo})',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 13, color: kTextPrimary),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person_pin_rounded, size: 18, color: kTurquoise),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Personel: ${pdks.currentUser.fullName} (${pdks.currentUser.displaySicilNo}) • ${pdks.currentUser.department}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: kTextPrimary,
                               ),
                             ),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            _movFilterEmployeeId = val;
-                            _movCurrentPage = 1;
-                          });
-                        },
+                          ],
+                        ),
                       ),
-                    ),
+                    if (canManageAll) ...[
+                      // Ad, soyad veya sicil numarası ile arama
+                      SizedBox(
+                        width: 260,
+                        child: TextField(
+                          controller: _movSearchCtrl,
+                          style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
+                          decoration: const InputDecoration(
+                            labelText: 'Ad, Soyad veya Sicil No Ara',
+                            prefixIcon: Icon(Icons.search_rounded, size: 18),
+                          ),
+                          onChanged: (_) => setState(() => _movCurrentPage = 1),
+                        ),
+                      ),
+
+                      // Departman Filtresi
+                      SizedBox(
+                        width: 190,
+                        child: DropdownButtonFormField<String>(
+                          value: departments.contains(_movFilterDepartment)
+                              ? _movFilterDepartment
+                              : 'Tümü',
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                          decoration: const InputDecoration(labelText: 'Departman'),
+                          items: departments
+                              .map((d) => DropdownMenuItem(
+                                    value: d,
+                                    child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _movFilterDepartment = val ?? 'Tümü';
+                              _movCurrentPage = 1;
+                            });
+                          },
+                        ),
+                      ),
+
+                      // Personel Filtresi
+                      SizedBox(
+                        width: 210,
+                        child: DropdownButtonFormField<int?>(
+                          value: _movFilterEmployeeId,
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                          decoration: const InputDecoration(labelText: 'Personel'),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('Tüm Personeller', style: TextStyle(fontSize: 13, color: kTextPrimary)),
+                            ),
+                            ...pdks.employees.map(
+                              (e) => DropdownMenuItem<int?>(
+                                value: e.id,
+                                child: Text(
+                                  '${e.fullName} (${e.displaySicilNo})',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 13, color: kTextPrimary),
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _movFilterEmployeeId = val;
+                              _movCurrentPage = 1;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
 
                     // Hareket Türü Filtresi
                     SizedBox(
@@ -1603,15 +1659,16 @@ class _EmployeeMovementManagementScreenState
                                       });
                                     },
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFD97706)),
-                                    tooltip: 'Hareketi Düzelt',
-                                    onPressed: () => _showMovementFormDialog(
-                                      context,
-                                      pdks,
-                                      existingMovement: mov,
+                                  if (canManageAll)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFD97706)),
+                                      tooltip: 'Hareketi Düzelt',
+                                      onPressed: () => _showMovementFormDialog(
+                                        context,
+                                        pdks,
+                                        existingMovement: mov,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -1851,16 +1908,18 @@ class _EmployeeMovementManagementScreenState
                       ),
                     );
                   }),
-                const SizedBox(height: 12),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kTurquoise,
-                    foregroundColor: Colors.white,
+                if (pdks.canManageAllEmployeeMovements) ...[
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kTurquoise,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.edit_note_rounded, size: 18),
+                    label: const Text('Bu Hareketi Düzelt'),
+                    onPressed: () => _showMovementFormDialog(context, pdks, existingMovement: mov),
                   ),
-                  icon: const Icon(Icons.edit_note_rounded, size: 18),
-                  label: const Text('Bu Hareketi Düzelt'),
-                  onPressed: () => _showMovementFormDialog(context, pdks, existingMovement: mov),
-                ),
+                ],
               ],
             ),
           ),

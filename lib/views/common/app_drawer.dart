@@ -589,13 +589,19 @@ class AppDrawer extends StatelessWidget {
                     context,
                     icon: Icons.swap_vert_circle_rounded,
                     color: const Color(0xFF0D9488),
-                    title: 'Çalışan Hareket Yönetimi',
-                    subtitle: 'Giriş, çıkış, mola, devam özeti & kontrol bekleyenler',
+                    title: pdks.canManageAllEmployeeMovements
+                        ? 'Çalışan Hareket Yönetimi'
+                        : 'Çalışan Hareketleri',
+                    subtitle: pdks.canManageAllEmployeeMovements
+                        ? 'Giriş, çıkış, mola, devam özeti & kontrol bekleyenler'
+                        : 'Kendi giriş, çıkış ve mola hareketlerim',
                     onTapCustom: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const EmployeeMovementManagementScreen(),
+                          builder: (_) => EmployeeMovementManagementScreen(
+                            initialTabIndex: pdks.canManageAllEmployeeMovements ? 0 : 1,
+                          ),
                         ),
                       );
                     },

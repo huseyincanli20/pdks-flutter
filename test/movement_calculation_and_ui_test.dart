@@ -445,7 +445,7 @@ void main() {
       expect(updated.correctionHistory.last.approvalStatus, CorrectionApprovalStatus.pending);
     });
 
-    testWidgets('9. Çalışan Hareket Yönetimi ekranı 6 sekmeyi ve KPI kartlarını doğru render eder', (tester) async {
+    testWidgets('9. İK, Yönetici ve Admin kullanıcıları Çalışan Hareket Yönetimi ekranında 6 sekmeyi ve KPI kartlarını doğru görür', (tester) async {
       tester.view.physicalSize = const Size(1440, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -453,7 +453,11 @@ void main() {
 
       await tester.pumpWidget(
         ChangeNotifierProvider<PdksState>(
-          create: (_) => PdksState(),
+          create: (_) {
+            final s = PdksState();
+            s.switchUserForTesting(s.employees.firstWhere((e) => e.role == UserRole.hr));
+            return s;
+          },
           child: MaterialApp(
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -492,6 +496,53 @@ void main() {
       await tester.tap(find.text('Kontrol Bekleyenler').first);
       await tester.pumpAndSettle();
       expect(find.text('Onayla'), findsWidgets);
+    });
+
+    testWidgets('11. İK, Yönetici ve Admin harici çalışanlar sadece Çalışan Hareketleri sekmesini ve yalnızca kendi hareketlerini görebilir', (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      late PdksState state;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<PdksState>(
+          create: (_) {
+            state = PdksState();
+            final regularEmployee = state.employees.firstWhere((e) => e.role == UserRole.employee);
+            state.switchUserForTesting(regularEmployee);
+            return state;
+          },
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.light,
+            home: const EmployeeMovementManagementScreen(initialTabIndex: 0),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1) İK/Yönetici/Admin dışındaki kullanıcı diğer 5 sekmeyi göremez
+      expect(state.canManageAllEmployeeMovements, isFalse);
+      expect(find.text('Genel Bakış'), findsNothing);
+      expect(find.text('Personeller'), findsNothing);
+      expect(find.text('Günlük Devam Özeti'), findsNothing);
+      expect(find.text('Vardiyalar'), findsNothing);
+      expect(find.text('Kontrol Bekleyenler'), findsNothing);
+
+      // Sadece Çalışan Hareketleri sekmesi açık olmalı
+      expect(find.text('Çalışan Hareketleri'), findsWidgets);
+      expect(find.textContaining('Yeni Hareket Ekle'), findsNothing);
+
+      // 2) Çalışan Hareketleri'nde sadece kendi kayıtlarını görebilmeli, başka personeller görünmemeli
+      expect(
+        state.visibleEmployeeMovements.every((m) => m.employeeId == state.currentUser.id),
+        isTrue,
+      );
+      expect(find.textContaining(state.currentUser.fullName), findsWidgets);
+      expect(find.text('Zeynep Kaya'), findsNothing);
+      expect(find.text('Kemal Özdemir'), findsNothing);
     });
 
     test('10. Mesaiye Gir ve Mesaiden Çık işlemleri Çalışan Hareket Yönetimi listesine ve günlük özete anında işlenir', () async {

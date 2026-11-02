@@ -248,7 +248,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       case 0:
         return '${user.department} • ${pdks.activeCompany.name}';
       case 1:
-        return 'Toplam ${pdks.records.length} Kayıt Bulundu';
+        final visibleCount = pdks.canManageAllEmployeeMovements
+            ? pdks.records.length
+            : pdks.records.where((r) => r.employeeId == user.id).length;
+        return 'Toplam $visibleCount Kayıt Bulundu';
       case 2:
         return 'Kalan Yıllık İzin: ${user.remainingLeaveDays} Gün';
       case 3:
@@ -815,7 +818,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                if (pdks.records.isEmpty)
+                if ((pdks.canManageAllEmployeeMovements
+                        ? pdks.records
+                        : pdks.records.where((r) => r.employeeId == user.id))
+                    .isEmpty)
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
@@ -823,7 +829,11 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                     ),
                   )
                 else
-                  ...pdks.records.take(4).map((record) => _buildRecordTile(record)),
+                  ...(pdks.canManageAllEmployeeMovements
+                          ? pdks.records
+                          : pdks.records.where((r) => r.employeeId == user.id))
+                      .take(4)
+                      .map((record) => _buildRecordTile(record)),
               ],
             ),
           ),
@@ -836,7 +846,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   // TAB 2: HAREKETLERİM (GİRİŞ - ÇIKIŞ GEÇMİŞİ)
   // ==========================================
   Widget _buildRecordsTab(PdksState pdks, Employee user) {
-    final records = pdks.records;
+    final records = pdks.canManageAllEmployeeMovements
+        ? pdks.records
+        : pdks.records.where((r) => r.employeeId == user.id).toList();
     final checkIns = records.where((r) => r.type == AttendanceType.checkIn).length;
     final checkOuts = records.where((r) => r.type == AttendanceType.checkOut).length;
 

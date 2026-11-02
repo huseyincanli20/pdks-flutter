@@ -5324,11 +5324,27 @@ class PdksState extends ChangeNotifier {
   // ÇALIŞAN HAREKET YÖNETİMİ (PDKS MOVEMENT MANAGEMENT)
   // ==========================================
 
+  /// İK Personeli (UserRole.hr), Yönetici/Patron (UserRole.boss) ve Admin (UserRole.admin)
+  /// tüm çalışan hareketlerini ve yönetim sekmelerini görebilir.
+  /// Diğer roller yalnızca "Çalışan Hareketleri" sekmesini ve orada sadece kendi hareketlerini görebilir.
+  bool get canManageAllEmployeeMovements =>
+      _currentUser.role == UserRole.hr ||
+      _currentUser.role == UserRole.boss ||
+      _currentUser.role == UserRole.admin;
+
   List<PdksShiftDefinition> get pdksShiftDefinitions => _db.getAllPdksShifts();
 
   Map<int, int> get employeeShiftMap => _db.getEmployeeShiftMap();
 
   List<EmployeeMovementRecord> get employeeMovements => _db.getAllEmployeeMovements();
+
+  /// Aktif kullanıcının yetkisine göre görebileceği çalışan hareketleri listesi:
+  /// İK, Yönetici ve Admin tüm personelleri görür; diğer çalışanlar yalnızca kendi kayıtlarını görür.
+  List<EmployeeMovementRecord> get visibleEmployeeMovements {
+    final all = _db.getAllEmployeeMovements();
+    if (canManageAllEmployeeMovements) return all;
+    return all.where((m) => m.employeeId == _currentUser.id).toList();
+  }
 
   List<AnomalyResolutionRecord> get anomalyResolutions => _db.getAllAnomalyResolutions();
 
