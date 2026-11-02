@@ -30,40 +30,26 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: '3.24.5'
           cache: true
 
-      - name: Install Flutter Dependencies
+      - name: Install Dependencies
         run: flutter pub get
-
-      - name: Setup CocoaPods
-        run: |
-          cd ios
-          pod repo update || true
-          pod install
-          cd ..
 
       - name: Build iOS Application (Release)
         run: |
           flutter build ios --release --no-codesign --no-tree-shake-icons
 
-      - name: Package Payload to IPA
+      - name: Package IPA
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
           zip -qr pdks_flutter.ipa Payload
-          shasum -a 256 pdks_flutter.ipa > pdks_flutter.ipa.sha256
           rm -rf Payload
-          echo "### 📱 iOS IPA Paketi Başarıyla Üretildi! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "- **Dosya Adı:** \`pdks_flutter.ipa\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **SHA-256 Doğrulama Kodu:** \`$(cat pdks_flutter.ipa.sha256)\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Mimari:** arm64 (iOS Release)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Yükleme:** Sideloadly, AltStore, TrollStore veya MDM/TestFlight ile yüklenebilir." >> $GITHUB_STEP_SUMMARY
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: pdks-ios-ipa
-          path: |
-            pdks_flutter.ipa
-            pdks_flutter.ipa.sha256
+          path: pdks_flutter.ipa
           retention-days: 14
