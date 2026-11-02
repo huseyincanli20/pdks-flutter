@@ -199,6 +199,9 @@ class PdksState extends ChangeNotifier {
   Employee get currentUser => _currentUser;
   void switchUserForTesting(Employee emp) {
     _currentUser = emp;
+    _activeCompanyId = emp.companyId;
+    _isLoggedIn = true;
+    _db.saveUserSession(emp.email);
     notifyListeners();
   }
   bool get isLoggedIn => _isLoggedIn;
@@ -460,6 +463,7 @@ class PdksState extends ChangeNotifier {
     _currentUser = targetUser;
     _activeCompanyId = _currentUser.companyId;
     _isLoggedIn = true;
+    _db.saveUserSession(_currentUser.email);
     _db.setFailedPinAttempts(0);
     _db.setPinLockoutUntil(null);
     _startTimer();
@@ -2201,6 +2205,7 @@ class PdksState extends ChangeNotifier {
         _currentUser = cloudEmp;
         _activeCompanyId = _currentUser.companyId;
         _isLoggedIn = true;
+        _db.saveUserSession(cloudEmp.email);
         _startTimer();
 
         notifyListeners();
@@ -2553,6 +2558,26 @@ class PdksState extends ChangeNotifier {
       }
     }
 
+    // Kalıcı Kullanıcı Oturumu Kontrolü (Uygulama kapansa bile "Oturumu Kapat" denene kadar açık kalır)
+    final bool sessionActive = _db.isSessionActive();
+    final String? savedLoggedInEmail = _db.getLoggedInUserEmail();
+
+    if (sessionActive && savedLoggedInEmail != null && savedLoggedInEmail.trim().isNotEmpty) {
+      final cleanEmail = savedLoggedInEmail.trim().toLowerCase();
+      final matched = _employees.where((e) => e.email.toLowerCase() == cleanEmail && e.isApproved).toList();
+      if (matched.isNotEmpty) {
+        _currentUser = matched.first;
+        _activeCompanyId = _currentUser.companyId;
+        _isLoggedIn = true;
+        _startTimer();
+      } else {
+        _isLoggedIn = false;
+        _db.clearUserSession();
+      }
+    } else {
+      _isLoggedIn = false;
+    }
+
     // 5. Araç Talepleri
     if (_db.getAllVehicleRequests().isNotEmpty) {
       _vehicleRequests.clear();
@@ -2676,6 +2701,27 @@ class PdksState extends ChangeNotifier {
     _isCheckedIn = false;
     _lastCheckInTime = null;
     _workedToday = Duration.zero;
+
+    // Eğer kullanıcı oturumu açıksa, bugünkü en son giriş/çıkış hareketini geri yükle
+    if (_isLoggedIn) {
+      final now = DateTime.now();
+      final todayRecords = _records.where((r) =>
+        r.employeeId == _currentUser.id &&
+        r.timestamp.year == now.year &&
+        r.timestamp.month == now.month &&
+        r.timestamp.day == now.day
+      ).toList();
+
+      if (todayRecords.isNotEmpty) {
+        todayRecords.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final lastRec = todayRecords.first;
+        if (lastRec.type == AttendanceType.checkIn) {
+          _isCheckedIn = true;
+          _lastCheckInTime = lastRec.timestamp;
+          _workedToday = now.difference(lastRec.timestamp);
+        }
+      }
+    }
   }
 
   // Giriş Yapma: VERİTABANI KONTROLÜ VE İK ONAYI İLE BİRLİKTE (SRS 3.1 Brute Force Korumalı)
@@ -2738,6 +2784,7 @@ class PdksState extends ChangeNotifier {
       _currentUser = user;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
+      _db.saveUserSession(user.email);
       _startTimer();
 
       notifyListeners();
@@ -2780,6 +2827,7 @@ class PdksState extends ChangeNotifier {
       _currentUser = demoMatched;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
+      _db.saveUserSession(demoMatched.email);
       _startTimer();
 
       notifyListeners();
@@ -3066,6 +3114,7 @@ class PdksState extends ChangeNotifier {
     _isCheckedIn = false;
     _isAdminEditMode = false;
     _workTimer?.cancel();
+    _db.clearUserSession();
     notifyListeners();
   }
 

@@ -84,6 +84,8 @@ class DatabaseService {
   static const String _keyLockedPeriods = 'pdks_db_locked_periods_v1';
   static const String _keySavedCompanyCode = 'pdks_db_saved_company_code_v1';
   static const String _keyLastUserEmail = 'pdks_db_last_user_email_v1';
+  static const String _keyLoggedInUserEmail = 'pdks_db_logged_in_user_email_v1';
+  static const String _keyIsSessionActive = 'pdks_db_is_session_active_v1';
   static const String _keyFailedPinAttempts = 'pdks_db_failed_pin_attempts_v1';
   static const String _keyPinLockoutUntil = 'pdks_db_pin_lockout_until_v1';
 
@@ -119,6 +121,8 @@ class DatabaseService {
   CafeteriaMenu? _todayMenu;
   String? _activeCompanyId;
   String? _themeType;
+  String? _inMemoryLoggedInUserEmail;
+  bool _inMemoryIsSessionActive = false;
 
   // Kurumsal Ek Modüller Önbellek Listeleri
   final List<ShiftSwapRequest> _shiftSwaps = [];
@@ -210,6 +214,9 @@ class DatabaseService {
   Future<void> _loadAllDataFromDb() async {
     final prefs = _prefs;
     if (prefs == null) return;
+
+    _inMemoryIsSessionActive = prefs.getBool(_keyIsSessionActive) ?? false;
+    _inMemoryLoggedInUserEmail = prefs.getString(_keyLoggedInUserEmail);
 
     // 1. Şirketler
     final companiesRaw = prefs.getString(_keyCompanies);
@@ -2870,6 +2877,26 @@ class DatabaseService {
 
   String? getLastUserEmail() => _prefs?.getString(_keyLastUserEmail);
   Future<void> saveLastUserEmail(String email) async => await _prefs?.setString(_keyLastUserEmail, email);
+
+  // Kalıcı Oturum Yönetimi (Uygulamadan çıkılsa bile açık kalır, sadece "Oturumu Kapat" ile sonlanır)
+  String? getLoggedInUserEmail() => _inMemoryLoggedInUserEmail ?? _prefs?.getString(_keyLoggedInUserEmail);
+
+  bool isSessionActive() => _inMemoryIsSessionActive || (_prefs?.getBool(_keyIsSessionActive) ?? false);
+
+  Future<void> saveUserSession(String email) async {
+    _inMemoryLoggedInUserEmail = email;
+    _inMemoryIsSessionActive = true;
+    await _prefs?.setString(_keyLoggedInUserEmail, email);
+    await _prefs?.setBool(_keyIsSessionActive, true);
+    await saveLastUserEmail(email);
+  }
+
+  Future<void> clearUserSession() async {
+    _inMemoryLoggedInUserEmail = null;
+    _inMemoryIsSessionActive = false;
+    await _prefs?.remove(_keyLoggedInUserEmail);
+    await _prefs?.setBool(_keyIsSessionActive, false);
+  }
 
   int getFailedPinAttempts() => _prefs?.getInt(_keyFailedPinAttempts) ?? _inMemoryFailedPinAttempts;
   Future<void> setFailedPinAttempts(int count) async {
