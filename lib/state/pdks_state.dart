@@ -2633,6 +2633,15 @@ class PdksState extends ChangeNotifier {
 
     // 13. Hızlı Menü & Sayfa Düzenlemeleri
     _quickMenuItems = List.from(_db.getAllQuickMenuItems());
+    final currentIds = _quickMenuItems.map((e) => e.id).toSet();
+    final bool hasNewMods = currentIds.contains('qm_shuttle') &&
+        currentIds.contains('qm_shift_swap') &&
+        currentIds.contains('qm_doctor');
+    if (!hasNewMods) {
+      _quickMenuItems.clear();
+      _quickMenuItems.addAll(DatabaseService.defaultQuickMenuItems());
+      _db.saveQuickMenuItems(_quickMenuItems);
+    }
     _pageCustomizations.clear();
     _pageCustomizations.addAll(_db.getAllPageCustomizations());
 

@@ -347,6 +347,24 @@ class DatabaseService {
       }
     }
 
+    // Otomatik Hızlı Menü Senkronizasyonu (11 kurumsal modülü garanti ekle)
+    final existingIds = _quickMenuItems.map((e) => e.id).toSet();
+    final bool hasNewModules = existingIds.contains('qm_shuttle') &&
+        existingIds.contains('qm_shift_swap') &&
+        existingIds.contains('qm_helpdesk') &&
+        existingIds.contains('qm_doctor');
+    if (!hasNewModules || _quickMenuItems.isEmpty) {
+      _quickMenuItems.clear();
+      _quickMenuItems.addAll(defaultQuickMenuItems());
+      saveQuickMenuItems(_quickMenuItems);
+    } else {
+      final missing = defaultQuickMenuItems().where((d) => !existingIds.contains(d.id)).toList();
+      if (missing.isNotEmpty) {
+        _quickMenuItems.addAll(missing);
+        saveQuickMenuItems(_quickMenuItems);
+      }
+    }
+
     // 11. Sayfa Özelleştirmeleri (Yönetici & Admin Düzenleme Modu)
     final pageCustRaw = prefs.getString(_keyPageCustomizations);
     if (pageCustRaw != null && pageCustRaw.isNotEmpty) {
@@ -1682,24 +1700,6 @@ class DatabaseService {
       actionType: 'chat',
     ),
     QuickMenuItem(
-      id: 'qm_contacts',
-      title: 'Kişiler',
-      subtitle: 'Şirket rehberi & mesai arkadaşları',
-      iconCode: 0xe49b,
-      colorValue: 0xFF4F46E5,
-      isVisible: true,
-      actionType: 'contacts',
-    ),
-    QuickMenuItem(
-      id: 'qm_notifications',
-      title: 'Bildirimler',
-      subtitle: 'Duyurular & onay bildirimleri',
-      iconCode: 0xe44f,
-      colorValue: 0xFF8B5CF6,
-      isVisible: true,
-      actionType: 'notifications',
-    ),
-    QuickMenuItem(
       id: 'qm_cafeteria',
       title: 'Yemekhane Menüsü',
       subtitle: 'Günün menüsü & 2 haftalık çizelge',
@@ -1709,22 +1709,31 @@ class DatabaseService {
       actionType: 'cafeteria',
     ),
     QuickMenuItem(
-      id: 'qm_business_card',
-      title: 'Kartvizit',
-      subtitle: 'Dijital QR kodlu şirket kartı',
-      iconCode: 0xf04ee,
-      colorValue: 0xFF0D9488,
+      id: 'qm_shuttle',
+      title: 'Servis Saatleri',
+      subtitle: 'Maslak, Levent, Kadıköy güzergahları',
+      iconCode: 0xe1d5,
+      colorValue: 0xFF3B82F6,
       isVisible: true,
-      actionType: 'business_card',
+      actionType: 'shuttle',
     ),
     QuickMenuItem(
-      id: 'qm_favorites',
-      title: 'Sık Kullanılanlar',
-      subtitle: 'Hızlı kısayollar, yemek & servis',
-      iconCode: 0xe5f9,
-      colorValue: 0xFFD97706,
-      isVisible: false,
-      actionType: 'favorites',
+      id: 'qm_holidays',
+      title: 'Resmi Tatiller',
+      subtitle: '2026 resmi tatil takvimi & köprüler',
+      iconCode: 0xe122,
+      colorValue: 0xFF6366F1,
+      isVisible: true,
+      actionType: 'holidays',
+    ),
+    QuickMenuItem(
+      id: 'qm_doctor',
+      title: 'Revir & Hekim',
+      subtitle: 'İş yeri hekimi, oda & acil hatlar',
+      iconCode: 0xe3e3,
+      colorValue: 0xFFEF4444,
+      isVisible: true,
+      actionType: 'doctor',
     ),
     QuickMenuItem(
       id: 'qm_shift_swap',
@@ -1772,33 +1781,6 @@ class DatabaseService {
       actionType: 'ptt_radio',
     ),
     QuickMenuItem(
-      id: 'qm_shuttle',
-      title: 'Servis Saatleri',
-      subtitle: 'Akşam çıkış saatleri ve güzergahlar',
-      iconCode: 0xe1d5,
-      colorValue: 0xFF3B82F6,
-      isVisible: true,
-      actionType: 'shuttle',
-    ),
-    QuickMenuItem(
-      id: 'qm_holidays',
-      title: 'Resmi Tatiller',
-      subtitle: '2026 yılı tatil günleri ve köprüler',
-      iconCode: 0xe122,
-      colorValue: 0xFF6366F1,
-      isVisible: true,
-      actionType: 'holidays',
-    ),
-    QuickMenuItem(
-      id: 'qm_doctor',
-      title: 'Revir & Hekim',
-      subtitle: 'İş yeri hekimi ve acil dahili hatlar',
-      iconCode: 0xe3e3,
-      colorValue: 0xFFEF4444,
-      isVisible: true,
-      actionType: 'doctor',
-    ),
-    QuickMenuItem(
       id: 'qm_hybrid_desk',
       title: 'Hibrit & Masa',
       subtitle: 'Masa ve toplantı odası rezervasyonu',
@@ -1826,6 +1808,24 @@ class DatabaseService {
       actionType: 'okr',
     ),
     QuickMenuItem(
+      id: 'qm_contacts',
+      title: 'Kişiler',
+      subtitle: 'Şirket rehberi & mesai arkadaşları',
+      iconCode: 0xe49b,
+      colorValue: 0xFF4F46E5,
+      isVisible: true,
+      actionType: 'contacts',
+    ),
+    QuickMenuItem(
+      id: 'qm_notifications',
+      title: 'Bildirimler',
+      subtitle: 'Duyurular & onay bildirimleri',
+      iconCode: 0xe44f,
+      colorValue: 0xFF8B5CF6,
+      isVisible: true,
+      actionType: 'notifications',
+    ),
+    QuickMenuItem(
       id: 'qm_leave',
       title: 'İzin Talebi',
       subtitle: 'Yıllık izin veya mazeret talebi oluşturun',
@@ -1833,6 +1833,24 @@ class DatabaseService {
       colorValue: 0xFFF59E0B,
       isVisible: true,
       actionType: 'leave',
+    ),
+    QuickMenuItem(
+      id: 'qm_business_card',
+      title: 'Kartvizit',
+      subtitle: 'Dijital QR kodlu şirket kartı',
+      iconCode: 0xf04ee,
+      colorValue: 0xFF0D9488,
+      isVisible: true,
+      actionType: 'business_card',
+    ),
+    QuickMenuItem(
+      id: 'qm_favorites',
+      title: 'Sık Kullanılanlar',
+      subtitle: 'Hızlı kısayollar, yemek & servis',
+      iconCode: 0xe5f9,
+      colorValue: 0xFFD97706,
+      isVisible: false,
+      actionType: 'favorites',
     ),
     QuickMenuItem(
       id: 'qm_records',
@@ -1904,9 +1922,10 @@ class DatabaseService {
       return defaultQuickMenuItems();
     }
     final existingIds = _quickMenuItems.map((e) => e.id).toSet();
-    final missing = defaultQuickMenuItems().where((d) => !existingIds.contains(d.id));
+    final missing = defaultQuickMenuItems().where((d) => !existingIds.contains(d.id)).toList();
     if (missing.isNotEmpty) {
       _quickMenuItems.addAll(missing);
+      saveQuickMenuItems(_quickMenuItems);
     }
     return List.unmodifiable(_quickMenuItems);
   }

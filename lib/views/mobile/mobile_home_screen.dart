@@ -32,6 +32,7 @@ import '../vehicle/vehicle_request_screen.dart';
 import '../enterprise/enterprise_hub_screen.dart';
 import '../kiosk/kiosk_terminal_screen.dart';
 import '../../models/page_customization.dart';
+import '../../models/quick_menu_item.dart';
 
 class MobileHomeScreen extends StatefulWidget {
   const MobileHomeScreen({super.key});
@@ -43,6 +44,7 @@ class MobileHomeScreen extends StatefulWidget {
 class _MobileHomeScreenState extends State<MobileHomeScreen> {
   int _currentIndex = 0;
   bool _isLoading = false;
+  bool _isQuickMenuGridView = false;
 
   String _formatDuration(Duration d) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -567,30 +569,84 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Hızlı İşlemler',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
-                    ),
-                    if (user.role == UserRole.boss || user.role == UserRole.admin)
-                      InkWell(
-                        onTap: () => QuickMenuManagerDialog.show(context),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    Row(
+                      children: [
+                        Text(
+                          'Hızlı İşlemler',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.text(context)),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.primaryOf(context).withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.tune_rounded, size: 14, color: Color(0xFF2563EB)),
-                              SizedBox(width: 4),
-                              Text('Menüyü Düzenle', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
-                            ],
+                          child: Text(
+                            '${pdks.visibleQuickMenuItems.length} Modül',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryOf(context)),
                           ),
                         ),
-                      ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _isQuickMenuGridView = !_isQuickMenuGridView;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg(context),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.cardBorder(context)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isQuickMenuGridView ? Icons.view_carousel_rounded : Icons.grid_view_rounded,
+                                  size: 14,
+                                  color: AppColors.primaryOf(context),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _isQuickMenuGridView ? 'Yatay Liste' : 'Tümü (Izgara)',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryOf(context)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (user.role == UserRole.boss || user.role == UserRole.admin) ...[
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: () => QuickMenuManagerDialog.show(context),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryOf(context).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.tune_rounded, size: 14, color: Color(0xFF2563EB)),
+                                  SizedBox(width: 4),
+                                  Text('Menüyü Düzenle', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -635,251 +691,47 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   ),
                 ],
 
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: pdks.visibleQuickMenuItems.map((item) {
-                      return Container(
-                        width: 135,
-                        margin: const EdgeInsets.only(right: 10),
-                        child: _buildQuickActionCard(
-                          icon: item.icon,
-                          color: item.color,
-                          title: item.title,
-                          subtitle: item.actionType == 'leave' ? 'Kalan: ${user.remainingLeaveDays} Gün' : item.subtitle,
-                          onTap: () {
-                            if (!pdks.hasPagePermission(item.actionType)) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Yetki Sınırı: Bu modüle erişim için rol yetkiniz bulunmamaktadır.'),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                              return;
-                            }
-
-                            switch (item.actionType) {
-                              case 'profile':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-                                break;
-                              case 'payroll':
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
-                                        ? const PayrollManagementScreen()
-                                        : const MyPayrollsScreen(),
-                                  ),
-                                );
-                                break;
-                              case 'chat':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
-                                break;
-                              case 'contacts':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
-                                break;
-                              case 'notifications':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-                                break;
-                              case 'cafeteria':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
-                                break;
-                              case 'business_card':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
-                                break;
-                              case 'favorites':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
-                                break;
-                              case 'leave':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-                                break;
-                              case 'records':
-                                setState(() => _currentIndex = 1);
-                                break;
-                              case 'field_work':
-                                FieldWorkDialog.show(context);
-                                break;
-                              case 'overtime':
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
-                                );
-                                break;
-                              case 'vehicle_request':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
-                                break;
-                              case 'shift_swap':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 1)));
-                                break;
-                              case 'helpdesk':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 2)));
-                                break;
-                              case 'announcements':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 3)));
-                                break;
-                              case 'onboarding':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 4)));
-                                break;
-                              case 'training':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 5)));
-                                break;
-                              case 'okr':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 6)));
-                                break;
-                              case 'visitors':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 7)));
-                                break;
-                              case 'hybrid_desk':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 8)));
-                                break;
-                              case 'branches':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 9)));
-                                break;
-                              case 'feedback':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 10)));
-                                break;
-                              case 'calibration':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 12)));
-                                break;
-                              case 'pdks_ai':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 14)));
-                                break;
-                              case 'kiosk_face':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const KioskTerminalScreen()));
-                                break;
-                              case 'digital_docs':
-                              case 'digital_signature':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 16)));
-                                break;
-                              case 'near_miss':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 17)));
-                                break;
-                              case 'ptt_radio':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 18)));
-                                break;
-                              case 'shuttle':
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    title: const Row(
-                                      children: [
-                                        Icon(Icons.directions_bus_rounded, color: Color(0xFF3B82F6), size: 22),
-                                        SizedBox(width: 8),
-                                        Expanded(child: Text('Şirket Servis Saatleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                                      ],
-                                    ),
-                                    content: const Text(
-                                      'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n'
-                                      '1. Maslak - Levent - Zincirlikuyu - Kadıköy\n'
-                                      '2. Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n'
-                                      '3. Maslak - Kozyatağı - Ataşehir - Ümraniye\n'
-                                      '4. Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\n'
-                                      'Servis Sorumlusu İletişim: 0532 000 11 22',
-                                      style: TextStyle(fontSize: 13, height: 1.5),
-                                    ),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
-                                    ],
-                                  ),
-                                );
-                                break;
-                              case 'holidays':
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    title: const Row(
-                                      children: [
-                                        Icon(Icons.calendar_month_rounded, color: Color(0xFF6366F1), size: 22),
-                                        SizedBox(width: 8),
-                                        Expanded(child: Text('2026 Resmi Tatiller', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                                      ],
-                                    ),
-                                    content: const Text(
-                                      '• 1 Ocak (Perşembe): Yılbaşı\n'
-                                      '• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n'
-                                      '• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n'
-                                      '• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n'
-                                      '• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n'
-                                      '• 30 Ağustos (Pazar): Zafer Bayramı\n'
-                                      '• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
-                                      style: TextStyle(fontSize: 13, height: 1.5),
-                                    ),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
-                                    ],
-                                  ),
-                                );
-                                break;
-                              case 'doctor':
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    title: const Row(
-                                      children: [
-                                        Icon(Icons.medical_services_outlined, color: Color(0xFFEF4444), size: 22),
-                                        SizedBox(width: 8),
-                                        Expanded(child: Text('İş Yeri Hekimi & Revir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                                      ],
-                                    ),
-                                    content: const Text(
-                                      'İş Yeri Hekimi: Dr. Mehmet Yılmaz\n'
-                                      'Çalışma Saatleri: Hafta içi 09:00 - 17:30\n'
-                                      'Konum: B Blok, Giriş Kat, Oda No: 104\n\n'
-                                      'Acil Dahili Hatlar:\n'
-                                      '• Revir: Dahili 1044\n'
-                                      '• İK Masası: Dahili 1002\n'
-                                      '• Güvenlik Masası: Dahili 1000\n'
-                                      '• Genel Acil Çağrı: 112',
-                                      style: TextStyle(fontSize: 13, height: 1.5),
-                                    ),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
-                                    ],
-                                  ),
-                                );
-                                break;
-                              case 'enterprise_hub':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));
-                                break;
-                              case 'settings':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-                                break;
-                              case 'about':
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
-                                break;
-                              case 'cloud_db':
-                                showFirebaseConfigDialog(context);
-                                break;
-                              case 'info_dialog':
-                              default:
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    title: Row(
-                                      children: [
-                                        Icon(item.icon, color: item.color, size: 22),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-                                      ],
-                                    ),
-                                    content: Text(item.customContent ?? item.subtitle, style: const TextStyle(fontSize: 13, height: 1.5)),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
-                                    ],
-                                  ),
-                                );
-                                break;
-                            }
-                          },
+                // Hızlı İşlemler Kartları: Izgara veya Yatay Liste
+                _isQuickMenuGridView
+                    ? GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          mainAxisExtent: 148,
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                        itemCount: pdks.visibleQuickMenuItems.length,
+                        itemBuilder: (ctx, index) {
+                          final item = pdks.visibleQuickMenuItems[index];
+                          return _buildQuickActionCard(
+                            icon: item.icon,
+                            color: item.color,
+                            title: item.title,
+                            subtitle: item.actionType == 'leave' ? 'Kalan: ${user.remainingLeaveDays} Gün' : item.subtitle,
+                            onTap: () => _handleQuickActionTap(context, item, user, pdks),
+                          );
+                        },
+                      )
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: pdks.visibleQuickMenuItems.map((item) {
+                            return Container(
+                              width: 140,
+                              margin: const EdgeInsets.only(right: 10),
+                              child: _buildQuickActionCard(
+                                icon: item.icon,
+                                color: item.color,
+                                title: item.title,
+                                subtitle: item.actionType == 'leave' ? 'Kalan: ${user.remainingLeaveDays} Gün' : item.subtitle,
+                                onTap: () => _handleQuickActionTap(context, item, user, pdks),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
               ],
             ),
           ),
@@ -1401,7 +1253,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
             icon: Icons.settings_outlined,
             color: const Color(0xFF475569),
             title: 'Görünüm & Tema Ayarları',
-            subtitle: 'Aydınlık, Koyu ve kurumsal renk temaları',
+            subtitle: 'Aydınlık ve Koyu Tema Seçimi',
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
@@ -1462,6 +1314,235 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
     );
   }
 
+  void _handleQuickActionTap(BuildContext context, QuickMenuItem item, Employee user, PdksState pdks) {
+    if (!pdks.hasPagePermission(item.actionType)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yetki Sınırı: Bu modüle erişim için rol yetkiniz bulunmamaktadır.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    switch (item.actionType) {
+      case 'profile':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+        break;
+      case 'payroll':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                ? const PayrollManagementScreen()
+                : const MyPayrollsScreen(),
+          ),
+        );
+        break;
+      case 'chat':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+        break;
+      case 'contacts':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+        break;
+      case 'notifications':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+        break;
+      case 'cafeteria':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+        break;
+      case 'business_card':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
+        break;
+      case 'favorites':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+        break;
+      case 'leave':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+        break;
+      case 'records':
+        setState(() => _currentIndex = 1);
+        break;
+      case 'field_work':
+        FieldWorkDialog.show(context);
+        break;
+      case 'overtime':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+        );
+        break;
+      case 'vehicle_request':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
+        break;
+      case 'shift_swap':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 1)));
+        break;
+      case 'helpdesk':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 2)));
+        break;
+      case 'announcements':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 3)));
+        break;
+      case 'onboarding':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 4)));
+        break;
+      case 'training':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 5)));
+        break;
+      case 'okr':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 6)));
+        break;
+      case 'visitors':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 7)));
+        break;
+      case 'hybrid_desk':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 8)));
+        break;
+      case 'branches':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 9)));
+        break;
+      case 'feedback':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 10)));
+        break;
+      case 'calibration':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 12)));
+        break;
+      case 'pdks_ai':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 14)));
+        break;
+      case 'kiosk_face':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const KioskTerminalScreen()));
+        break;
+      case 'digital_docs':
+      case 'digital_signature':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 16)));
+        break;
+      case 'near_miss':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 17)));
+        break;
+      case 'ptt_radio':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 18)));
+        break;
+      case 'shuttle':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.directions_bus_rounded, color: Color(0xFF3B82F6), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('Şirket Servis Saatleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n'
+              '1. Maslak - Levent - Zincirlikuyu - Kadıköy\n'
+              '2. Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n'
+              '3. Maslak - Kozyatağı - Ataşehir - Ümraniye\n'
+              '4. Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\n'
+              'Servis Sorumlusu İletişim: 0532 000 11 22',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'holidays':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.calendar_month_rounded, color: Color(0xFF6366F1), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('2026 Resmi Tatiller', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              '• 1 Ocak (Perşembe): Yılbaşı\n'
+              '• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n'
+              '• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n'
+              '• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n'
+              '• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n'
+              '• 30 Ağustos (Pazar): Zafer Bayramı\n'
+              '• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'doctor':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.medical_services_outlined, color: Color(0xFFEF4444), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('İş Yeri Hekimi & Revir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              'İş Yeri Hekimi: Dr. Mehmet Yılmaz\n'
+              'Çalışma Saatleri: Hafta içi 09:00 - 17:30\n'
+              'Konum: B Blok, Giriş Kat, Oda No: 104\n\n'
+              'Acil Dahili Hatlar:\n'
+              '• Revir: Dahili 1044\n'
+              '• İK Masası: Dahili 1002\n'
+              '• Güvenlik Masası: Dahili 1000\n'
+              '• Genel Acil Çağrı: 112',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'enterprise_hub':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));
+        break;
+      case 'settings':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+        break;
+      case 'about':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+        break;
+      case 'cloud_db':
+        showFirebaseConfigDialog(context);
+        break;
+      case 'info_dialog':
+      default:
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(item.icon, color: item.color, size: 22),
+                const SizedBox(width: 8),
+                Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: Text(item.customContent ?? item.subtitle, style: const TextStyle(fontSize: 13, height: 1.5)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+    }
+  }
+
   Widget _buildQuickActionCard({
     required IconData icon,
     required Color color,
@@ -1471,13 +1552,13 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        height: 152,
-        padding: const EdgeInsets.all(14),
+        height: 148,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.cardBg(context),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.cardBorder(context)),
           boxShadow: [
             BoxShadow(
@@ -1490,13 +1571,26 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             Text(
@@ -1506,13 +1600,31 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
             ),
             const SizedBox(height: 4),
-            Expanded(
+            SizedBox(
+              height: 32,
               child: Text(
                 subtitle,
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: AppColors.textSub(context), fontSize: 11, height: 1.25),
               ),
+            ),
+            const Spacer(),
+            // Eşit Alt Çizgi ve Yönlendirici (Her kartın alt hizası birebir eşit)
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: color.withOpacity(0.7)),
+              ],
             ),
           ],
         ),
