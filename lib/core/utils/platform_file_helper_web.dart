@@ -2,6 +2,14 @@
 import 'dart:html' as html;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:typed_data';
+
+Future<void> platformSaveBytes({required String fileName, required Uint8List bytes, required String mimeType}) async {
+  final url = html.Url.createObjectUrlFromBlob(html.Blob([bytes], mimeType));
+  final link = html.AnchorElement(href: url)..download = fileName;
+  html.document.body?.children.add(link); link.click(); link.remove();
+  Timer(const Duration(seconds: 30), () => html.Url.revokeObjectUrl(url));
+}
 
 Future<void> platformSaveAndOpenFile({
   required String fileName,

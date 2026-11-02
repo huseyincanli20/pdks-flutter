@@ -1,0 +1,125 @@
+@page
+@model SurveysModel
+@{
+    ViewData["Title"] = "Çalışan Anketleri & Memnuniyet";
+}
+
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-square-poll-vertical text-purple-600"></i> Çalışan Memnuniyet & Nabız Anketleri
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Personel geri bildirimleri, şirket içi anketler ve memnuniyet puanları</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <button onclick="document.getElementById('surveyModal').classList.remove('hidden')" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-pen-to-square mr-1"></i> Ankete Katıl / Yanıtla
+        </button>
+    </div>
+</div>
+
+<div class="space-y-6">
+    @foreach (var s in Model.Surveys)
+    {
+        var avg = s.Responses.Count > 0 ? s.Responses.Average(r => r.Rating) : 0.0;
+
+        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">@s.Title</h2>
+                    <p class="text-xs text-slate-500 mt-1">@s.Description</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block uppercase font-bold">Ortalama Puan</span>
+                        <div class="text-2xl font-black text-purple-600 flex items-center gap-1">
+                            @avg.ToString("0.0") <span class="text-sm text-slate-400 font-normal">/ 5.0</span>
+                        </div>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gelen Yanıtlar -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Son Çalışan Yorumları & Puanları (@s.Responses.Count Yanıt)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach (var r in s.Responses)
+                    {
+                        <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/70 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div class="font-bold text-slate-900 text-xs">@r.Employee?.FullName</div>
+                                <div class="flex text-amber-400 text-xs gap-0.5">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= r.Rating) { <i class="fa-solid fa-star"></i> }
+                                        else { <i class="fa-regular fa-star text-slate-300"></i> }
+                                    }
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-600 italic">"@r.Feedback"</p>
+                            <span class="text-2xs text-slate-400 font-mono block">@r.SubmittedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal -->
+<div id="surveyModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <h3 class="font-bold text-slate-900 text-lg border-b pb-3">Anket Değerlendirmesi Yap</h3>
+        <div class="space-y-3 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Personel</label>
+                <select id="srEmp" class="w-full bg-slate-50 border rounded-xl p-2.5">
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <option value="@emp.Id">@emp.FullName</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Memnuniyet Puanınız (1-5)</label>
+                <select id="srRate" class="w-full bg-slate-50 border rounded-xl p-2.5 font-bold">
+                    <option value="5">⭐⭐⭐⭐⭐ 5 - Çok Memnunum</option>
+                    <option value="4">⭐⭐⭐⭐ 4 - Memnunum</option>
+                    <option value="3">⭐⭐⭐ 3 - Orta / Fena Değil</option>
+                    <option value="2">⭐⭐ 2 - Geliştirilmeli</option>
+                    <option value="1">⭐ 1 - Memnun Değilim</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Görüş ve Önerileriniz</label>
+                <textarea id="srFeed" rows="3" placeholder="Fikirlerinizi paylaşın..." class="w-full bg-slate-50 border rounded-xl p-2.5"></textarea>
+            </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+            <button onclick="document.getElementById('surveyModal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-slate-600 text-xs font-semibold">İptal</button>
+            <button onclick="submitSurvey()" class="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-semibold">Yanıtı Gönder</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function submitSurvey() {
+        const emp = parseInt(document.getElementById("srEmp").value);
+        const rate = parseInt(document.getElementById("srRate").value);
+        const feed = document.getElementById("srFeed").value;
+
+        const res = await fetch("/api/surveys/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ surveyId: 1, employeeId: emp, rating: rate, feedback: feed })
+        });
+        const data = await res.json();
+        if (res.ok) { alert(data.message); location.reload(); }
+        else { alert("Hata oluştu."); }
+    }
+</script>
+}

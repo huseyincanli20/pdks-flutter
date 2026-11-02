@@ -1,0 +1,220 @@
+@page
+@model BillingModel
+@{
+    ViewData["Title"] = "PDKS Abonelik ve Ödeme";
+}
+
+<!-- Üst Başlık -->
+<div class="mb-8 text-center max-w-2xl mx-auto">
+    <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+        Şirketiniz İçin SaaS Lisanslama
+    </span>
+    <h1 class="text-3xl font-black text-slate-900 mt-3">Esnek ve Şeffaf Fiyatlandırma</h1>
+    <p class="text-slate-500 text-sm mt-2">
+        Mobil GPS doğrulama, sınırsız personel, izin yönetimi ve Excel puantaj dahil tek paket.
+    </p>
+</div>
+
+<!-- Plan Kartları -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+    <!-- Aylık Plan -->
+    <div class="bg-white rounded-3xl p-8 border-2 @(Model.Company?.Plan == PdksApp.Models.SubscriptionPlan.Monthly ? "border-indigo-600 shadow-xl" : "border-slate-200 shadow-sm") relative flex flex-col justify-between">
+        @if (Model.Company?.Plan == PdksApp.Models.SubscriptionPlan.Monthly)
+        {
+            <span class="absolute -top-3.5 right-8 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                Mevcut Planınız
+            </span>
+        }
+        <div>
+            <h3 class="text-xl font-bold text-slate-900">Aylık Abonelik</h3>
+            <p class="text-xs text-slate-400 mt-1">Her ay otomatik yenilenen esnek plan</p>
+
+            <div class="mt-6 flex items-baseline gap-1">
+                <span class="text-4xl font-black text-slate-900">200</span>
+                <span class="text-slate-500 font-bold">TL / Ay</span>
+            </div>
+
+            <ul class="mt-8 space-y-3.5 text-xs text-slate-600">
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> Sınırsız Personel ve Departman
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> Mobil Tarayıcı GPS Konum Doğrulama
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> İzin, Rapor ve Mazeret Sistemi
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> Excel Puantaj Dışa Aktarma
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i> İstediğiniz Zaman İptal
+                </li>
+            </ul>
+        </div>
+
+        <button onclick="openPaymentModal(1, 'Aylık Plan', '200 TL')" class="mt-8 w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-md">
+            Aylık Planı Seç (200 TL)
+        </button>
+    </div>
+
+    <!-- Yıllık Plan -->
+    <div class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-8 relative shadow-2xl flex flex-col justify-between border-2 @(Model.Company?.Plan == PdksApp.Models.SubscriptionPlan.Yearly ? "border-amber-400" : "border-indigo-700")">
+        <span class="absolute -top-3.5 right-8 bg-amber-400 text-slate-950 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow">
+            2 Ay Ücretsiz Fırsatı
+        </span>
+
+        <div>
+            <h3 class="text-xl font-bold">Yıllık Abonelik</h3>
+            <p class="text-xs text-indigo-200 mt-1">Yıllık peşin ödemede 400 TL avantaj</p>
+
+            <div class="mt-6 flex items-baseline gap-1">
+                <span class="text-4xl font-black text-amber-300">2.000</span>
+                <span class="text-indigo-200 font-bold">TL / Yıl</span>
+                <span class="text-xs text-indigo-300 ml-2 line-through">2.400 TL</span>
+            </div>
+
+            <ul class="mt-8 space-y-3.5 text-xs text-indigo-100">
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-amber-300 text-sm"></i> Aylık plandaki TÜM özellikler
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-amber-300 text-sm"></i> <strong>2 Ay Bedava</strong> Kullanım
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-amber-300 text-sm"></i> Öncelikli 7/24 WhatsApp & Telefon Desteği
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-amber-300 text-sm"></i> Özel Şirket Logosu & Markalama
+                </li>
+                <li class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-circle-check text-amber-300 text-sm"></i> 1 Yıl Fiyat Sabitleme Garantisi
+                </li>
+            </ul>
+        </div>
+
+        <button onclick="openPaymentModal(2, 'Yıllık Plan', '2.000 TL')" class="mt-8 w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-3.5 rounded-2xl text-sm transition-all shadow-lg shadow-amber-500/20">
+            Yıllık Avantajlı Abone Ol (2.000 TL)
+        </button>
+    </div>
+</div>
+
+<!-- Güvenli Ödeme Modal Penceresi (PayTR / iyzico Mock) -->
+<div id="paymentModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div>
+                <h3 class="font-bold text-slate-900 text-lg">Güvenli 3D Ödeme</h3>
+                <span id="modalPlanLabel" class="text-xs text-indigo-600 font-bold"></span>
+            </div>
+            <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <!-- Sanal Kredi Kartı Görünümü -->
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-lg space-y-4 font-mono text-xs">
+            <div class="flex justify-between items-center text-slate-400">
+                <span class="tracking-widest">BULUT PDKS SAAS</span>
+                <i class="fa-brands fa-cc-mastercard text-2xl text-amber-400"></i>
+            </div>
+            <div class="text-base tracking-widest font-black" id="previewCardNum">•••• •••• •••• ••••</div>
+            <div class="flex justify-between text-2xs text-slate-400">
+                <div>
+                    <span>KART SAHİBİ</span>
+                    <div class="text-white font-bold text-xs uppercase" id="previewCardHolder">AD SOYAD</div>
+                </div>
+                <div>
+                    <span>SKT</span>
+                    <div class="text-white font-bold text-xs" id="previewCardExp">12/28</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Alanları -->
+        <div class="space-y-3 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Kart Üzerindeki İsim</label>
+                <input type="text" id="payHolder" placeholder="Ahmet Yılmaz" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" oninput="document.getElementById('previewCardHolder').innerText = this.value || 'AD SOYAD'" />
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Kart Numarası</label>
+                <input type="text" id="payNumber" placeholder="4543 •••• •••• 1234" maxlength="19" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono" oninput="document.getElementById('previewCardNum').innerText = this.value || '•••• •••• •••• ••••'" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Son Kullanma (AA/YY)</label>
+                    <input type="text" id="payExp" placeholder="12/28" maxlength="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono" oninput="document.getElementById('previewCardExp').innerText = this.value || '12/28'" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">CVV / Güvenlik Kodu</label>
+                    <input type="password" id="payCvc" placeholder="•••" maxlength="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono" />
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <button onclick="submitSubscription()" id="btnPay" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-lock"></i> <span id="btnPayText">Ödemeyi Tamamla</span>
+            </button>
+            <p class="text-center text-2xs text-slate-400 mt-2 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL & 3D Secure İle Korunmaktadır
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let selectedPlanType = 1;
+
+    function openPaymentModal(type, title, price) {
+        selectedPlanType = type;
+        document.getElementById("modalPlanLabel").innerText = `${title} - Tutar: ${price}`;
+        document.getElementById("btnPayText").innerText = `${price} Öde ve Başlat`;
+        document.getElementById("paymentModal").classList.remove("hidden");
+    }
+
+    function closePaymentModal() {
+        document.getElementById("paymentModal").classList.add("hidden");
+    }
+
+    async function submitSubscription() {
+        const holder = document.getElementById("payHolder").value;
+        const number = document.getElementById("payNumber").value;
+        const exp = document.getElementById("payExp").value;
+        const cvc = document.getElementById("payCvc").value;
+
+        if (!number || number.length < 16) {
+            alert("Lütfen geçerli bir kart numarası giriniz.");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/subscription/upgrade", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    companyId: 1,
+                    planType: selectedPlanType,
+                    cardHolderName: holder || "Test Kullanıcı",
+                    cardNumber: number,
+                    expireMonth: "12",
+                    expireYear: "28",
+                    cvc: cvc || "123"
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "Ödeme başarısız.");
+            }
+        } catch(e) {
+            alert("Bağlantı hatası oluştu.");
+        }
+    }
+</script>
+}

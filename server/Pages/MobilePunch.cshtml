@@ -1,0 +1,200 @@
+@page
+@model MobilePunchModel
+@{
+    ViewData["Title"] = "Personel Mobil GPS Giriş / Çıkış";
+}
+
+<div class="max-w-md mx-auto">
+    <!-- Mobil Kart -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+        <!-- Başlık -->
+        <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 text-white text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-2xl mb-3 backdrop-blur-sm shadow-inner">
+                <i class="fa-solid fa-location-dot text-3xl text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">Mobil PDKS Girişi</h1>
+            <p class="text-indigo-200 text-xs mt-1">@Model.Company?.Name</p>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <!-- GPS Konum Durumu -->
+            <div id="locationBadge" class="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex items-start gap-3">
+                <div class="text-amber-600 mt-0.5">
+                    <i class="fa-solid fa-circle-notch fa-spin text-lg" id="locIcon"></i>
+                </div>
+                <div class="text-xs">
+                    <span class="font-bold text-amber-900 block" id="locStatus">GPS Konumu Alınıyor...</span>
+                    <span class="text-amber-700 block mt-0.5" id="locDetails">Lütfen tarayıcınızın konum erişimine izin verin.</span>
+                </div>
+            </div>
+
+            <!-- Demo Simülasyon Butonu (Test Kolaylığı İçin) -->
+            <div class="flex items-center justify-between text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-600 font-medium">Ofis İçi Konum Simüle Et:</span>
+                <button type="button" onclick="simulateOfficeLocation()" class="text-indigo-600 hover:text-indigo-800 font-semibold bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shadow-2xs">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Ofis İçi Yap
+                </button>
+            </div>
+
+            <!-- Personel Seçimi -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Personel Seçiniz
+                </label>
+                <select id="employeeSelect" class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <option value="@emp.Id">@emp.FullName (@emp.Department)</option>
+                    }
+                </select>
+            </div>
+
+            <!-- PIN Kodu Girişi -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Personel PIN Kodu
+                </label>
+                <div class="relative">
+                    <input type="password" id="pinInput" placeholder="PIN kodunuzu girin (Örn: 1001)" value="1001"
+                           class="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono tracking-widest" />
+                    <span class="absolute right-4 top-3.5 text-xs text-slate-400">Örn: 1001</span>
+                </div>
+            </div>
+
+            <!-- İşlem Butonları (Giriş / Çıkış) -->
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button type="button" onclick="submitAttendance(1)" id="btnCheckIn"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-100 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95">
+                    <i class="fa-solid fa-arrow-right-to-bracket text-lg"></i>
+                    <span class="text-sm">GİRİŞ YAP</span>
+                </button>
+
+                <button type="button" onclick="submitAttendance(2)" id="btnCheckOut"
+                        class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-rose-100 flex flex-col items-center justify-center gap-1 transition-transform active:scale-95">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-lg"></i>
+                    <span class="text-sm">ÇIKIŞ YAP</span>
+                </button>
+            </div>
+
+            <!-- Sonuç Bildirim Alanı -->
+            <div id="resultBox" class="hidden p-4 rounded-2xl text-xs font-medium"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentLat = null;
+    let currentLng = null;
+    const officeLat = @(Model.Company?.OfficeLatitude ?? 41.0082);
+    const officeLng = @(Model.Company?.OfficeLongitude ?? 28.9784);
+    const allowedRadius = @(Model.Company?.AllowedRadiusMeters ?? 250);
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    currentLat = position.coords.latitude;
+                    currentLng = position.coords.longitude;
+                    updateLocationUI(true, `Konumunuz alındı: ${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`);
+                },
+                (error) => {
+                    updateLocationUI(false, "Konum alınamadı. Lütfen tarayıcıdan GPS izinlerini kontrol edin.");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            updateLocationUI(false, "Tarayıcınız Geolocation (GPS) desteklemiyor.");
+        }
+    }
+
+    function simulateOfficeLocation() {
+        currentLat = officeLat + 0.0001; // Ofis içinde simülasyon koordinatı
+        currentLng = officeLng + 0.0001;
+        updateLocationUI(true, `Ofis Konumu Simüle Edildi: ${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`);
+    }
+
+    function updateLocationUI(success, message) {
+        const badge = document.getElementById("locationBadge");
+        const icon = document.getElementById("locIcon");
+        const status = document.getElementById("locStatus");
+        const details = document.getElementById("locDetails");
+
+        if (success) {
+            badge.className = "p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-start gap-3";
+            icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
+            status.className = "font-bold text-emerald-900 block";
+            status.innerText = "GPS Konumu Hazır";
+            details.className = "text-emerald-700 block mt-0.5";
+            details.innerText = message;
+        } else {
+            badge.className = "p-4 rounded-2xl bg-rose-50 border border-rose-100 flex items-start gap-3";
+            icon.className = "fa-solid fa-triangle-exclamation text-rose-600 text-lg";
+            status.className = "font-bold text-rose-900 block";
+            status.innerText = "GPS Uyarısı";
+            details.className = "text-rose-700 block mt-0.5";
+            details.innerText = message;
+        }
+    }
+
+    async function submitAttendance(type) {
+        const resultBox = document.getElementById("resultBox");
+        resultBox.classList.add("hidden");
+
+        if (currentLat === null || currentLng === null) {
+            alert("Lütfen önce GPS konumunun alınmasını bekleyin veya 'Ofis İçi Yap' simülasyonunu kullanın.");
+            return;
+        }
+
+        const employeeId = parseInt(document.getElementById("employeeSelect").value);
+        const pinCode = document.getElementById("pinInput").value;
+
+        if (!pinCode) {
+            alert("Lütfen PIN kodunuzu girin.");
+            return;
+        }
+
+        const payload = {
+            employeeId: employeeId,
+            pinCode: pinCode,
+            attendanceType: type,
+            latitude: currentLat,
+            longitude: currentLng,
+            deviceInfo: navigator.userAgent.substring(0, 50)
+        };
+
+        try {
+            const response = await fetch("/api/attendance/check", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            resultBox.classList.remove("hidden");
+
+            if (response.ok && data.success) {
+                resultBox.className = "p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1";
+                resultBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-check-circle text-emerald-600"></i> ${data.message}</div>
+                    <div class="text-xs text-emerald-700">Tarih: ${data.time} | Mesafe: ${data.distance} metre</div>
+                `;
+            } else {
+                resultBox.className = "p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 space-y-1";
+                resultBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-rose-600"></i> ${data.message || 'İşlem Başarısız'}</div>
+                `;
+            }
+        } catch (err) {
+            resultBox.classList.remove("hidden");
+            resultBox.className = "p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900";
+            resultBox.innerHTML = `<div class="font-bold">Bağlantı hatası oluştu.</div>`;
+        }
+    }
+
+    // Sayfa açıldığında otomatik konum iste
+    window.onload = () => {
+        getLocation();
+    };
+</script>
+}

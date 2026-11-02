@@ -5,6 +5,9 @@ class EmployeeDocument {
   final String title;
   final String documentType; // 'contract', 'id_card', 'certificate', 'health_report', 'diploma', 'criminal_record'
   final String fileName;
+  final String? storageFileId;
+  final String? mimeType;
+  final int? fileSize;
   final DateTime uploadDate;
   final DateTime? expiryDate; // Belge bitiş tarihi
   final String status; // 'valid', 'expiring_soon', 'expired'
@@ -17,6 +20,9 @@ class EmployeeDocument {
     required this.title,
     required this.documentType,
     required this.fileName,
+    this.storageFileId,
+    this.mimeType,
+    this.fileSize,
     DateTime? uploadDate,
     this.expiryDate,
     this.status = 'valid',
@@ -30,6 +36,9 @@ class EmployeeDocument {
         'title': title,
         'documentType': documentType,
         'fileName': fileName,
+        'storageFileId': storageFileId,
+        'mimeType': mimeType,
+        'fileSize': fileSize,
         'uploadDate': uploadDate.toIso8601String(),
         'expiryDate': expiryDate?.toIso8601String(),
         'status': status,
@@ -43,6 +52,9 @@ class EmployeeDocument {
         title: json['title'] ?? '',
         documentType: json['documentType'] ?? 'certificate',
         fileName: json['fileName'] ?? 'belge.pdf',
+        storageFileId: json['storageFileId'],
+        mimeType: json['mimeType'],
+        fileSize: json['fileSize'],
         uploadDate: json['uploadDate'] != null ? DateTime.parse(json['uploadDate']) : DateTime.now(),
         expiryDate: json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : null,
         status: json['status'] ?? 'valid',

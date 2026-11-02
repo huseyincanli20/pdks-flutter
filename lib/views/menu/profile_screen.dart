@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../core/services/central_store_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -32,6 +33,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _selectedOuterwearSize;
 
   bool _isEditing = false;
+  bool _uploadingAvatar = false;
+
+  Future<void> _saveAvatar(Uint8List bytes, String name, PdksState pdks) async {
+    if (_uploadingAvatar) throw StateError('Fotoğraf yükleniyor.');
+    _uploadingAvatar = true;
+    try {
+      final central = CentralStoreService.instance;
+      if (central.configured) {
+        final saved = await central.upload(bytes, name, pdks.currentUser.companyId,
+          employeeId: pdks.currentUser.id.toString(), category: 'profil');
+        pdks.updateCurrentUserAvatar('central-file:${saved['id']}');
+      } else {
+        pdks.updateCurrentUserAvatar('data:image/jpeg;base64,${base64Encode(bytes)}');
+      }
+    } finally { _uploadingAvatar = false; }
+  }
 
   final List<String> _shirtSizes = const ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
   final List<String> _pantSizes = const ['28', '30', '32', '34', '36', '38', '40', '42', '44'];
@@ -193,8 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 800, maxHeight: 800);
                     if (image != null) {
                       final bytes = await image.readAsBytes();
-                      final base64Uri = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-                      pdks.updateCurrentUserAvatar(base64Uri);
+                      await _saveAvatar(bytes, image.name, pdks);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -207,6 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   } catch (e) {
                     debugPrint('Galeri fotoğraf hatası: $e');
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Fotoğraf yüklenemedi: $e')));
                   }
                 },
               ),
@@ -233,8 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85, maxWidth: 800, maxHeight: 800);
                     if (photo != null) {
                       final bytes = await photo.readAsBytes();
-                      final base64Uri = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-                      pdks.updateCurrentUserAvatar(base64Uri);
+                      await _saveAvatar(bytes, photo.name, pdks);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -247,6 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   } catch (e) {
                     debugPrint('Kamera hatası: $e');
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Fotoğraf yüklenemedi: $e')));
                   }
                 },
               ),

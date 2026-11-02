@@ -41,3 +41,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Private runtime data and deployment credentials
+**/App_Data/
+*.db
+*.db-shm
+*.db-wal
+*.key
+.env
+.env.*
+!.env.example

@@ -1,0 +1,332 @@
+@page
+@model LeavesModel
+@{
+    ViewData["Title"] = "İzin ve Rapor Yönetimi";
+}
+
+<!-- Üst Başlık & Yeni İzin Talep Butonu -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-indigo-600"></i> İzin & Mazeret Yönetimi
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Personel izin talepleri, onay/ret süreçleri ve yıllık izin kotaları</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <button onclick="openModal()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-plus"></i> Yeni İzin Talebi Oluştur
+        </button>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bekleyen Talepler</span>
+            <div class="text-2xl font-black text-amber-600 mt-1">@Model.PendingCount</div>
+        </div>
+        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Onaylanan İzinler</span>
+            <div class="text-2xl font-black text-emerald-600 mt-1">@Model.ApprovedCount</div>
+        </div>
+        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-check-double"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Reddedilen Talepler</span>
+            <div class="text-2xl font-black text-rose-600 mt-1">@Model.RejectedCount</div>
+        </div>
+        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-ban"></i>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- İzin Talepleri Listesi -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-indigo-500"></i> İzin Talepleri
+            </h2>
+            <span class="text-xs text-slate-500">Tüm Kayıtlar</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                    <tr>
+                        <th class="px-5 py-3.5">Personel</th>
+                        <th class="px-5 py-3.5">İzin Türü</th>
+                        <th class="px-5 py-3.5">Tarih Aralığı</th>
+                        <th class="px-5 py-3.5">Gün</th>
+                        <th class="px-5 py-3.5">Durum</th>
+                        <th class="px-5 py-3.5 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model.LeaveRequests.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="px-5 py-8 text-center text-slate-400">
+                                Henüz bir izin talebi bulunmuyor.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.LeaveRequests)
+                    {
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-5 py-3.5">
+                                <div class="font-semibold text-slate-900">@item.Employee?.FullName</div>
+                                <div class="text-xs text-slate-400">@item.Employee?.Department</div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                @switch (item.Type)
+                                {
+                                    case PdksApp.Models.LeaveType.Annual:
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">Yıllık İzin</span>
+                                        break;
+                                    case PdksApp.Models.LeaveType.Sick:
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">Rapor / Hastalık</span>
+                                        break;
+                                    case PdksApp.Models.LeaveType.Excuse:
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Mazeret İzni</span>
+                                        break;
+                                    default:
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Diğer</span>
+                                        break;
+                                }
+                                @if (!string.IsNullOrEmpty(item.Reason))
+                                {
+                                    <div class="text-xs text-slate-400 mt-1 italic truncate max-w-[150px]">"@item.Reason"</div>
+                                }
+                            </td>
+                            <td class="px-5 py-3.5 text-xs text-slate-600 font-mono">
+                                @item.StartDate.ToString("dd.MM.yyyy") - @item.EndDate.ToString("dd.MM.yyyy")
+                            </td>
+                            <td class="px-5 py-3.5 text-xs font-bold text-slate-700">
+                                @item.TotalDays gün
+                            </td>
+                            <td class="px-5 py-3.5">
+                                @switch (item.Status)
+                                {
+                                    case PdksApp.Models.LeaveStatus.Pending:
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                                            <i class="fa-solid fa-clock"></i> Beklemede
+                                        </span>
+                                        break;
+                                    case PdksApp.Models.LeaveStatus.Approved:
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                            <i class="fa-solid fa-check"></i> Onaylandı
+                                        </span>
+                                        break;
+                                    case PdksApp.Models.LeaveStatus.Rejected:
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                                            <i class="fa-solid fa-xmark"></i> Reddedildi
+                                        </span>
+                                        break;
+                                }
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                @if (item.Status == PdksApp.Models.LeaveStatus.Pending)
+                                {
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button onclick="processLeave(@item.Id, 1)" title="Onayla" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors">
+                                            <i class="fa-solid fa-check text-xs"></i>
+                                        </button>
+                                        <button onclick="processLeave(@item.Id, 2)" title="Reddet" class="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-slate-400">İşlendi</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Personel Kalan İzin Kotası -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h2 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-user-clock text-indigo-500"></i> Yıllık İzin Bakiyeleri
+        </h2>
+        <div class="space-y-3">
+            @foreach (var emp in Model.Employees)
+            {
+                var remaining = emp.AnnualLeaveAllowance - emp.UsedLeaveDays;
+                var percent = (int)((double)emp.UsedLeaveDays / emp.AnnualLeaveAllowance * 100);
+
+                <div class="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="font-bold text-sm text-slate-800">@emp.FullName</span>
+                        <span class="text-xs font-semibold text-indigo-600">@remaining Gün Kaldı</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div class="bg-indigo-600 h-2 rounded-full" style="width: @percent%"></div>
+                    </div>
+                    <div class="flex justify-between text-2xs text-slate-400 mt-1 font-mono text-[11px]">
+                        <span>Kullanılan: @emp.UsedLeaveDays gün</span>
+                        <span>Toplam Hak: @emp.AnnualLeaveAllowance gün</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Yeni İzin Talep Modal Penceresi -->
+<div id="leaveModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="font-bold text-slate-900 text-lg">Yeni İzin / Mazeret Talebi</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <div class="space-y-3 text-sm">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Personel</label>
+                <select id="modalEmpSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    @foreach (var emp in Model.Employees)
+                    {
+                        <option value="@emp.Id">@emp.FullName (@emp.Department)</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Personel PIN Kodu</label>
+                <input type="password" id="modalPin" value="1001" placeholder="PIN giriniz" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono" />
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">İzin Türü</label>
+                <select id="modalType" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <option value="1">Yıllık İzin</option>
+                    <option value="2">Rapor / Hastalık</option>
+                    <option value="3">Mazeret İzni</option>
+                    <option value="4">Ücretsiz İzin</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Başlangıç Tarihi</label>
+                    <input type="date" id="modalStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Bitiş Tarihi</label>
+                    <input type="date" id="modalEndDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs" />
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Açıklama / Mazeret</label>
+                <textarea id="modalReason" rows="2" placeholder="Gerekçe yazınız..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs"></textarea>
+            </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+            <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 text-xs font-semibold">İptal</button>
+            <button onclick="submitLeaveRequest()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Talebi Gönder</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function openModal() {
+        // Bugün ve yarın varsayılan tarihler
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("modalStartDate").value = today;
+        document.getElementById("modalEndDate").value = today;
+        document.getElementById("leaveModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+        document.getElementById("leaveModal").classList.add("hidden");
+    }
+
+    async function submitLeaveRequest() {
+        const empId = parseInt(document.getElementById("modalEmpSelect").value);
+        const pin = document.getElementById("modalPin").value;
+        const type = parseInt(document.getElementById("modalType").value);
+        const startDate = document.getElementById("modalStartDate").value;
+        const endDate = document.getElementById("modalEndDate").value;
+        const reason = document.getElementById("modalReason").value;
+
+        if (!pin || !startDate || !endDate) {
+            alert("Lütfen PIN ve tarih alanlarını doldurunuz.");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/leave/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    employeeId: empId,
+                    pinCode: pin,
+                    leaveType: type,
+                    startDate: startDate,
+                    endDate: endDate,
+                    reason: reason
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        } catch(e) {
+            alert("Bağlantı hatası oluştu.");
+        }
+    }
+
+    async function processLeave(requestId, newStatus) {
+        const comment = newStatus === 1 ? "Yönetici tarafından onaylandı." : "Yönetici tarafından reddedildi.";
+        if (!confirm(newStatus === 1 ? "Bu izin talebini onaylamak istiyor musunuz?" : "Bu izin talebini reddetmek istiyor musunuz?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/leave/process", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    requestId: requestId,
+                    newStatus: newStatus,
+                    managerComment: comment
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                location.reload();
+            } else {
+                alert(data.message || "İşlem gerçekleştirilemedi.");
+            }
+        } catch(e) {
+            alert("Bağlantı hatası oluştu.");
+        }
+    }
+</script>
+}

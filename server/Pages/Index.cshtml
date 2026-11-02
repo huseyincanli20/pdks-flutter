@@ -1,0 +1,178 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "PDKS Yönetici Paneli";
+}
+
+<!-- Üst Başlık & SaaS Bilgisi -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900">@Model.Company?.Name - Yönetim Paneli</h1>
+        <p class="text-sm text-slate-500 mt-1">Personel devamlılığı, GPS doğrulama ve anlık yoklama takibi</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl text-right">
+            <span class="text-xs uppercase font-semibold text-indigo-600 block">SaaS Abonelik Planı</span>
+            <span class="font-bold text-indigo-900 text-sm">
+                @(Model.Company?.Plan == PdksApp.Models.SubscriptionPlan.Monthly ? "Aylık 200 TL" : "Yıllık 2.000 TL")
+            </span>
+        </div>
+        <a asp-page="/MobilePunch" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-qrcode"></i> Mobil Giriş Paneli
+        </a>
+    </div>
+</div>
+
+<!-- İstatistik Kartları -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kayıtlı Personel</span>
+            <div class="text-2xl font-black text-slate-900 mt-1">@Model.TotalEmployeesCount</div>
+        </div>
+        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-users"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bugün İşte Olanlar</span>
+            <div class="text-2xl font-black text-emerald-600 mt-1">@Model.TodayCheckInsCount / @Model.TotalEmployeesCount</div>
+        </div>
+        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">GPS Çap Toleransı</span>
+            <div class="text-2xl font-black text-amber-600 mt-1">@Model.Company?.AllowedRadiusMeters m</div>
+        </div>
+        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-location-crosshairs"></i>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ofis Konumu</span>
+            <div class="text-xs font-mono text-slate-600 mt-2 truncate max-w-[130px]">
+                @Model.Company?.OfficeLatitude, @Model.Company?.OfficeLongitude
+            </div>
+        </div>
+        <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg">
+            <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Son Giriş-Çıkış Hareketleri -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-indigo-500"></i> Son Giriş-Çıkış Hareketleri (Anlık)
+            </h2>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">Canlı Takip</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                    <tr>
+                        <th class="px-5 py-3.5">Personel</th>
+                        <th class="px-5 py-3.5">İşlem</th>
+                        <th class="px-5 py-3.5">Tarih / Saat</th>
+                        <th class="px-5 py-3.5">GPS Doğrulama</th>
+                        <th class="px-5 py-3.5">Uzaklık</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model.RecentRecords.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="px-5 py-8 text-center text-slate-400">
+                                Henüz bir giriş/çıkış hareketi kaydedilmedi.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var record in Model.RecentRecords)
+                    {
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-5 py-3.5">
+                                <div class="font-semibold text-slate-900">@record.Employee?.FullName</div>
+                                <div class="text-xs text-slate-400">@record.Employee?.Department</div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                @if (record.Type == PdksApp.Models.AttendanceType.CheckIn)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Giriş
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Çıkış
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-5 py-3.5 font-mono text-xs text-slate-600">
+                                @record.Timestamp.AddHours(3).ToString("dd.MM.yyyy HH:mm:ss")
+                            </td>
+                            <td class="px-5 py-3.5">
+                                @if (record.IsLocationVerified)
+                                {
+                                    <span class="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                                        <i class="fa-solid fa-circle-check"></i> Onaylandı
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1 text-xs text-rose-600 font-medium">
+                                        <i class="fa-solid fa-circle-xmark"></i> Kapsam Dışı
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-5 py-3.5 text-xs font-mono text-slate-500">
+                                @record.CalculatedDistanceMeters m
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Şirket Personel Listesi & PIN Kodları -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h2 class="font-bold text-slate-900 text-base mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-id-card text-indigo-500"></i> Aktif Personeller
+        </h2>
+        <div class="space-y-3">
+            @foreach (var emp in Model.Employees)
+            {
+                <div class="p-3 rounded-xl border border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                        <div class="font-semibold text-sm text-slate-800">@emp.FullName</div>
+                        <div class="text-xs text-slate-400">@emp.Department • @emp.Title</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-mono bg-white px-2 py-1 rounded border border-slate-200 font-bold text-indigo-600">
+                            PIN: @emp.PinCode
+                        </span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="mt-6 p-4 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-900">
+            <p class="font-semibold mb-1"><i class="fa-solid fa-circle-info"></i> SaaS Kiralama Bilgisi</p>
+            <p class="text-indigo-700 leading-relaxed">
+                Müşteri şirketler bu paneli kullanarak ofis koordinatlarını, izin verilen yarıçapı ve personellerini yönetir. Giriş işlemleri ise personelin mobil cihazından tek tıkla yapılır.
+            </p>
+        </div>
+    </div>
+</div>

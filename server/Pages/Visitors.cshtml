@@ -1,0 +1,154 @@
+@page
+@model VisitorsModel
+@{
+    ViewData["Title"] = "Ziyaretçi Takip Sistemi";
+}
+
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-id-badge text-teal-600"></i> Ziyaretçi Giriş & Güvenlik Takibi
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Şirkete gelen misafirlerin kayıtları, kart numaraları ve anlık bina mevcudu</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="bg-teal-50 border border-teal-100 px-4 py-2 rounded-xl text-teal-800 text-sm font-bold flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+            Şu An Binadaki Ziyaretçi: @Model.ActiveVisitorCount
+        </div>
+        <button onclick="document.getElementById('visModal').classList.remove('hidden')" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-plus mr-1"></i> Ziyaretçi Girişi Yap
+        </button>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                <tr>
+                    <th class="px-5 py-3.5">Kart No</th>
+                    <th class="px-5 py-3.5">Ziyaretçi Adı</th>
+                    <th class="px-5 py-3.5">Kurum / Firma</th>
+                    <th class="px-5 py-3.5">Ziyaret Edilen Kişi</th>
+                    <th class="px-5 py-3.5">Giriş Saati</th>
+                    <th class="px-5 py-3.5">Çıkış Saati</th>
+                    <th class="px-5 py-3.5 text-right">İşlem</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @foreach (var item in Model.Visitors)
+                {
+                    <tr class="hover:bg-slate-50/70">
+                        <td class="px-5 py-3.5 font-mono font-bold text-teal-700">
+                            <span class="bg-teal-50 px-2 py-1 rounded border border-teal-200">@item.BadgeNumber</span>
+                        </td>
+                        <td class="px-5 py-3.5 font-bold text-slate-900">
+                            @item.VisitorFullName
+                            <div class="text-xs text-slate-400 font-normal">@item.Phone</div>
+                        </td>
+                        <td class="px-5 py-3.5 text-xs text-slate-600">@item.CompanyOrOrganization</td>
+                        <td class="px-5 py-3.5 text-xs font-semibold text-slate-800">
+                            <i class="fa-solid fa-user text-slate-400 mr-1"></i> @item.HostEmployeeName
+                            <div class="text-xs text-slate-400 font-normal">@item.Purpose</div>
+                        </td>
+                        <td class="px-5 py-3.5 text-xs font-mono text-slate-600">
+                            @item.CheckInTime.AddHours(3).ToString("dd.MM.yyyy HH:mm")
+                        </td>
+                        <td class="px-5 py-3.5 text-xs font-mono">
+                            @if (item.CheckOutTime != null)
+                            {
+                                <span class="text-slate-500">@item.CheckOutTime.Value.AddHours(3).ToString("HH:mm")</span>
+                            }
+                            else
+                            {
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">İçeride</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            @if (item.CheckOutTime == null)
+                            {
+                                <button onclick="checkoutVisitor(@item.Id)" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white text-xs font-bold transition-colors">
+                                    <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Çıkış Ver
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-xs text-slate-400">Ayrıldı</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="visModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <h3 class="font-bold text-slate-900 text-lg border-b pb-3">Ziyaretçi Giriş Formu</h3>
+        <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Adı Soyadı</label>
+                    <input type="text" id="vName" placeholder="Ziyaretçi Ad Soyad" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kart No</label>
+                    <input type="text" id="vBadge" value="Z-03" class="w-full bg-slate-50 border rounded-xl p-2.5 font-mono" />
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kurum / Firma</label>
+                    <input type="text" id="vCompany" placeholder="Örn: X Danışmanlık" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Telefon</label>
+                    <input type="text" id="vPhone" placeholder="05xx..." class="w-full bg-slate-50 border rounded-xl p-2.5" />
+                </div>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Ziyaret Edilen Personel</label>
+                <input type="text" id="vHost" placeholder="Örn: Ahmet Yılmaz" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Ziyaret Amacı</label>
+                <input type="text" id="vPurp" value="Toplantı / Görüşme" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+            </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+            <button onclick="document.getElementById('visModal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-slate-600 text-xs font-semibold">İptal</button>
+            <button onclick="submitVisitor()" class="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold">Girişi Tamamla</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function submitVisitor() {
+        const name = document.getElementById("vName").value;
+        const badge = document.getElementById("vBadge").value;
+        const comp = document.getElementById("vCompany").value;
+        const phone = document.getElementById("vPhone").value;
+        const host = document.getElementById("vHost").value;
+        const purp = document.getElementById("vPurp").value;
+
+        if (!name) { alert("Lütfen isim girin."); return; }
+
+        const res = await fetch("/api/visitors/checkin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visitorFullName: name, companyOrOrganization: comp, phone: phone, hostEmployeeName: host, purpose: purp, badgeNumber: badge })
+        });
+        if (res.ok) location.reload();
+    }
+
+    async function checkoutVisitor(id) {
+        if (!confirm("Ziyaretçi çıkışını onaylıyor musunuz?")) return;
+        const res = await fetch(`/api/visitors/checkout/${id}`, { method: "POST" });
+        if (res.ok) location.reload();
+    }
+</script>
+}

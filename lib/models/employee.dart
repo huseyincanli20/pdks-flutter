@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../core/services/central_store_service.dart';
 import 'package:flutter/material.dart';
 
 enum UserRole {
@@ -335,6 +336,10 @@ class Employee {
   ImageProvider? get avatarImageProvider {
     if (avatarUrl == null || avatarUrl!.trim().isEmpty) return null;
     final url = avatarUrl!.trim();
+    if (url.startsWith('central-file:')) {
+      final store = CentralStoreService.instance;
+      return store.configured ? NetworkImage(store.fileUrl(url.substring(13)), headers: store.headers) : null;
+    }
     if (url.startsWith('data:image')) {
       final commaIndex = url.indexOf(',');
       if (commaIndex != -1) {

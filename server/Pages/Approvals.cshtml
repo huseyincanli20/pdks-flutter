@@ -1,0 +1,171 @@
+@page
+@model ApprovalsModel
+@{
+    ViewData["Title"] = "Onaylarım Merkezi";
+}
+
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-stamp text-indigo-600"></i> Merkezi Onay Ekranı
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">İzinler, fazla mesailer ve işçilik taleplerini tek merkezden onaylayın veya reddedin</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <div class="bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl text-indigo-800 text-sm font-bold flex items-center gap-2">
+            <i class="fa-solid fa-bell text-indigo-600"></i>
+            Bekleyen Toplam Onay: @Model.TotalPending
+        </div>
+    </div>
+</div>
+
+<div class="space-y-8">
+    <!-- 1. İZİN ONAYLARI -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-calendar-check text-indigo-600"></i> Bekleyen İzin Talepleri (@Model.PendingLeaves.Count)
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                    <tr>
+                        <th class="px-5 py-3">Personel</th>
+                        <th class="px-5 py-3">İzin Türü</th>
+                        <th class="px-5 py-3">Tarih Aralığı</th>
+                        <th class="px-5 py-3">Süre</th>
+                        <th class="px-5 py-3">Gerekçe</th>
+                        <th class="px-5 py-3 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model.PendingLeaves.Count == 0)
+                    {
+                        <tr><td colspan="6" class="px-5 py-6 text-center text-slate-400">Bekleyen izin onayı bulunmuyor.</td></tr>
+                    }
+                    @foreach (var l in Model.PendingLeaves)
+                    {
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="px-5 py-3 font-bold text-slate-900">@l.Employee?.FullName</td>
+                            <td class="px-5 py-3 text-xs">@l.Type</td>
+                            <td class="px-5 py-3 text-xs font-mono">@l.StartDate.ToString("dd.MM") - @l.EndDate.ToString("dd.MM.yyyy")</td>
+                            <td class="px-5 py-3 text-xs font-bold text-slate-700">@l.TotalDays Gün</td>
+                            <td class="px-5 py-3 text-xs text-slate-500">@l.Reason</td>
+                            <td class="px-5 py-3 text-right">
+                                <div class="inline-flex gap-2">
+                                    <button onclick="processItem(1, @l.Id, 1)" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"><i class="fa-solid fa-check mr-1"></i> Onayla</button>
+                                    <button onclick="processItem(1, @l.Id, 2)" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white"><i class="fa-solid fa-xmark mr-1"></i> Reddet</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. FAZLA MESAİ ONAYLARI -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-clock text-amber-500"></i> Bekleyen Fazla Mesai Bildirimleri (@Model.PendingOvertimes.Count)
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                    <tr>
+                        <th class="px-5 py-3">Personel</th>
+                        <th class="px-5 py-3">Tarih</th>
+                        <th class="px-5 py-3">Mesai Süresi</th>
+                        <th class="px-5 py-3">Tahmini Tutar</th>
+                        <th class="px-5 py-3">Gerekçe</th>
+                        <th class="px-5 py-3 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model.PendingOvertimes.Count == 0)
+                    {
+                        <tr><td colspan="6" class="px-5 py-6 text-center text-slate-400">Bekleyen fazla mesai onayı bulunmuyor.</td></tr>
+                    }
+                    @foreach (var o in Model.PendingOvertimes)
+                    {
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="px-5 py-3 font-bold text-slate-900">@o.Employee?.FullName</td>
+                            <td class="px-5 py-3 text-xs font-mono">@o.OvertimeDate.ToString("dd.MM.yyyy")</td>
+                            <td class="px-5 py-3 text-xs font-bold font-mono text-slate-800">@o.Hours Saat</td>
+                            <td class="px-5 py-3 text-xs font-bold font-mono text-emerald-600">@o.EstimatedPay.ToString("N2") TL</td>
+                            <td class="px-5 py-3 text-xs text-slate-500">@o.Reason</td>
+                            <td class="px-5 py-3 text-right">
+                                <div class="inline-flex gap-2">
+                                    <button onclick="processItem(2, @o.Id, 1)" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"><i class="fa-solid fa-check mr-1"></i> Onayla</button>
+                                    <button onclick="processItem(2, @o.Id, 2)" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white"><i class="fa-solid fa-xmark mr-1"></i> Reddet</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. İŞÇİLİK / PERSONEL TALEPLERİ -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h2 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-blue-600"></i> Bekleyen İşçilik / Eleman Talepleri (@Model.PendingLabors.Count)
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                    <tr>
+                        <th class="px-5 py-3">Departman & Pozisyon</th>
+                        <th class="px-5 py-3">Kişi Sayısı</th>
+                        <th class="px-5 py-3">İhtiyaç Tarihi</th>
+                        <th class="px-5 py-3">Aciliyet</th>
+                        <th class="px-5 py-3">Gerekçe</th>
+                        <th class="px-5 py-3 text-right">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @if (Model.PendingLabors.Count == 0)
+                    {
+                        <tr><td colspan="6" class="px-5 py-6 text-center text-slate-400">Bekleyen işçilik talebi bulunmuyor.</td></tr>
+                    }
+                    @foreach (var lb in Model.PendingLabors)
+                    {
+                        <tr class="hover:bg-slate-50/70">
+                            <td class="px-5 py-3 font-bold text-slate-900">@lb.PositionTitle (@lb.Department)</td>
+                            <td class="px-5 py-3 text-xs font-bold text-blue-600">@lb.HeadCount Kişi</td>
+                            <td class="px-5 py-3 text-xs font-mono">@lb.NeededDate.ToString("dd.MM.yyyy")</td>
+                            <td class="px-5 py-3 text-xs font-bold text-slate-700">@lb.Urgency</td>
+                            <td class="px-5 py-3 text-xs text-slate-500">@lb.Justification</td>
+                            <td class="px-5 py-3 text-right">
+                                <div class="inline-flex gap-2">
+                                    <button onclick="processItem(3, @lb.Id, 1)" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"><i class="fa-solid fa-check mr-1"></i> Onayla</button>
+                                    <button onclick="processItem(3, @lb.Id, 2)" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white"><i class="fa-solid fa-xmark mr-1"></i> Reddet</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function processItem(type, id, status) {
+        const comment = status === 1 ? "Merkezi onay panelinden onaylandı." : "Merkezi panelden reddedildi.";
+        const res = await fetch("/api/approvals/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemType: type, itemId: id, newStatus: status, comment: comment })
+        });
+        if (res.ok) location.reload();
+    }
+</script>
+}

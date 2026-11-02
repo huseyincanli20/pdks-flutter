@@ -8,6 +8,7 @@ import '../../models/page_customization.dart';
 import '../../models/employee.dart';
 import '../common/firebase_config_dialog.dart';
 import '../../core/services/ios_notification_service.dart';
+import 'central_storage_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -287,6 +288,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MediaQuery.of(context).padding.bottom + 24,
         ),
         children: [
+          if (pdks.currentUser.role == UserRole.admin || pdks.currentUser.role == UserRole.boss)
+            Card(child: ListTile(leading: const Icon(Icons.storage_rounded),
+              title: const Text('Merkezi Veritabanı ve Dosyalar'),
+              subtitle: const Text('Sunucu bağlantısı, kayıt aktarımı, fotoğraf ve belgeler'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const CentralStorageScreen())))),
           // Sadece Yönetici & Admin Rolünde Gözüken Canlı Düzenleme Çubuğu
           const AdminEditModeBar(
             pageId: 'settings',

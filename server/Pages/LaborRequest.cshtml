@@ -1,0 +1,158 @@
+@page
+@model LaborRequestModel
+@{
+    ViewData["Title"] = "İşçilik & Personel Talepleri";
+}
+
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-plus text-blue-600"></i> İşçilik & Vardiya Takviye Talepleri
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Departmanların ek personel, vardiya takviyesi ve geçici iş gücü talepleri</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <button onclick="document.getElementById('laborModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-plus mr-1"></i> Yeni İşçilik Talebi Aç
+        </button>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                <tr>
+                    <th class="px-5 py-3.5">Departman & Pozisyon</th>
+                    <th class="px-5 py-3.5">Talep Edilen Kişi</th>
+                    <th class="px-5 py-3.5">İhtiyaç Tarihi</th>
+                    <th class="px-5 py-3.5">Aciliyet</th>
+                    <th class="px-5 py-3.5">Gerekçe</th>
+                    <th class="px-5 py-3.5">Durum</th>
+                    <th class="px-5 py-3.5 text-right">İşlem</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @foreach (var item in Model.Requests)
+                {
+                    <tr class="hover:bg-slate-50/70">
+                        <td class="px-5 py-3.5">
+                            <div class="font-bold text-slate-900">@item.PositionTitle</div>
+                            <div class="text-xs text-slate-400">@item.Department</div>
+                        </td>
+                        <td class="px-5 py-3.5 font-bold font-mono text-indigo-600">
+                            @item.HeadCount Kişi
+                        </td>
+                        <td class="px-5 py-3.5 font-mono text-xs text-slate-600">
+                            @item.NeededDate.ToString("dd.MM.yyyy")
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">@item.Urgency</span>
+                        </td>
+                        <td class="px-5 py-3.5 text-xs text-slate-500 max-w-[200px] truncate" title="@item.Justification">
+                            @item.Justification
+                        </td>
+                        <td class="px-5 py-3.5">
+                            @if (item.Status == PdksApp.Models.ApprovalStatus.Pending)
+                            {
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Değerlendirmede</span>
+                            }
+                            else if (item.Status == PdksApp.Models.ApprovalStatus.Approved)
+                            {
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Onaylandı</span>
+                            }
+                            else
+                            {
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">Reddedildi</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            @if (item.Status == PdksApp.Models.ApprovalStatus.Pending)
+                            {
+                                <div class="inline-flex gap-1.5">
+                                    <button onclick="processApproval(3, @item.Id, 1)" class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"><i class="fa-solid fa-check text-xs"></i></button>
+                                    <button onclick="processApproval(3, @item.Id, 2)" class="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></button>
+                                </div>
+                            }
+                            else { <span class="text-xs text-slate-400">İşlendi</span> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="laborModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <h3 class="font-bold text-slate-900 text-lg border-b pb-3">Yeni İşçilik / Personel Talebi</h3>
+        <div class="space-y-3 text-xs">
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Departman</label>
+                <input type="text" id="lbDept" value="Üretim / Depo" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Pozisyon / Unvan</label>
+                <input type="text" id="lbTitle" placeholder="Örn: Forklift Operatörü, Yazılımcı" class="w-full bg-slate-50 border rounded-xl p-2.5" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kişi Sayısı</label>
+                    <input type="number" id="lbCount" value="1" min="1" class="w-full bg-slate-50 border rounded-xl p-2 font-mono" />
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Aciliyet</label>
+                    <select id="lbUrg" class="w-full bg-slate-50 border rounded-xl p-2">
+                        <option>Normal</option>
+                        <option>Yüksek</option>
+                        <option>Kritik</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">İhtiyaç Tarihi</label>
+                <input type="date" id="lbDate" class="w-full bg-slate-50 border rounded-xl p-2" />
+            </div>
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Talep Gerekçesi</label>
+                <textarea id="lbJust" rows="2" placeholder="Gerekçe..." class="w-full bg-slate-50 border rounded-xl p-2.5"></textarea>
+            </div>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+            <button onclick="document.getElementById('laborModal').classList.add('hidden')" class="px-4 py-2 rounded-xl text-slate-600 text-xs font-semibold">İptal</button>
+            <button onclick="submitLabor()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold">Talebi Gönder</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function submitLabor() {
+        const dept = document.getElementById("lbDept").value;
+        const title = document.getElementById("lbTitle").value;
+        const count = parseInt(document.getElementById("lbCount").value);
+        const urg = document.getElementById("lbUrg").value;
+        const date = document.getElementById("lbDate").value || new Date().toISOString().split('T')[0];
+        const just = document.getElementById("lbJust").value;
+
+        const res = await fetch("/api/labor/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ companyId: 1, department: dept, positionTitle: title, headCount: count, neededDate: date, justification: just, urgency: urg })
+        });
+        const data = await res.json();
+        if (res.ok) { alert(data.message); location.reload(); }
+        else { alert(data.message || "Hata oluştu."); }
+    }
+
+    async function processApproval(type, id, status) {
+        const res = await fetch("/api/approvals/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemType: type, itemId: id, newStatus: status, comment: "Yönetici onayı" })
+        });
+        if (res.ok) location.reload();
+    }
+</script>
+}

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'central_store_service.dart';
 import '../../models/employee.dart';
 import '../../models/company.dart';
 import '../../models/attendance_record.dart';
@@ -108,7 +109,7 @@ class DatabaseService {
   static const String _keyAnomalyResolutions = 'pdks_db_anomaly_resolutions_v1';
   static const String _keyIncludeDutyNetWork = 'pdks_db_include_duty_net_work_v1';
 
-  SharedPreferences? _prefs;
+  CentralPreferences? _prefs;
   bool _isInitialized = false;
 
   // Bellek İçi Hızlı Veri Deposu (In-Memory Database Cache)
@@ -177,7 +178,7 @@ class DatabaseService {
     if (_isInitialized && !forceReload) return;
 
     try {
-      _prefs = await SharedPreferences.getInstance();
+      _prefs = CentralPreferences(await SharedPreferences.getInstance());
       _employees.clear();
       _companies.clear();
       _records.clear();
@@ -227,6 +228,7 @@ class DatabaseService {
   Future<void> _loadAllDataFromDb() async {
     final prefs = _prefs;
     if (prefs == null) return;
+    final demo = !CentralStoreService.instance.configured;
 
     _inMemoryIsSessionActive = prefs.getBool(_keyIsSessionActive) ?? false;
     _inMemoryLoggedInUserEmail = prefs.getString(_keyLoggedInUserEmail);
@@ -256,7 +258,7 @@ class DatabaseService {
     }
 
     // Eğer veritabanı tamamen boşsa (ilk kurulum), varsayılan şirket ve çalışanları tohumla
-    if (_companies.isEmpty || _employees.isEmpty) {
+    if (demo && (_companies.isEmpty || _employees.isEmpty)) {
       await _seedDefaultDatabase();
     }
 
@@ -295,7 +297,7 @@ class DatabaseService {
         debugPrint('⚠️ Vardiyalar yüklenirken hata: $e');
       }
     }
-    if (_shifts.isEmpty) {
+    if (demo && _shifts.isEmpty) {
       await _seedDefaultShifts();
     }
 
@@ -334,7 +336,7 @@ class DatabaseService {
         debugPrint('⚠️ Bildirimler yüklenirken hata: $e');
       }
     }
-    if (_notifications.isEmpty) {
+    if (demo && _notifications.isEmpty) {
       await _seedDefaultNotifications();
     }
 
@@ -406,7 +408,7 @@ class DatabaseService {
         debugPrint('⚠️ Araç talepleri yüklenirken hata: $e');
       }
     }
-    if (_vehicleRequests.isEmpty) {
+    if (demo && _vehicleRequests.isEmpty) {
       await _seedDefaultVehicleRequests();
     }
 
@@ -449,7 +451,7 @@ class DatabaseService {
         debugPrint('⚠️ Bordrolar yüklenirken hata: $e');
       }
     }
-    if (_payrolls.isEmpty) {
+    if (demo && _payrolls.isEmpty) {
       await _seedDefaultPayrolls();
     }
 
@@ -464,7 +466,7 @@ class DatabaseService {
         debugPrint('⚠️ 2 Haftalık menü yüklenirken hata: $e');
       }
     }
-    if (_twoWeekMenus.isEmpty) {
+    if (demo && _twoWeekMenus.isEmpty) {
       await _seedDefaultTwoWeekMenu();
     }
 
@@ -805,12 +807,12 @@ class DatabaseService {
       }
     }
 
-    if (_helpdeskTickets.isEmpty || _announcements.isEmpty || _trainingCourses.isEmpty) {
+    if (demo && (_helpdeskTickets.isEmpty || _announcements.isEmpty || _trainingCourses.isEmpty)) {
       await _seedDefaultEnterpriseModules();
     }
 
     // Mevcut veritabanında yeni demo roller (Teknisyen, Doktor, Servis, Araç Kiralama ve Ek Personeller) eksikse ekle
-    await _ensureNewDemoEmployees();
+    if (demo) await _ensureNewDemoEmployees();
 
     // 41. Çalışan Hareket Yönetimi (PDKS Vardiyalar, Vardiya Atamaları, Hareketler ve Anomali Kararları)
     final pdksShiftsRaw = prefs.getString(_keyPdksShiftDefs);
@@ -871,7 +873,7 @@ class DatabaseService {
 
     _includeDutyInNetWork = prefs.getBool(_keyIncludeDutyNetWork) ?? true;
 
-    if (_pdksShiftDefs.isEmpty || _employeeMovements.isEmpty) {
+    if (demo && (_pdksShiftDefs.isEmpty || _employeeMovements.isEmpty)) {
       await _seedMovementManagementData();
     }
   }
@@ -3930,6 +3932,7 @@ class DatabaseService {
   }
 
   void _seedEnterpriseDefaultDataSync() {
+    if (CentralStoreService.instance.configured) return;
     // 32. Yapay Zeka Anomali & Sahte Geçiş (Anti-Buddy Punching) Tohumları
     if (_anomalies.isEmpty) {
       _anomalies.addAll([

@@ -1,0 +1,91 @@
+@page
+@model PuantajModel
+@{
+    ViewData["Title"] = "Puantaj ve Excel Raporları";
+}
+
+<!-- Üst Başlık & Excel İndir Butonu -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-file-excel text-emerald-600"></i> Aylık Puantaj & Bordro Dökümü
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Personel mesai hareketleri, izin günleri ve aylık devam tablosu</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <a href="/api/reports/puantaj/excel?year=@Model.SelectedYear&month=@Model.SelectedMonth"
+           class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-download"></i> Excel Olarak İndir (.xlsx)
+        </a>
+    </div>
+</div>
+
+<!-- Dönem Seçim Filtresi -->
+<div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <span class="text-xs font-bold uppercase text-slate-400">Dönem Seçimi:</span>
+        <select onchange="changePeriod(this)" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="10" selected>Ekim 2026</option>
+            <option value="9">Eylül 2026</option>
+            <option value="8">Ağustos 2026</option>
+        </select>
+    </div>
+    <div class="text-xs text-slate-500">
+        Toplam <strong class="text-slate-800">@Model.Rows.Count</strong> personel için puantaj hesaplandı.
+    </div>
+</div>
+
+<!-- Puantaj Tablosu -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-100 font-semibold">
+                <tr>
+                    <th class="px-5 py-3.5">Personel</th>
+                    <th class="px-5 py-3.5">Departman</th>
+                    <th class="px-5 py-3.5 text-center">Doğrulanmış Giriş</th>
+                    <th class="px-5 py-3.5 text-center">Doğrulanmış Çıkış</th>
+                    <th class="px-5 py-3.5 text-center">Onaylı İzin (Gün)</th>
+                    <th class="px-5 py-3.5 text-center">Kalan Yıllık İzin</th>
+                    <th class="px-5 py-3.5 text-right">Durum</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @foreach (var row in Model.Rows)
+                {
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                        <td class="px-5 py-3.5 font-bold text-slate-900">
+                            @row.FullName
+                        </td>
+                        <td class="px-5 py-3.5 text-slate-600 text-xs">
+                            @row.Department
+                        </td>
+                        <td class="px-5 py-3.5 text-center font-mono font-bold text-emerald-600">
+                            @row.CheckInsCount Gün
+                        </td>
+                        <td class="px-5 py-3.5 text-center font-mono font-bold text-indigo-600">
+                            @row.CheckOutsCount Gün
+                        </td>
+                        <td class="px-5 py-3.5 text-center font-mono font-bold text-amber-600">
+                            @row.ApprovedLeaveDays Gün
+                        </td>
+                        <td class="px-5 py-3.5 text-center font-mono text-slate-700">
+                            @row.RemainingLeaveDays Gün
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                                <i class="fa-solid fa-circle-check"></i> Bordroya Hazır
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function changePeriod(select) {
+        window.location.href = `/Puantaj?year=2026&month=${select.value}`;
+    }
+</script>

@@ -1,5 +1,9 @@
 # Kurumsal PDKS (Personel Devam Kontrol Sistemi) - Flutter Cross-Platform
 
+## Merkezi veritabanı ve fotoğraf/belge deposu
+
+Flutter iş kayıtları için sürüm kontrolü, çevrimdışı gönderim kuyruğu ve özel dosya yükleme eklendi. .NET 10 sunucu kaynakları `server/` klasöründedir. Kurulum, veri taşıma ve erişim sınırları için [sunucu kılavuzunu](server/README.md) okuyun. Bağlantı **Ayarlar → Merkezi Veritabanı ve Dosyalar** ekranından etkinleştirilir; mevcut tarayıcı kayıtları kendiliğinden aktarılmaz. Veritabanı dosyaları, yüklenen belgeler ve özel bağlantı anahtarları depoya dahil edilmez.
+
 Bu proje; **iOS**, **Android**, **Web** ve **Tablet Kiosk** cihazlarında tek bir kod tabanı (Flutter) üzerinden çalışan kapsamlı bir Personel Devam Kontrol Sistemidir.
 
 ---

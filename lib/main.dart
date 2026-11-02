@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/ios_notification_service.dart';
 import 'core/services/database_service.dart';
+import 'core/services/central_store_service.dart';
 import 'models/employee.dart';
 import 'state/pdks_state.dart';
 import 'views/auth/auth_screen.dart';
@@ -15,6 +16,7 @@ import 'views/cafeteria/cafeteria_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await CentralStoreService.instance.initialize();
   await DatabaseService().init();
 
   runApp(
