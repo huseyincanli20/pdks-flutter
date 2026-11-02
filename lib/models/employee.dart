@@ -149,7 +149,7 @@ const List<AppPageDefinition> kAllAppPages = [
   AppPageDefinition(id: 'field_work', title: 'Dışarıda Çalışma (Saha)', category: 'Operasyon', icon: Icons.location_on_rounded),
   AppPageDefinition(id: 'overtime', title: 'Fazla Mesai Talebi', category: 'Operasyon', icon: Icons.more_time_rounded),
   AppPageDefinition(id: 'vehicle_request', title: 'Araç Talebi & Filo', category: 'Operasyon', icon: Icons.directions_car_rounded),
-  AppPageDefinition(id: 'enterprise_hub', title: 'Kurumsal Modüller (15 Modül)', category: 'Kurumsal & Operasyon', icon: Icons.hub_rounded),
+  AppPageDefinition(id: 'enterprise_hub', title: 'Kurumsal Modüller (19 Modül)', category: 'Kurumsal & Operasyon', icon: Icons.hub_rounded),
   AppPageDefinition(id: 'settings', title: 'Uygulama Ayarları', category: 'Sistem', icon: Icons.settings_rounded),
   AppPageDefinition(id: 'about', title: 'Hakkımda & Güvenlik', category: 'Sistem', icon: Icons.info_rounded),
   AppPageDefinition(id: 'cloud_db', title: 'Firebase Bulut DB', category: 'Sistem (Korumalı)', icon: Icons.cloud_rounded),
@@ -264,6 +264,8 @@ class Employee {
   final String? pantSize;
   final int? shoeSize;
   final String? outerwearSize;
+  final String sicilNo;
+  final String branch;
 
   Employee({
     required this.id,
@@ -294,7 +296,12 @@ class Employee {
     this.pantSize,
     this.shoeSize,
     this.outerwearSize,
+    this.sicilNo = '',
+    this.branch = 'Merkez Kampüs',
   });
+
+  String get displaySicilNo =>
+      sicilNo.isNotEmpty ? sicilNo : 'SIC-${id.toString().padLeft(4, '0')}';
 
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
 
@@ -330,6 +337,8 @@ class Employee {
     String? pantSize,
     int? shoeSize,
     String? outerwearSize,
+    String? sicilNo,
+    String? branch,
   }) {
     return Employee(
       id: id ?? this.id,
@@ -360,6 +369,8 @@ class Employee {
       pantSize: pantSize ?? this.pantSize,
       shoeSize: shoeSize ?? this.shoeSize,
       outerwearSize: outerwearSize ?? this.outerwearSize,
+      sicilNo: sicilNo ?? this.sicilNo,
+      branch: branch ?? this.branch,
     );
   }
 
@@ -406,6 +417,8 @@ class Employee {
       pantSize: json['pantSize'],
       shoeSize: json['shoeSize'],
       outerwearSize: json['outerwearSize'],
+      sicilNo: json['sicilNo'] ?? '',
+      branch: json['branch'] ?? 'Merkez Kampüs',
     );
   }
 
@@ -439,6 +452,8 @@ class Employee {
       'pantSize': pantSize,
       'shoeSize': shoeSize,
       'outerwearSize': outerwearSize,
+      'sicilNo': sicilNo,
+      'branch': branch,
     };
   }
 }

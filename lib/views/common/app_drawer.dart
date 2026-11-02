@@ -16,6 +16,7 @@ import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../vehicle/vehicle_request_screen.dart';
 import '../enterprise/enterprise_hub_screen.dart';
+import '../kiosk/kiosk_terminal_screen.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
 
@@ -433,10 +434,18 @@ class AppDrawer extends StatelessWidget {
                       context,
                       icon: Icons.hub_rounded,
                       color: const Color(0xFF6366F1),
-                      title: 'Kurumsal Modüller (15 Modül)',
-                      subtitle: 'Vardiya takası, hibrit masa, helpdesk, hedefler...',
+                      title: 'Kurumsal Modüller (19 Modül)',
+                      subtitle: 'AI mevzuat, e-imza, İSG ramak kala, telsiz...',
                       destination: const EnterpriseHubScreen(),
                     ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.camera_front_rounded,
+                    color: const Color(0xFF10B981),
+                    title: 'Kiosk & Tablet Turnike Modu',
+                    subtitle: 'Yüz tanıma, canlılık (liveness) ve TCP/IP turnike rölesi',
+                    destination: const KioskTerminalScreen(),
+                  ),
                   if (user.role == UserRole.admin || user.role == UserRole.boss)
                     _buildDrawerTile(
                       context,

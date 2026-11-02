@@ -8,6 +8,7 @@ import '../../models/page_customization.dart';
 import '../../state/pdks_state.dart';
 import '../common/admin_edit_mode_bar.dart';
 import 'chat_conversation_screen.dart';
+import 'group_member_management_sheet.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -236,6 +237,57 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             iconColor: ch.iconColor,
                             time: lastMsg?.timestamp,
                             unreadCount: unreadCount,
+                            trailing: PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 18),
+                              tooltip: 'Grup Seçenekleri',
+                              onSelected: (val) {
+                                if (val == 'open') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatConversationScreen(
+                                        channelId: ch.id,
+                                        title: ch.title,
+                                        subtitle: ch.subtitle,
+                                        icon: ch.icon,
+                                        iconColor: ch.iconColor,
+                                      ),
+                                    ),
+                                  );
+                                } else if (val == 'members') {
+                                  GroupMemberManagementSheet.show(context, ch.id);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'open',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Sohbeti Aç', style: TextStyle(fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'members',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.people_alt_outlined,
+                                        size: 18,
+                                        color: pdks.canManageGroupMembers(ch.id) ? const Color(0xFF2563EB) : null,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        pdks.canManageGroupMembers(ch.id) ? 'Kişi Ekle / Çıkar' : 'Grup Üyeleri',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -411,6 +463,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     required DateTime? time,
     required int unreadCount,
     required VoidCallback onTap,
+    Widget? trailing,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -429,6 +482,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         onTap: onTap,
+        trailing: trailing,
         leading: Container(
           width: 44,
           height: 44,

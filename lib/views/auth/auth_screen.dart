@@ -22,11 +22,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   final _loginPinController = TextEditingController();
   bool _loginObscure = true;
 
+  // Company Code Gate Controller
+  final _companyGateController = TextEditingController(text: 'FABRIKA01');
+
   // Register Controllers
   final _regCompanyCodeController = TextEditingController();
   final _regNameController = TextEditingController();
   final _regEmailController = TextEditingController();
   final _regPhoneController = TextEditingController();
+  final _regTcKimlikController = TextEditingController();
   final _regPinController = TextEditingController();
   bool _regObscure = true;
 
@@ -59,10 +63,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     _tabController.dispose();
     _loginEmailController.dispose();
     _loginPinController.dispose();
+    _companyGateController.dispose();
     _regCompanyCodeController.dispose();
     _regNameController.dispose();
     _regEmailController.dispose();
     _regPhoneController.dispose();
+    _regTcKimlikController.dispose();
     _regPinController.dispose();
     _buyCompanyNameController.dispose();
     _buyCompanyCodeController.dispose();
@@ -90,6 +96,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     }
 
     final pdks = context.read<PdksState>();
+    if (pdks.isPinLockedOut) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.danger,
+          content: Text('Güvenlik Kilidi: 4 kez hatalı PIN girildi. Kalan süre: ${pdks.lockoutSecondsRemaining} sn veya SMS ile PIN sıfırlayın.'),
+        ),
+      );
+      return;
+    }
+
     final result = pdks.login(email, pin);
     if (!result.success) {
       if (result.isPendingApproval) {
@@ -215,6 +231,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       fullName: name,
       email: email,
       phone: phone,
+      tcKimlikNo: _regTcKimlikController.text.trim(),
       pin: pin,
     );
 
@@ -291,10 +308,400 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
+  // T.C. Kimlik ve SMS OTP ile PIN Sıfırlama Diyaloğu (SRS 3.3)
+  void _showForgotPasswordDialog(BuildContext context, PdksState pdks) {
+    final tcController = TextEditingController();
+    final phoneController = TextEditingController();
+    final otpController = TextEditingController();
+    final newPinController = TextEditingController();
+    bool otpSent = false;
+    bool isLoading = false;
+    String? statusMessage;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.sms_outlined, color: Color(0xFF2563EB), size: 22),
+                ),
+                const SizedBox(width: 10),
+                const Text('PIN Sıfırlama (SMS OTP)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!otpSent) ...[
+                    const Text(
+                      'T.C. Kimlik Numaranızı ve sistemde kayıtlı cep telefonunuzu giriniz. Bilgiler eşleştiğinde tek kullanımlık 6 haneli SMS onay kodu gönderilecektir.',
+                      style: TextStyle(fontSize: 12, height: 1.4, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: tcController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 11,
+                      decoration: InputDecoration(
+                        labelText: 'T.C. Kimlik No *',
+                        hintText: '11 haneli T.C. Kimlik No',
+                        counterText: '',
+                        prefixIcon: const Icon(Icons.badge_outlined, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Kayıtlı Cep Telefonu *',
+                        hintText: '05XX XXX XX XX',
+                        prefixIcon: const Icon(Icons.phone_android_outlined, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'SMS onay kodu ${phoneController.text.trim()} numarasına iletildi!',
+                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF047857), fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: InputDecoration(
+                        labelText: '6 Haneli SMS Kodu *',
+                        hintText: pdks.lastGeneratedResetOtp ?? '6 haneli kod',
+                        counterText: '',
+                        prefixIcon: const Icon(Icons.lock_clock_outlined, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: newPinController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Yeni 4 Haneli PIN Kodu *',
+                        hintText: 'Örn: 2468',
+                        counterText: '',
+                        prefixIcon: const Icon(Icons.pin_outlined, size: 20),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                  if (statusMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      statusMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 11.5, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('İptal'),
+              ),
+              if (!otpSent)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          final tc = tcController.text.trim();
+                          final phone = phoneController.text.trim();
+                          if (tc.isEmpty || phone.isEmpty) {
+                            setDialogState(() => statusMessage = 'Lütfen T.C. Kimlik ve Telefon alanlarını doldurun.');
+                            return;
+                          }
+                          setDialogState(() {
+                            isLoading = true;
+                            statusMessage = null;
+                          });
+                          final res = pdks.requestPinResetOtp(tcKimlikNo: tc, phone: phone);
+                          setDialogState(() {
+                            isLoading = false;
+                            if (res.success) {
+                              otpSent = true;
+                              if (res.otp != null) {
+                                otpController.text = res.otp!;
+                              }
+                            } else {
+                              statusMessage = res.message;
+                            }
+                          });
+                        },
+                  child: const Text('SMS Kodu Gönder', style: TextStyle(fontWeight: FontWeight.bold)),
+                )
+              else
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          final otp = otpController.text.trim();
+                          final pin = newPinController.text.trim();
+                          if (otp.length != 6 || pin.length != 4) {
+                            setDialogState(() => statusMessage = 'SMS kodu 6, yeni PIN kodu 4 hane olmalıdır.');
+                            return;
+                          }
+                          final res = pdks.verifyOtpAndResetPin(
+                            phone: phoneController.text.trim(),
+                            otpCode: otp,
+                            new4DigitPin: pin,
+                          );
+                          if (res.success) {
+                            Navigator.pop(ctx);
+                            _loginPinController.text = pin;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(backgroundColor: AppColors.success, content: Text(res.message)),
+                            );
+                          } else {
+                            setDialogState(() => statusMessage = res.message);
+                          }
+                        },
+                  child: const Text('PIN\'i Sıfırla ve Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // Multi-Tenant Şirket Kodu Kapısı (SRS 2.1)
+  Widget _buildCompanyCodeGate(BuildContext context, PdksState pdks, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.domain_verification_rounded, color: Color(0xFF3B82F6), size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Şirket Kodu Doğrulama', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('Çok Kiracılı (Multi-Tenant) SaaS Altyapısı', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Kurumunuz tarafından personelinize tahsis edilmiş tekil Şirket Kodunu giriniz. Bu kod cihaz hafızasında güvenle saklanarak sonraki açılışlarda ilgili şirketin kurumsal kimliğiyle doğrudan işlem yapılmasını sağlar.',
+            style: TextStyle(fontSize: 12, height: 1.4, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _companyGateController,
+            textCapitalization: TextCapitalization.characters,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 1.5),
+            decoration: InputDecoration(
+              labelText: 'Kurumsal Şirket Kodu *',
+              hintText: 'Örn: FABRIKA01',
+              prefixIcon: const Icon(Icons.apartment_rounded, color: Color(0xFF3B82F6)),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text('Hızlı Şirket Seçimi (Demo Ortamı):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _buildCompanyChip('FABRIKA01', 'Fabrika 01 Endüstriyel'),
+              _buildCompanyChip('ACME', 'ACME Teknoloji'),
+              _buildCompanyChip('NOVA', 'Nova Savunma'),
+              _buildCompanyChip('OZDEMIR', 'Özdemir Holding'),
+            ],
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+              label: const Text('Şirketi Doğrula ve Devam Et', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              onPressed: () {
+                final code = _companyGateController.text.trim();
+                if (code.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Lütfen bir şirket kodu giriniz.')),
+                  );
+                  return;
+                }
+                final res = pdks.setCompanyCode(code);
+                if (res.success) {
+                  _regCompanyCodeController.text = code.toUpperCase();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(backgroundColor: AppColors.success, content: Text(res.message)),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(backgroundColor: AppColors.danger, content: Text(res.message)),
+                  );
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompanyChip(String code, String label) {
+    return ActionChip(
+      avatar: const Icon(Icons.business, size: 14, color: Color(0xFF2563EB)),
+      label: Text('$code ($label)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+      onPressed: () {
+        _companyGateController.text = code;
+      },
+    );
+  }
+
+  Widget _buildCompanyBadge(PdksState pdks, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: pdks.activeCompany.primaryColor.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: pdks.activeCompany.primaryColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.business_rounded, color: pdks.activeCompany.primaryColor, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  pdks.activeCompany.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Kod: ${pdks.activeCompany.code} • ${pdks.activeCompany.sector}',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () => pdks.clearSavedCompanyCode(),
+            child: const Text('Şirket Değiştir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasCompanyCode = pdks.savedCompanyCode != null && pdks.savedCompanyCode!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1D),
@@ -337,74 +744,79 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                     'Çoklu Şirket & Personel Devam Takip Sistemi',
                     style: TextStyle(color: Colors.white60, fontSize: 13),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // Form Kartı (Glass & Card style)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // Tab Başlıkları
-                        Container(
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(18),
+                  // Çok Kiracılı Şirket Kodu Kapısı veya Kurumsal Giriş Formu (SRS 2.1)
+                  if (!hasCompanyCode)
+                    _buildCompanyCodeGate(context, pdks, isDark)
+                  else ...[
+                    _buildCompanyBadge(pdks, isDark),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
                           ),
-                          child: TabBar(
-                            controller: _tabController,
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            indicator: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.25),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Tab Başlıkları
+                          Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(18),
                             ),
-                            labelColor: Colors.white,
-                            unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            tabs: const [
-                              Tab(text: 'Giriş Yap'),
-                              Tab(text: 'Kayıt Ol'),
-                              Tab(text: 'Satın Al 💎'),
-                            ],
-                          ),
-                        ),
-
-                        // Tab İçerikleri
-                        Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: SizedBox(
-                            height: 600,
-                            child: TabBarView(
+                            child: TabBar(
                               controller: _tabController,
-                              children: [
-                                _buildLoginTab(pdks),
-                                _buildRegisterTab(),
-                                _buildPurchaseTab(pdks),
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicator: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.25),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              labelColor: Colors.white,
+                              unselectedLabelColor: isDark ? const Color(0xFF94A3B8) : AppColors.textSecondary,
+                              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              tabs: const [
+                                Tab(text: 'Giriş Yap'),
+                                Tab(text: 'Kayıt Ol'),
+                                Tab(text: 'Satın Al 💎'),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+
+                          // Tab İçerikleri
+                          Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: SizedBox(
+                              height: 600,
+                              child: TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  _buildLoginTab(pdks),
+                                  _buildRegisterTab(pdks),
+                                  _buildPurchaseTab(pdks),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -421,6 +833,41 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Güvenlik Kilidi (Brute-Force Lockout Banner - SRS 3.1)
+          if (pdks.isPinLockedOut) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.red.withOpacity(0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.gpp_bad_rounded, color: Colors.red, size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '🔒 GÜVENLİK KİLİDİ AKTİF (Brute-Force)',
+                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.red),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '4 kez ardışık hatalı PIN girildiği için oturum kilitlendi. Kalan süre: ${pdks.lockoutSecondsRemaining} sn.\nPIN\'inizi unuttuysanız aşağıdaki SMS OTP ile anında sıfırlayabilirsiniz.',
+                          style: const TextStyle(fontSize: 10.5, color: Colors.redAccent),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Onay Bildirimi Geldi Banner'ı (Kayıtlı Telefona Push & SMS İletildiğinde)
           if (pdks.lastDispatchedPhoneNotification != null) ...[
             Container(
@@ -525,7 +972,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 6),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.lock_reset_rounded, size: 15, color: Color(0xFF3B82F6)),
+            label: const Text('PIN\'imi Unuttum (SMS OTP) 🔐', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+            onPressed: () => _showForgotPasswordDialog(context, pdks),
+          ),
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -535,6 +996,31 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             ),
             onPressed: _handleLogin,
             child: const Text('Giriş Yap', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            icon: const Icon(Icons.fingerprint_rounded, color: Color(0xFF10B981), size: 22),
+            label: const Text(
+              'Biyometrik Giriş (Touch ID / Face ID)',
+              style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            onPressed: () async {
+              final res = await pdks.loginWithBiometrics();
+              if (!mounted) return;
+              if (!res.success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(backgroundColor: AppColors.danger, content: Text(res.message)),
+                );
+              }
+            },
           ),
         ),
 
@@ -698,8 +1184,12 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildRegisterTab() {
+  Widget _buildRegisterTab(PdksState pdks) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (pdks.savedCompanyCode != null && _regCompanyCodeController.text.isEmpty) {
+      _regCompanyCodeController.text = pdks.savedCompanyCode!;
+    }
 
     return SingleChildScrollView(
       child: Column(
@@ -718,10 +1208,10 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           _buildInput('Ad Soyad *', _regNameController, Icons.person_outline, hint: 'Ad Soyad', isDark: isDark),
           const SizedBox(height: 8),
-          _buildInput('Kurumsal E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress, isDark: isDark),
+          _buildInput('Kurumsal / Kişisel E-Posta *', _regEmailController, Icons.email_outlined, hint: 'E-posta Adresi', keyboardType: TextInputType.emailAddress, isDark: isDark),
           const SizedBox(height: 8),
           _buildInput(
-            'Telefon Numarası (En fazla 11 hane)',
+            'Telefon Numarası (En fazla 11 hane) *',
             _regPhoneController,
             Icons.phone_outlined,
             hint: '05XX XXX XX XX',
@@ -733,9 +1223,23 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             ],
             isDark: isDark,
           ),
+          const SizedBox(height: 8),
+          _buildInput(
+            'T.C. Kimlik Numarası (11 Hane) *',
+            _regTcKimlikController,
+            Icons.badge_outlined,
+            hint: '11 haneli T.C. Kimlik No (SMS OTP için)',
+            keyboardType: TextInputType.number,
+            maxLength: 11,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+            ],
+            isDark: isDark,
+          ),
           const SizedBox(height: 10),
 
-          // İK Onay Bilgilendirme Kutusu
+          // İK Onay Bilgilendirme Kutusu (Kısıtlı Ön Kayıt - SRS 2.2)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -745,11 +1249,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
             ),
             child: Row(
               children: [
-                Icon(Icons.assignment_ind_rounded, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB), size: 20),
+                Icon(Icons.shield_outlined, color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB), size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Departman ve unvan atamanız, kaydınız oluştuktan sonra İnsan Kaynakları (İK) tarafından onay sürecinde yapılacaktır.',
+                    '🔒 Kısıtlı Ön Kayıt Sistemi (SRS 2.2): Kurumsal güvenliği sağlamak amacıyla açık kayıt ekranında sicil numarası, departman, şube ve sistem rolü seçimi yapılamaz. Ön kayıt talebiniz şirket yetkilisinin onay ekranına iletilecek; yetkili kişi başvuruyu onaylarken Sicil No, Şube, Departman ve Rolünüzü bizzat atayacaktır.',
                     style: TextStyle(
                       fontSize: 11,
                       color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF1E40AF),

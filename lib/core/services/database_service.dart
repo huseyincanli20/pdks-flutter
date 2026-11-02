@@ -24,6 +24,13 @@ import '../../models/hybrid_booking.dart';
 import '../../models/organization_branch.dart';
 import '../../models/integration_and_sync.dart';
 import '../../models/employee_feedback.dart';
+import '../../models/equipment_and_cmms.dart';
+import '../../models/audit_log.dart';
+import '../../models/ai_anomaly_and_insights.dart';
+import '../../models/face_kiosk_and_turnstile.dart';
+import '../../models/digital_signature_and_export.dart';
+import '../../models/occupational_safety_and_nearmiss.dart';
+import '../../models/push_to_talk_and_media.dart';
 
 /// PDKS Kurumsal Veritabanı Servisi (Persistent Database Engine)
 /// SharedPreferences / IndexedDB / Web LocalStorage üzerinde kalıcı veri yönetimi
@@ -31,7 +38,9 @@ class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   static DatabaseService get instance => _instance;
-  DatabaseService._internal();
+  DatabaseService._internal() {
+    _seedEnterpriseDefaultDataSync();
+  }
 
   // Veritabanı Depolama Anahtarları
   static const String _keyEmployees = 'pdks_db_employees_v1';
@@ -69,6 +78,25 @@ class DatabaseService {
   static const String _keyIntegrations = 'pdks_db_integrations_v1';
   static const String _keyOfflineQueue = 'pdks_db_offline_queue_v1';
   static const String _keyFeedbacks = 'pdks_db_feedbacks_v1';
+  static const String _keyEquipmentRecords = 'pdks_db_equipment_records_v1';
+  static const String _keyWorkOrders = 'pdks_db_work_orders_v1';
+  static const String _keyAuditLogs = 'pdks_db_audit_logs_v1';
+  static const String _keyLockedPeriods = 'pdks_db_locked_periods_v1';
+  static const String _keySavedCompanyCode = 'pdks_db_saved_company_code_v1';
+  static const String _keyLastUserEmail = 'pdks_db_last_user_email_v1';
+  static const String _keyFailedPinAttempts = 'pdks_db_failed_pin_attempts_v1';
+  static const String _keyPinLockoutUntil = 'pdks_db_pin_lockout_until_v1';
+
+  // İleri Düzey 5 Kurumsal Modül Anahtarları (Advanced Enterprise Keys)
+  static const String _keyAnomalies = 'pdks_db_anomalies_v1';
+  static const String _keyFaceEnrollments = 'pdks_db_face_enrollments_v1';
+  static const String _keyKioskTerminals = 'pdks_db_kiosk_terminals_v1';
+  static const String _keySignedDocuments = 'pdks_db_signed_docs_v1';
+  static const String _keyNearMissReports = 'pdks_db_near_miss_v1';
+  static const String _keySafetyCertificates = 'pdks_db_safety_certs_v1';
+  static const String _keyHazardZones = 'pdks_db_hazard_zones_v1';
+  static const String _keyPttChannels = 'pdks_db_ptt_channels_v1';
+  static const String _keyPttBursts = 'pdks_db_ptt_bursts_v1';
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -109,6 +137,21 @@ class DatabaseService {
   final List<IntegrationEndpoint> _integrations = [];
   final List<OfflineSyncItem> _offlineQueue = [];
   final List<EmployeeFeedback> _feedbacks = [];
+  final List<EquipmentRecord> _equipmentRecords = [];
+  final List<MaintenanceWorkOrder> _workOrders = [];
+  final List<AuditLogRecord> _auditLogs = [];
+  final List<String> _lockedPeriods = [];
+
+  // İleri Düzey 5 Modül Önbellek Listeleri
+  final List<PdkAnomalyRecord> _anomalies = [];
+  final List<FaceEnrollment> _faceEnrollments = [];
+  final List<KioskTerminal> _kioskTerminals = [];
+  final List<SignedDocumentRecord> _signedDocuments = [];
+  final List<NearMissReport> _nearMissReports = [];
+  final List<SafetyCertificate> _safetyCertificates = [];
+  final List<HazardZone> _hazardZones = [];
+  final List<PttChannel> _pttChannels = [];
+  final List<PttVoiceBurst> _pttBursts = [];
 
   bool get isInitialized => _isInitialized;
 
@@ -148,6 +191,10 @@ class DatabaseService {
       _integrations.clear();
       _offlineQueue.clear();
       _feedbacks.clear();
+      _equipmentRecords.clear();
+      _workOrders.clear();
+      _auditLogs.clear();
+      _lockedPeriods.clear();
       _todayMenu = null;
       _activeCompanyId = null;
       _themeType = null;
@@ -570,6 +617,157 @@ class DatabaseService {
       }
     }
 
+    // 28. Kalibrasyon & CMMS Ekipman Sicil Kartları (ISO 9001 / ISO 17025)
+    final eqRaw = prefs.getString(_keyEquipmentRecords);
+    if (eqRaw != null && eqRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(eqRaw);
+        _equipmentRecords.clear();
+        _equipmentRecords.addAll(list.map((i) => EquipmentRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Ekipman kayıtları yüklenirken hata: $e');
+      }
+    }
+
+    // 29. Periyodik Bakım & Arıza İş Emirleri (CMMS Work Orders)
+    final woRaw = prefs.getString(_keyWorkOrders);
+    if (woRaw != null && woRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(woRaw);
+        _workOrders.clear();
+        _workOrders.addAll(list.map((i) => MaintenanceWorkOrder.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Bakım iş emirleri yüklenirken hata: $e');
+      }
+    }
+
+    // 30. Değiştirilemez Denetim Kayıtları (Immutable Audit Log)
+    final auditRaw = prefs.getString(_keyAuditLogs);
+    if (auditRaw != null && auditRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(auditRaw);
+        _auditLogs.clear();
+        _auditLogs.addAll(list.map((i) => AuditLogRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Denetim kayıtları yüklenirken hata: $e');
+      }
+    }
+
+    // 31. Bordro Kilitli Puantaj Dönemleri
+    final lockedRaw = prefs.getStringList(_keyLockedPeriods);
+    if (lockedRaw != null) {
+      _lockedPeriods.clear();
+      _lockedPeriods.addAll(lockedRaw);
+    }
+
+    // 32. Yapay Zeka Anomali & Sahte Geçiş Kayıtları
+    final anomaliesRaw = prefs.getString(_keyAnomalies);
+    if (anomaliesRaw != null && anomaliesRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(anomaliesRaw);
+        _anomalies.clear();
+        _anomalies.addAll(list.map((i) => PdkAnomalyRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Anomaliler yüklenirken hata: $e');
+      }
+    }
+
+    // 33. Yüz Tanıma & Canlılık Biyometrik Kayıtları
+    final faceRaw = prefs.getString(_keyFaceEnrollments);
+    if (faceRaw != null && faceRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(faceRaw);
+        _faceEnrollments.clear();
+        _faceEnrollments.addAll(list.map((i) => FaceEnrollment.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Yüz kayıtları yüklenirken hata: $e');
+      }
+    }
+
+    // 34. Kiosk & Turnike Terminalleri
+    final kioskRaw = prefs.getString(_keyKioskTerminals);
+    if (kioskRaw != null && kioskRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(kioskRaw);
+        _kioskTerminals.clear();
+        _kioskTerminals.addAll(list.map((i) => KioskTerminal.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Kiosk terminalleri yüklenirken hata: $e');
+      }
+    }
+
+    // 35. 5070 Sayılı Kanun Uyumlu İmzalı Belgeler
+    final signedRaw = prefs.getString(_keySignedDocuments);
+    if (signedRaw != null && signedRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(signedRaw);
+        _signedDocuments.clear();
+        _signedDocuments.addAll(list.map((i) => SignedDocumentRecord.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ İmzalı belgeler yüklenirken hata: $e');
+      }
+    }
+
+    // 36. Ramak Kala (Near-Miss) İSG Olay Bildirimleri
+    final nearMissRaw = prefs.getString(_keyNearMissReports);
+    if (nearMissRaw != null && nearMissRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(nearMissRaw);
+        _nearMissReports.clear();
+        _nearMissReports.addAll(list.map((i) => NearMissReport.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Ramak kala bildirimleri yüklenirken hata: $e');
+      }
+    }
+
+    // 37. Personel İSG Sertifikaları & Sağlık Muayeneleri
+    final certsRaw = prefs.getString(_keySafetyCertificates);
+    if (certsRaw != null && certsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(certsRaw);
+        _safetyCertificates.clear();
+        _safetyCertificates.addAll(list.map((i) => SafetyCertificate.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ İSG sertifikaları yüklenirken hata: $e');
+      }
+    }
+
+    // 38. Tehlikeli Bölge ve Zorunlu KKD Alanları
+    final hazardRaw = prefs.getString(_keyHazardZones);
+    if (hazardRaw != null && hazardRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(hazardRaw);
+        _hazardZones.clear();
+        _hazardZones.addAll(list.map((i) => HazardZone.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ Tehlikeli bölgeler yüklenirken hata: $e');
+      }
+    }
+
+    // 39. Saha Telsizi (PTT) Kanalları
+    final pttRaw = prefs.getString(_keyPttChannels);
+    if (pttRaw != null && pttRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(pttRaw);
+        _pttChannels.clear();
+        _pttChannels.addAll(list.map((i) => PttChannel.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ PTT kanalları yüklenirken hata: $e');
+      }
+    }
+
+    // 40. PTT Ses İletimleri
+    final burstsRaw = prefs.getString(_keyPttBursts);
+    if (burstsRaw != null && burstsRaw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(burstsRaw);
+        _pttBursts.clear();
+        _pttBursts.addAll(list.map((i) => PttVoiceBurst.fromJson(Map<String, dynamic>.from(i))));
+      } catch (e) {
+        debugPrint('⚠️ PTT ses iletimleri yüklenirken hata: $e');
+      }
+    }
+
     if (_helpdeskTickets.isEmpty || _announcements.isEmpty || _trainingCourses.isEmpty) {
       await _seedDefaultEnterpriseModules();
     }
@@ -625,11 +823,43 @@ class DatabaseService {
           email: 'merkez@ozdemirholding.com.tr',
           primaryColor: const Color(0xFFD97706),
         ),
+        Company(
+          id: 'cmp_fabrika01',
+          code: 'FABRIKA01',
+          name: 'Fabrika 01 Endüstriyel Üretim ve Otomotiv A.Ş.',
+          sector: 'Otomotiv & Ağır Sanayi',
+          address: 'Organize Sanayi Bölgesi 4. Cadde No: 12, Kocaeli',
+          officeLat: 40.76540,
+          officeLng: 29.94080,
+          allowedRadiusMeters: 300.0,
+          allowedWifiSsid: 'Fabrika01_Uretim_WiFi',
+          taxNumber: '1122334455',
+          phone: '+90 262 600 01 01',
+          email: 'ik@fabrika01.com.tr',
+          primaryColor: const Color(0xFF0284C7),
+        ),
       ];
 
   Future<void> _seedDefaultDatabase() async {
     if (_companies.isEmpty) {
       _companies.addAll(defaultCompanies());
+      await _persistCompanies();
+    } else if (!_companies.any((c) => c.code == 'FABRIKA01')) {
+      _companies.add(Company(
+        id: 'cmp_fabrika01',
+        code: 'FABRIKA01',
+        name: 'Fabrika 01 Endüstriyel Üretim ve Otomotiv A.Ş.',
+        sector: 'Otomotiv & Ağır Sanayi',
+        address: 'Organize Sanayi Bölgesi 4. Cadde No: 12, Kocaeli',
+        officeLat: 40.76540,
+        officeLng: 29.94080,
+        allowedRadiusMeters: 300.0,
+        allowedWifiSsid: 'Fabrika01_Uretim_WiFi',
+        taxNumber: '1122334455',
+        phone: '+90 262 600 01 01',
+        email: 'ik@fabrika01.com.tr',
+        primaryColor: const Color(0xFF0284C7),
+      ));
       await _persistCompanies();
     }
 
@@ -1171,6 +1401,16 @@ class DatabaseService {
 
   Future<void> insertCustomChannel(ChatChannel channel) async {
     _customChannels.add(channel);
+    await _persistChannels();
+  }
+
+  Future<void> updateCustomChannel(ChatChannel channel) async {
+    final idx = _customChannels.indexWhere((c) => c.id == channel.id);
+    if (idx != -1) {
+      _customChannels[idx] = channel;
+    } else {
+      _customChannels.add(channel);
+    }
     await _persistChannels();
   }
 
@@ -2521,6 +2761,272 @@ class DatabaseService {
     } catch (_) {}
   }
 
+  // 12. Kalibrasyon & CMMS Ekipman Sicil Kartları (ISO 9001 / ISO 17025)
+  List<EquipmentRecord> getAllEquipmentRecords() => List.unmodifiable(_equipmentRecords);
+  Future<void> insertEquipmentRecord(EquipmentRecord eq) async {
+    _equipmentRecords.insert(0, eq);
+    await _persistEquipmentRecords();
+  }
+  Future<void> updateEquipmentRecord(EquipmentRecord eq) async {
+    final idx = _equipmentRecords.indexWhere((e) => e.id == eq.id);
+    if (idx != -1) {
+      _equipmentRecords[idx] = eq;
+      await _persistEquipmentRecords();
+    }
+  }
+  Future<void> deleteEquipmentRecord(String id) async {
+    _equipmentRecords.removeWhere((e) => e.id == id);
+    await _persistEquipmentRecords();
+  }
+  Future<void> _persistEquipmentRecords() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyEquipmentRecords, jsonEncode(_equipmentRecords.map((e) => e.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 13. Periyodik Bakım ve Arıza İş Emirleri (CMMS Work Orders)
+  List<MaintenanceWorkOrder> getAllWorkOrders() => List.unmodifiable(_workOrders);
+  Future<void> insertWorkOrder(MaintenanceWorkOrder wo) async {
+    _workOrders.insert(0, wo);
+    await _persistWorkOrders();
+  }
+  Future<void> updateWorkOrder(MaintenanceWorkOrder wo) async {
+    final idx = _workOrders.indexWhere((w) => w.id == wo.id);
+    if (idx != -1) {
+      _workOrders[idx] = wo;
+      await _persistWorkOrders();
+    }
+  }
+  Future<void> _persistWorkOrders() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyWorkOrders, jsonEncode(_workOrders.map((w) => w.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 14. Değiştirilemez Denetim Kayıtları (Immutable Audit Log - KVKK & 4857)
+  List<AuditLogRecord> getAllAuditLogs() => List.unmodifiable(_auditLogs);
+  Future<void> insertAuditLog(AuditLogRecord log) async {
+    _auditLogs.insert(0, log);
+    await _persistAuditLogs();
+  }
+  Future<void> _persistAuditLogs() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyAuditLogs, jsonEncode(_auditLogs.map((l) => l.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 15. Puantaj ve Dönem Kilitleme (Bordro Tahakkuk Güvenliği)
+  List<String> getLockedPeriods() => List.unmodifiable(_lockedPeriods);
+  bool isPeriodLocked(String period) => _lockedPeriods.contains(period);
+  Future<void> togglePeriodLock(String period) async {
+    if (_lockedPeriods.contains(period)) {
+      _lockedPeriods.remove(period);
+    } else {
+      _lockedPeriods.add(period);
+    }
+    await _persistLockedPeriods();
+  }
+  Future<void> _persistLockedPeriods() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setStringList(_keyLockedPeriods, _lockedPeriods);
+    } catch (_) {}
+  }
+
+  // 16. Multi-Tenant Şirket Kodu ve Güvenli PIN Oturum Yönetimi
+  String? _inMemoryCompanyCode = 'FABRIKA01';
+  int _inMemoryFailedPinAttempts = 0;
+  DateTime? _inMemoryPinLockoutUntil;
+
+  String? getSavedCompanyCode() {
+    if (_prefs != null && _prefs!.containsKey(_keySavedCompanyCode)) {
+      final code = _prefs!.getString(_keySavedCompanyCode);
+      return (code != null && code.isNotEmpty) ? code : null;
+    }
+    return _inMemoryCompanyCode;
+  }
+
+  Future<void> saveCompanyCode(String code) async {
+    _inMemoryCompanyCode = code;
+    await _prefs?.setString(_keySavedCompanyCode, code);
+  }
+
+  Future<void> clearCompanyCode() async {
+    _inMemoryCompanyCode = null;
+    await _prefs?.setString(_keySavedCompanyCode, '');
+  }
+
+  String? getLastUserEmail() => _prefs?.getString(_keyLastUserEmail);
+  Future<void> saveLastUserEmail(String email) async => await _prefs?.setString(_keyLastUserEmail, email);
+
+  int getFailedPinAttempts() => _prefs?.getInt(_keyFailedPinAttempts) ?? _inMemoryFailedPinAttempts;
+  Future<void> setFailedPinAttempts(int count) async {
+    _inMemoryFailedPinAttempts = count;
+    await _prefs?.setInt(_keyFailedPinAttempts, count);
+  }
+
+  DateTime? getPinLockoutUntil() {
+    final s = _prefs?.getString(_keyPinLockoutUntil);
+    if (s != null) return DateTime.tryParse(s);
+    return _inMemoryPinLockoutUntil;
+  }
+
+  Future<void> setPinLockoutUntil(DateTime? time) async {
+    _inMemoryPinLockoutUntil = time;
+    if (time == null) {
+      await _prefs?.remove(_keyPinLockoutUntil);
+    } else {
+      await _prefs?.setString(_keyPinLockoutUntil, time.toIso8601String());
+    }
+  }
+
+  // 17. Yapay Zeka & Anomali Tespiti (Anti-Buddy Punching)
+  List<PdkAnomalyRecord> getAllAnomalies() => List.unmodifiable(_anomalies);
+  Future<void> insertAnomaly(PdkAnomalyRecord item) async {
+    _anomalies.insert(0, item);
+    await _persistAnomalies();
+  }
+  Future<void> updateAnomaly(PdkAnomalyRecord item) async {
+    final idx = _anomalies.indexWhere((a) => a.id == item.id);
+    if (idx != -1) {
+      _anomalies[idx] = item;
+      await _persistAnomalies();
+    }
+  }
+  Future<void> _persistAnomalies() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyAnomalies, jsonEncode(_anomalies.map((a) => a.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 18. Yüz Tanıma & Kiosk Terminalleri
+  List<FaceEnrollment> getAllFaceEnrollments() => List.unmodifiable(_faceEnrollments);
+  Future<void> saveFaceEnrollment(FaceEnrollment item) async {
+    _faceEnrollments.removeWhere((f) => f.employeeId == item.employeeId);
+    _faceEnrollments.add(item);
+    await _persistFaceEnrollments();
+  }
+  Future<void> _persistFaceEnrollments() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyFaceEnrollments, jsonEncode(_faceEnrollments.map((f) => f.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  List<KioskTerminal> getAllKioskTerminals() => List.unmodifiable(_kioskTerminals);
+  Future<void> insertKioskTerminal(KioskTerminal item) async {
+    _kioskTerminals.add(item);
+    await _persistKioskTerminals();
+  }
+  Future<void> _persistKioskTerminals() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyKioskTerminals, jsonEncode(_kioskTerminals.map((k) => k.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 19. 5070 Sayılı Kanun Uyumlu E-İmza & Belge Arşivi
+  List<SignedDocumentRecord> getAllSignedDocuments() => List.unmodifiable(_signedDocuments);
+  Future<void> insertSignedDocument(SignedDocumentRecord item) async {
+    _signedDocuments.insert(0, item);
+    await _persistSignedDocuments();
+  }
+  Future<void> _persistSignedDocuments() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keySignedDocuments, jsonEncode(_signedDocuments.map((s) => s.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 20. İSG, Ramak Kala & Tehlikeli Bölge Geofence
+  List<NearMissReport> getAllNearMissReports() => List.unmodifiable(_nearMissReports);
+  Future<void> insertNearMissReport(NearMissReport item) async {
+    _nearMissReports.insert(0, item);
+    await _persistNearMissReports();
+  }
+  Future<void> updateNearMissReport(NearMissReport item) async {
+    final idx = _nearMissReports.indexWhere((n) => n.id == item.id);
+    if (idx != -1) {
+      _nearMissReports[idx] = item;
+      await _persistNearMissReports();
+    }
+  }
+  Future<void> _persistNearMissReports() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyNearMissReports, jsonEncode(_nearMissReports.map((n) => n.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  List<SafetyCertificate> getAllSafetyCertificates() => List.unmodifiable(_safetyCertificates);
+  Future<void> insertSafetyCertificate(SafetyCertificate item) async {
+    _safetyCertificates.add(item);
+    await _persistSafetyCertificates();
+  }
+  Future<void> _persistSafetyCertificates() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keySafetyCertificates, jsonEncode(_safetyCertificates.map((c) => c.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  List<HazardZone> getAllHazardZones() => List.unmodifiable(_hazardZones);
+  Future<void> insertHazardZone(HazardZone item) async {
+    _hazardZones.add(item);
+    await _persistHazardZones();
+  }
+  Future<void> _persistHazardZones() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyHazardZones, jsonEncode(_hazardZones.map((h) => h.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  // 21. Saha Telsizi (PTT) & Ses İletimleri
+  List<PttChannel> getAllPttChannels() => List.unmodifiable(_pttChannels);
+  Future<void> updatePttChannel(PttChannel item) async {
+    final idx = _pttChannels.indexWhere((p) => p.id == item.id);
+    if (idx != -1) {
+      _pttChannels[idx] = item;
+      await _persistPttChannels();
+    }
+  }
+  Future<void> _persistPttChannels() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyPttChannels, jsonEncode(_pttChannels.map((p) => p.toJson()).toList()));
+    } catch (_) {}
+  }
+
+  List<PttVoiceBurst> getAllPttBursts() => List.unmodifiable(_pttBursts);
+  Future<void> insertPttBurst(PttVoiceBurst item) async {
+    _pttBursts.insert(0, item);
+    await _persistPttBursts();
+  }
+  Future<void> _persistPttBursts() async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    try {
+      await prefs.setString(_keyPttBursts, jsonEncode(_pttBursts.map((b) => b.toJson()).toList()));
+    } catch (_) {}
+  }
+
   // 12. Varsayılan Kurumsal Tohumlama (Seed Data for 15 Modules)
   Future<void> _seedDefaultEnterpriseModules() async {
     // Vardiya Takas & Açık Vardiya
@@ -2963,6 +3469,430 @@ class DatabaseService {
         ),
       ]);
       await _persistFeedbacks();
+    }
+
+    // Kalibrasyon & CMMS Ekipman Sicil Kartları (ISO 9001 / ISO 17025)
+    if (_equipmentRecords.isEmpty) {
+      _equipmentRecords.addAll([
+        EquipmentRecord(
+          id: 'eq_01',
+          companyId: 'cmp_acme',
+          equipmentCode: 'CNC-01',
+          serialNumber: 'DMG-2024-8841',
+          name: '5 Eksen CNC Freze & İşleme Merkezi',
+          brandModel: 'DMG MORI DMU 50',
+          department: 'Üretim Departmanı',
+          location: 'Talaşlı İmalat Holü - İstasyon 1',
+          warrantyExpiryDate: DateTime.now().add(const Duration(days: 450)),
+          qrBarcode: 'EQ-CNC-01-DMG-2024',
+          calibrationPeriodMonths: 12,
+          lastCalibrationDate: DateTime.now().subtract(const Duration(days: 200)),
+          nextCalibrationDate: DateTime.now().add(const Duration(days: 165)),
+          referenceStandard: 'ISO 17025 / TÜRKAK Akredite',
+          toleranceLimit: '±0.005 mm',
+          certificatePdfUrl: 'sertifika_cnc_01_2026.pdf',
+          status: 'active',
+        ),
+        EquipmentRecord(
+          id: 'eq_02',
+          companyId: 'cmp_acme',
+          equipmentCode: 'MIC-04',
+          serialNumber: 'MIT-883921',
+          name: 'Dijital Kumpas & Mikrometre Takımı',
+          brandModel: 'Mitutoyo Digimatic 0-150mm',
+          department: 'Kalite Kontrol',
+          location: 'Ölçüm & Metroloji Odası',
+          warrantyExpiryDate: DateTime.now().add(const Duration(days: 200)),
+          qrBarcode: 'EQ-MIC-04-MIT-2024',
+          calibrationPeriodMonths: 6,
+          lastCalibrationDate: DateTime.now().subtract(const Duration(days: 178)),
+          nextCalibrationDate: DateTime.now().add(const Duration(days: 2)),
+          referenceStandard: 'ISO 17025 / DIN 862',
+          toleranceLimit: '±0.001 mm',
+          certificatePdfUrl: 'sertifika_mic_04_2026.pdf',
+          status: 'warning_3d',
+        ),
+        EquipmentRecord(
+          id: 'eq_03',
+          companyId: 'cmp_acme',
+          equipmentCode: 'TRN-02',
+          serialNumber: 'ZK-PROX-9902',
+          name: 'RFID & Biyometrik Turnike Geçiş Terminali 2',
+          brandModel: 'ZKTeco ProCapture-X',
+          department: 'Güvenlik & İdari İşler',
+          location: 'Ana Bina Personel Girişi B Kapısı',
+          warrantyExpiryDate: DateTime.now().subtract(const Duration(days: 30)),
+          qrBarcode: 'EQ-TRN-02-ZK-2023',
+          calibrationPeriodMonths: 12,
+          lastCalibrationDate: DateTime.now().subtract(const Duration(days: 380)),
+          nextCalibrationDate: DateTime.now().subtract(const Duration(days: 15)),
+          referenceStandard: 'ISO 9001:2015 Madde 7.1.5',
+          toleranceLimit: 'Optik Doğrulama %99.9',
+          certificatePdfUrl: 'sertifika_trn_02_gecmis.pdf',
+          status: 'quarantine',
+          quarantineReason: 'Yıllık doğrulama periyodu aşıldı ve optik sensör tolerans dışı (ISO 9001 uyarınca kullanım dışı)',
+        ),
+        EquipmentRecord(
+          id: 'eq_04',
+          companyId: 'cmp_acme',
+          equipmentCode: 'TERMO-01',
+          serialNumber: 'FLUKE-802-99',
+          name: 'Hassas Sıcaklık ve Bağıl Nem Kalibratörü',
+          brandModel: 'Fluke 971 Metrology Grade',
+          department: 'AR-GE Laboratuvarı',
+          location: 'Temiz Oda (Cleanroom Class 1000)',
+          warrantyExpiryDate: DateTime.now().add(const Duration(days: 600)),
+          qrBarcode: 'EQ-TERMO-01-FLUKE',
+          calibrationPeriodMonths: 12,
+          lastCalibrationDate: DateTime.now().subtract(const Duration(days: 345)),
+          nextCalibrationDate: DateTime.now().add(const Duration(days: 20)),
+          referenceStandard: 'ISO 17025 / NIST Standard',
+          toleranceLimit: '±0.1°C / ±1.5% RH',
+          certificatePdfUrl: 'sertifika_termo_01_fluke.pdf',
+          status: 'warning_30d',
+        ),
+      ]);
+      await _persistEquipmentRecords();
+    }
+
+    // Periyodik Bakım & Arıza İş Emirleri (CMMS Work Orders)
+    if (_workOrders.isEmpty) {
+      _workOrders.addAll([
+        MaintenanceWorkOrder(
+          id: 'wo_01',
+          companyId: 'cmp_acme',
+          equipmentId: 'eq_01',
+          equipmentCode: 'CNC-01',
+          equipmentName: '5 Eksen CNC Freze & İşleme Merkezi',
+          title: 'Haftalık Spindle Yağlama ve Kızak Boşluk Kontrolü',
+          description: 'X/Y eksen cetvelleri temizlenecek, ISO VG 68 kızak yağı tamamlanacak.',
+          priority: 'high',
+          status: 'in_progress',
+          reportedBy: 'Ahmet Yılmaz',
+          reportedAt: DateTime.now().subtract(const Duration(hours: 4)),
+          assignedTechnicianId: 8,
+          assignedTechnicianName: 'Murat Usta (Teknisyen)',
+          startedAt: DateTime.now().subtract(const Duration(hours: 2)),
+          checklist: [
+            ChecklistItem(id: 'c1', title: 'Hava basıncı 6 bar kontrolü', isDone: true),
+            ChecklistItem(id: 'c2', title: 'Merkezi yağlama haznesi dolumu', isDone: true),
+            ChecklistItem(id: 'c3', title: 'Spindle salgı komparatör ölçümü', isDone: false),
+          ],
+          partsUsed: [
+            SparePartItem(partName: 'ISO VG 68 Hidrolik Kızak Yağı (1L)', quantity: 2, unitCost: 350.0),
+          ],
+          totalCost: 700.0,
+          mttrMinutes: 120,
+          downtimeMinutes: 45,
+        ),
+        MaintenanceWorkOrder(
+          id: 'wo_02',
+          companyId: 'cmp_acme',
+          equipmentId: 'eq_03',
+          equipmentCode: 'TRN-02',
+          equipmentName: 'RFID & Biyometrik Turnike Geçiş Terminali 2',
+          title: 'Turnike Kart Okuyucu Tepki Vermiyor (Karantinada)',
+          description: 'Ağ kablosu ve PoE güç beslemesi test edilecek, firmware yeniden yüklenecek.',
+          priority: 'urgent',
+          status: 'open',
+          reportedBy: 'Canan Can',
+          reportedAt: DateTime.now().subtract(const Duration(minutes: 40)),
+          assignedTechnicianId: 8,
+          assignedTechnicianName: 'Murat Usta (Teknisyen)',
+          checklist: [
+            ChecklistItem(id: 'tc1', title: 'RJ45 Ağ soketi kontrolü', isDone: false),
+            ChecklistItem(id: 'tc2', title: 'RFID okuyucu anten sinyal testi', isDone: false),
+          ],
+          totalCost: 0.0,
+        ),
+      ]);
+      await _persistWorkOrders();
+    }
+
+    // Değiştirilemez Denetim Kayıtları (Immutable Audit Log)
+    if (_auditLogs.isEmpty) {
+      _auditLogs.addAll([
+        AuditLogRecord(
+          id: 'audit_01',
+          companyId: 'cmp_acme',
+          userId: 1,
+          userName: 'Ahmet Yılmaz',
+          userRole: 'Sistem Yöneticisi',
+          ipAddress: '192.168.1.105',
+          timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+          actionType: 'Kalibrasyon Karantina',
+          targetEntity: 'EquipmentRecord',
+          entityId: 'eq_03',
+          oldValue: 'status: active',
+          newValue: 'status: quarantine (ISO 9001 uyarınca kullanım dışı)',
+        ),
+        AuditLogRecord(
+          id: 'audit_02',
+          companyId: 'cmp_acme',
+          userId: 2,
+          userName: 'Zeynep Kaya',
+          userRole: 'İK Yöneticisi',
+          ipAddress: '192.168.1.112',
+          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+          actionType: 'Fazla Mesai Onayı',
+          targetEntity: 'AttendanceRecord',
+          entityId: 'rec_449',
+          oldValue: 'approvedOvertime: 0.0',
+          newValue: 'approvedOvertime: 2.5 (4857 Madde 41 onaylandı)',
+        ),
+      ]);
+      await _persistAuditLogs();
+    }
+
+    // Kilitli Puantaj Dönemi (Örn. Geçen ayın bordrosu kapalı)
+    if (_lockedPeriods.isEmpty) {
+      final prevMonth = DateTime.now().subtract(const Duration(days: 35));
+      final monthStr = '${prevMonth.year}-${prevMonth.month.toString().padLeft(2, '0')}';
+      _lockedPeriods.add(monthStr);
+      await _persistLockedPeriods();
+    }
+
+    _seedEnterpriseDefaultDataSync();
+    await _persistAnomalies();
+    await _persistFaceEnrollments();
+    await _persistKioskTerminals();
+    await _persistSignedDocuments();
+    await _persistNearMissReports();
+    await _persistSafetyCertificates();
+    await _persistHazardZones();
+    await _persistPttChannels();
+    await _persistPttBursts();
+  }
+
+  void _seedEnterpriseDefaultDataSync() {
+    // 32. Yapay Zeka Anomali & Sahte Geçiş (Anti-Buddy Punching) Tohumları
+    if (_anomalies.isEmpty) {
+      _anomalies.addAll([
+        PdkAnomalyRecord(
+          id: 'anom_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          anomalyType: 'buddy_punching_suspected',
+          severity: 'critical',
+          title: 'Şüpheli Başkası Yerine Kart Basma (Buddy Punching)',
+          description: 'Aynı RFID turnikesinden 2.1 saniye arayla peş peşe 2 giriş tespit edildi. Kiosk kamera görüntüsünde tek kişi mevcuttu.',
+          detectedAt: DateTime.now().subtract(const Duration(hours: 2)),
+          status: 'pending',
+          evidenceData: {'turnstileId': 'TRN-01', 'intervalSeconds': 2.1, 'cameraConfidence': 0.22},
+        ),
+        PdkAnomalyRecord(
+          id: 'anom_02',
+          companyId: 'cmp_acme',
+          employeeId: 8,
+          employeeName: 'Murat Usta (Teknisyen)',
+          anomalyType: 'abnormal_overtime_surge',
+          severity: 'warning',
+          title: 'Haftalık Yasal Fazla Mesai Yoğunluğu (4857 Madde 41)',
+          description: 'Haftalık toplam çalışma süresi 58 saati aştı. Son 3 günde günlük 11 saatlik dinlenme süresi sınırına yaklaşıldı.',
+          detectedAt: DateTime.now().subtract(const Duration(hours: 5)),
+          status: 'pending',
+          evidenceData: {'weeklyHours': 58.5, 'consecutiveDays': 5},
+        ),
+      ]);
+    }
+
+    // 33. Yüz Tanıma Profilleri
+    if (_faceEnrollments.isEmpty) {
+      _faceEnrollments.addAll([
+        FaceEnrollment(
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          faceVectorHash: 'e7b8c9d0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0',
+          enrolledAt: DateTime.now().subtract(const Duration(days: 30)),
+          isLivenessVerified: true,
+          confidenceScore: 0.992,
+        ),
+        FaceEnrollment(
+          employeeId: 2,
+          employeeName: 'Zeynep Kaya',
+          faceVectorHash: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4',
+          enrolledAt: DateTime.now().subtract(const Duration(days: 25)),
+          isLivenessVerified: true,
+          confidenceScore: 0.987,
+        ),
+      ]);
+    }
+
+    // 34. Kiosk & Turnike Donanım Terminalleri
+    if (_kioskTerminals.isEmpty) {
+      _kioskTerminals.addAll([
+        KioskTerminal(
+          terminalId: 'kiosk_01',
+          companyId: 'cmp_acme',
+          terminalName: 'Fabrika Ana Giriş Turnike A1',
+          location: 'A Blok Güvenlik Nizamiyesi',
+          ipAddress: '192.168.1.201',
+          mode: 'hybrid',
+          isOnline: true,
+          lastHeartbeat: DateTime.now(),
+          totalScansToday: 218,
+        ),
+        KioskTerminal(
+          terminalId: 'kiosk_02',
+          companyId: 'cmp_acme',
+          terminalName: 'Atölye & İmalat Kiosk Duvar Tableti',
+          location: 'B Blok CNC & Pres Atölyesi',
+          ipAddress: '192.168.1.202',
+          mode: 'facial',
+          isOnline: true,
+          lastHeartbeat: DateTime.now(),
+          totalScansToday: 84,
+        ),
+      ]);
+    }
+
+    // 35. 5070 E-İmza & Bordro Belgeleri
+    if (_signedDocuments.isEmpty) {
+      _signedDocuments.add(
+        SignedDocumentRecord(
+          id: 'doc_01',
+          companyId: 'cmp_acme',
+          employeeId: 1,
+          employeeName: 'Ahmet Yılmaz',
+          documentType: 'payroll_slip',
+          documentTitle: '2026 Ekim Ayı Maaş Bordro Pusulası',
+          period: '2026-10',
+          signatureSvgOrPoints: 'POINTS:M12,45 C20,30 40,60 70,25 S90,80 120,40',
+          signedAt: DateTime.now().subtract(const Duration(days: 2)),
+          signerIp: '192.168.1.105',
+          isVerified5070: true,
+        ),
+      );
+    }
+
+    // 36. Ramak Kala (Near-Miss) İSG Olay Bildirimleri
+    if (_nearMissReports.isEmpty) {
+      _nearMissReports.addAll([
+        NearMissReport(
+          id: 'nm_01',
+          companyId: 'cmp_acme',
+          reporterId: 8,
+          reporterName: 'Murat Usta (Teknisyen)',
+          title: 'CNC-01 Tezgahı Çevresinde Hidrolik Yağ Sızıntısı',
+          description: 'Kızak yağı tahliyesinde sızıntı var, zemin aşırı kaygan. Bir çalışan neredeyse kayıp düşüyordu.',
+          department: 'Üretim & İmalat',
+          locationDetail: 'CNC-01 ve Pres Hattı 3. Koridor',
+          riskLevel: 'high',
+          reportedAt: DateTime.now().subtract(const Duration(hours: 6)),
+          status: 'action_taken',
+          correctiveAction: 'Bölge emniyet şeridine alındı, keçeler serildi.',
+        ),
+        NearMissReport(
+          id: 'nm_02',
+          companyId: 'cmp_acme',
+          reporterId: 1,
+          reporterName: 'Ahmet Yılmaz',
+          title: 'Trafo Odası Yan Panosunda Açık Klemens',
+          description: 'Aydınlatma panosunun kapağı açık kalmış ve 380V açık baralar çıplak duruyor.',
+          department: 'Enerji & Altyapı',
+          locationDetail: 'Trafo Binası Zemin Kat',
+          riskLevel: 'critical',
+          reportedAt: DateTime.now().subtract(const Duration(hours: 1)),
+          status: 'open',
+        ),
+      ]);
+    }
+
+    // 37. Personel İSG Sertifikaları & Sağlık Muayeneleri
+    if (_safetyCertificates.isEmpty) {
+      _safetyCertificates.addAll([
+        SafetyCertificate(
+          id: 'cert_01',
+          employeeId: 8,
+          employeeName: 'Murat Usta (Teknisyen)',
+          certificateType: 'high_altitude',
+          title: 'Yüksekte Çalışma & İskele Kurulum Yetki Belgesi (IRATA L1)',
+          issueDate: DateTime.now().subtract(const Duration(days: 300)),
+          expiryDate: DateTime.now().add(const Duration(days: 65)),
+          issuingOrganization: 'TMMOB & Akredite İSG Enstitüsü',
+        ),
+        SafetyCertificate(
+          id: 'cert_02',
+          employeeId: 2,
+          employeeName: 'Zeynep Kaya',
+          certificateType: 'first_aid',
+          title: 'Temel İlk Yardım ve Acil Durum Müdahale Sertifikası',
+          issueDate: DateTime.now().subtract(const Duration(days: 400)),
+          expiryDate: DateTime.now().subtract(const Duration(days: 10)),
+          issuingOrganization: 'Kızılay & Sağlık Bakanlığı',
+        ),
+      ]);
+    }
+
+    // 38. Tehlikeli Bölge ve Zorunlu KKD Alanları
+    if (_hazardZones.isEmpty) {
+      _hazardZones.addAll([
+        HazardZone(
+          id: 'hz_01',
+          companyId: 'cmp_acme',
+          zoneName: 'Ağır Pres & CNC İmalat Alanı',
+          requiredPPE: ['Baret (EN 397)', 'Çelik Burunlu Ayakkabı (S3)', 'Koruyucu Çapak Gözlüğü'],
+          centerLat: 40.01461,
+          centerLng: 32.51520,
+          radiusMeters: 60.0,
+          warningMessage: 'DİKKAT: Yüksek ses ve mekanik sıkışma tehlikesi! Baret ve S3 ayakkabı giyilmesi zorunludur.',
+        ),
+        HazardZone(
+          id: 'hz_02',
+          companyId: 'cmp_acme',
+          zoneName: 'Yüksek Gerilim Trafo & Şalt Sahası',
+          requiredPPE: ['Yalıtkan Baret', 'Ark Koruyucu Siperlik', '1000V Dielektrik Eldiven'],
+          centerLat: 40.01490,
+          centerLng: 32.51580,
+          radiusMeters: 30.0,
+          warningMessage: 'HAYATİ TEHLİKE: Yetkisiz giriş yasaktır! Yalnızca EKAT belgeli personel girebilir.',
+        ),
+      ]);
+    }
+
+    // 39. Saha Telsizi (PTT) Kanalları
+    if (_pttChannels.isEmpty) {
+      _pttChannels.addAll([
+        PttChannel(
+          id: 'ptt_01',
+          companyId: 'cmp_acme',
+          channelName: 'Kanal 1: Saha Güvenlik & Amirleri',
+          description: 'Nizamiye, çevre güvenlik ve ziyaretçi geçiş telsiz kanalı.',
+          activeParticipantsCount: 6,
+        ),
+        PttChannel(
+          id: 'ptt_02',
+          companyId: 'cmp_acme',
+          channelName: 'Kanal 2: Bakım & Arıza Teknisyenleri',
+          description: 'Mekanik, elektrik ve turnike arıza koordinasyon telsizi.',
+          activeParticipantsCount: 8,
+        ),
+        PttChannel(
+          id: 'ptt_03',
+          companyId: 'cmp_acme',
+          channelName: 'Kanal 3: İSG & Acil Müdahale',
+          description: 'Yangın, ilk yardım ve acil durum tahliye frekansı.',
+          activeParticipantsCount: 12,
+        ),
+      ]);
+    }
+
+    // 40. PTT Ses İletimleri
+    if (_pttBursts.isEmpty) {
+      _pttBursts.addAll([
+        PttVoiceBurst(
+          burstId: 'burst_01',
+          channelId: 'ptt_02',
+          speakerId: 8,
+          speakerName: 'Murat Usta (Teknisyen)',
+          speakerRole: 'Bakım Sorumlusu',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
+          durationSeconds: 4,
+          transcriptText: 'Merkez, Turnike 2 kart okuyucusu firmware güncellemesi tamamlandı, turnike aktif.',
+          waveformPoints: [0.2, 0.6, 0.9, 0.8, 0.4, 0.7, 0.9, 0.5, 0.2],
+        ),
+      ]);
     }
   }
 

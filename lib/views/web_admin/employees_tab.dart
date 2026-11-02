@@ -181,9 +181,23 @@ class EmployeesTab extends StatelessWidget {
 
   void _openApprovalSheet(BuildContext context, PdksState pdks, Employee emp) {
     final formKey = GlobalKey<FormState>();
-    final deptCtrl = TextEditingController(text: 'Yazılım & Ar-Ge');
-    final titleCtrl = TextEditingController(text: 'Yazılım Uzmanı');
-    final salaryCtrl = TextEditingController(text: '52000');
+    final sicilCtrl = TextEditingController(
+      text: emp.sicilNo.isNotEmpty ? emp.sicilNo : 'SIC-${DateTime.now().year}-${emp.id.toString().padLeft(4, '0')}',
+    );
+    final branchCtrl = TextEditingController(
+      text: emp.branch.isNotEmpty ? emp.branch : 'Merkez Fabrika',
+    );
+    final deptCtrl = TextEditingController(
+      text: emp.department.isNotEmpty && emp.department != 'Onay Bekliyor' && emp.department != 'Atama Bekliyor'
+          ? emp.department
+          : 'Yazılım & Ar-Ge',
+    );
+    final titleCtrl = TextEditingController(
+      text: emp.title.isNotEmpty && emp.title != 'Personel Adayı' ? emp.title : 'Yazılım Uzmanı',
+    );
+    final salaryCtrl = TextEditingController(
+      text: emp.baseGrossSalary > 0 ? emp.baseGrossSalary.toStringAsFixed(0) : '52000',
+    );
     UserRole selectedRole = UserRole.employee;
 
     final departments = [
@@ -291,6 +305,36 @@ class EmployeesTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
+                  // Sicil Numarası & Şube Atama (SRS 2.2 Yönetici Ataması)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: sicilCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Sicil No *',
+                            hintText: 'Örn: SIC-2026-0042',
+                            prefixIcon: Icon(Icons.badge_rounded, size: 20),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Sicil No zorunludur' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: branchCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Şube / Tesis *',
+                            hintText: 'Örn: Merkez Fabrika',
+                            prefixIcon: Icon(Icons.store_mall_directory_rounded, size: 20),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Şube zorunludur' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
                   // Departman Seçimi
                   const Text('Departman Belirleyin *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 6),
@@ -386,6 +430,8 @@ class EmployeesTab extends StatelessWidget {
                           employeeId: emp.id,
                           department: deptCtrl.text.trim(),
                           title: titleCtrl.text.trim(),
+                          sicilNo: sicilCtrl.text.trim(),
+                          branch: branchCtrl.text.trim(),
                           baseSalary: salary,
                           role: selectedRole,
                         );

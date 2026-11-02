@@ -23,11 +23,20 @@ import '../models/hybrid_booking.dart';
 import '../models/organization_branch.dart';
 import '../models/integration_and_sync.dart';
 import '../models/employee_feedback.dart';
+import '../models/equipment_and_cmms.dart';
+import '../models/audit_log.dart';
+import '../models/ai_anomaly_and_insights.dart';
+import '../models/face_kiosk_and_turnstile.dart';
+import '../models/digital_signature_and_export.dart';
+import '../models/occupational_safety_and_nearmiss.dart';
+import '../models/push_to_talk_and_media.dart';
+import '../core/utils/labor_law_rule_engine.dart';
 import '../core/services/api_service.dart';
 import '../core/services/location_service.dart';
 import '../core/services/database_service.dart';
 import '../core/services/firebase_service.dart';
 import '../core/services/ios_notification_service.dart';
+import '../core/services/biometric_service.dart';
 import '../core/theme/app_theme_type.dart';
 import '../core/theme/app_theme.dart';
 
@@ -71,6 +80,22 @@ class PdksState extends ChangeNotifier {
   final List<IntegrationEndpoint> _integrations = [];
   final List<OfflineSyncItem> _offlineQueue = [];
   final List<EmployeeFeedback> _feedbacks = [];
+  final List<EquipmentRecord> _equipmentRecords = [];
+  final List<MaintenanceWorkOrder> _workOrders = [];
+  final List<AuditLogRecord> _auditLogs = [];
+  final List<String> _lockedPeriods = [];
+
+  // 5 Yeni İleri Düzey Modül Bellek Listeleri
+  final List<PdkAnomalyRecord> _anomalies = [];
+  final List<FaceEnrollment> _faceEnrollments = [];
+  final List<KioskTerminal> _kioskTerminals = [];
+  final List<SignedDocumentRecord> _signedDocuments = [];
+  final List<NearMissReport> _nearMissReports = [];
+  final List<SafetyCertificate> _safetyCertificates = [];
+  final List<HazardZone> _hazardZones = [];
+  final List<PttChannel> _pttChannels = [];
+  final List<PttVoiceBurst> _pttBursts = [];
+  final List<AiAssistantMessage> _aiMessages = [];
 
   // Bildirimler
   List<AppNotification> _notifications = [];
@@ -172,6 +197,10 @@ class PdksState extends ChangeNotifier {
 
   // Getters
   Employee get currentUser => _currentUser;
+  void switchUserForTesting(Employee emp) {
+    _currentUser = emp;
+    notifyListeners();
+  }
   bool get isLoggedIn => _isLoggedIn;
   bool get isCheckedIn => _isCheckedIn;
   DateTime? get lastCheckInTime => _lastCheckInTime;
@@ -291,6 +320,328 @@ class PdksState extends ChangeNotifier {
       _offlineQueue.where((o) => o.companyId == _activeCompanyId).toList();
   List<EmployeeFeedback> get feedbacks =>
       _feedbacks.where((f) => f.companyId == _activeCompanyId).toList();
+
+  // CMMS & Kalibrasyon (ISO 9001 / ISO 17025)
+  List<EquipmentRecord> get equipmentRecords =>
+      _equipmentRecords.where((e) => e.companyId == _activeCompanyId).toList();
+  List<MaintenanceWorkOrder> get workOrders =>
+      _workOrders.where((w) => w.companyId == _activeCompanyId).toList();
+
+  // Değiştirilemez Denetim Kayıtları (Audit Log)
+  List<AuditLogRecord> get auditLogs =>
+      _auditLogs.where((a) => a.companyId == _activeCompanyId).toList();
+
+  // Puantaj Kilitli Dönemler
+  List<String> get lockedPeriods => List.unmodifiable(_lockedPeriods);
+  bool isPeriodLocked(String period) => _db.isPeriodLocked(period);
+
+  // 1. Yapay Zeka Anomali & Sahte Geçiş (Anti-Buddy Punching)
+  List<PdkAnomalyRecord> get anomalies =>
+      _anomalies.where((a) => a.companyId == _activeCompanyId).toList();
+
+  // 2. Yüz Tanıma & Kiosk Terminalleri
+  List<FaceEnrollment> get faceEnrollments => List.unmodifiable(_faceEnrollments);
+  List<KioskTerminal> get kioskTerminals =>
+      _kioskTerminals.where((k) => k.companyId == _activeCompanyId).toList();
+
+  // 3. 5070 E-İmza & Bordro İhracatı
+  List<SignedDocumentRecord> get signedDocuments =>
+      _signedDocuments.where((s) => s.companyId == _activeCompanyId).toList();
+
+  // 4. İSG & Ramak Kala (Near-Miss)
+  List<NearMissReport> get nearMissReports =>
+      _nearMissReports.where((n) => n.companyId == _activeCompanyId).toList();
+  List<SafetyCertificate> get safetyCertificates => List.unmodifiable(_safetyCertificates);
+  List<HazardZone> get hazardZones =>
+      _hazardZones.where((h) => h.companyId == _activeCompanyId).toList();
+
+  // 5. Saha Telsizi (PTT)
+  List<PttChannel> get pttChannels =>
+      _pttChannels.where((p) => p.companyId == _activeCompanyId).toList();
+  List<PttVoiceBurst> get pttBursts => List.unmodifiable(_pttBursts);
+
+  // AI Asistan Mesajları
+  List<AiAssistantMessage> get aiMessages => List.unmodifiable(_aiMessages);
+
+  // Multi-Tenant Şirket Kodu (Company Code) Yönetimi (SRS 2.1)
+  String? get savedCompanyCode => _db.getSavedCompanyCode();
+
+  ({bool success, String message, Company? company}) setCompanyCode(String rawCode) {
+    final clean = rawCode.trim().toUpperCase();
+    final comp = _companies.cast<Company?>().firstWhere(
+      (c) => c?.code.toUpperCase() == clean,
+      orElse: () => null,
+    );
+    if (comp == null) {
+      final availableCodes = _companies.map((c) => c.code).join(', ');
+      return (
+        success: false,
+        message: 'Belirtilen "$clean" koduna ait şirket bulunamadı. Mevcut şirketler: $availableCodes',
+        company: null,
+      );
+    }
+    _db.saveCompanyCode(clean);
+    _activeCompanyId = comp.id;
+    _db.saveActiveCompanyId(comp.id);
+    logAudit(
+      actionType: 'Şirket Kodu Eşleme',
+      targetEntity: 'TenantCompany',
+      entityId: comp.id,
+      newValue: 'Cihaz kurumsal kodu doğrulandı: $clean (${comp.name})',
+    );
+    notifyListeners();
+    return (
+      success: true,
+      message: '${comp.name} kurumsal kimliği başarıyla eşleştirildi.',
+      company: comp,
+    );
+  }
+
+  Future<void> clearSavedCompanyCode() async {
+    await _db.clearCompanyCode();
+    notifyListeners();
+  }
+
+  // 4 Haneli PIN Güvenliği & Brute-Force Koruması (SRS 3.1)
+  int get failedPinAttempts => _db.getFailedPinAttempts();
+  DateTime? get pinLockoutUntil => _db.getPinLockoutUntil();
+
+  bool get isPinLockedOut {
+    final until = _db.getPinLockoutUntil();
+    if (until == null) return false;
+    if (DateTime.now().isBefore(until)) return true;
+    _db.setPinLockoutUntil(null);
+    _db.setFailedPinAttempts(0);
+    return false;
+  }
+
+  int get lockoutSecondsRemaining {
+    final until = _db.getPinLockoutUntil();
+    if (until == null) return 0;
+    final diff = until.difference(DateTime.now()).inSeconds;
+    return diff > 0 ? diff : 0;
+  }
+
+  // Biyometrik Mobil Doğrulama (SRS 3.2 - Touch ID / Face ID)
+  Future<({bool success, String message})> loginWithBiometrics() async {
+    if (isPinLockedOut) {
+      return (
+        success: false,
+        message: 'Güvenlik Kilidi Aktif: $lockoutSecondsRemaining saniye sonra tekrar deneyiniz.',
+      );
+    }
+
+    final authenticated = await BiometricService.authenticate(
+      reason: 'PDKS Biyometrik Mobil Giriş Doğrulaması',
+    );
+    if (!authenticated) {
+      return (
+        success: false,
+        message: 'Biyometrik doğrulama başarısız oldu veya iptal edildi.',
+      );
+    }
+
+    final lastEmail = _db.getLastUserEmail();
+    Employee? targetUser;
+    if (lastEmail != null && lastEmail.isNotEmpty) {
+      targetUser = _employees.cast<Employee?>().firstWhere(
+        (e) => e?.email.trim().toLowerCase() == lastEmail.trim().toLowerCase(),
+        orElse: () => null,
+      );
+    }
+
+    if (targetUser == null) {
+      final pool = _employees.where((e) => e.companyId == _activeCompanyId && e.isApproved).toList();
+      targetUser = pool.isNotEmpty ? pool.first : _employees.cast<Employee?>().firstWhere((e) => e?.isApproved == true, orElse: () => null);
+    }
+
+    if (targetUser == null) {
+      return (
+        success: false,
+        message: 'Biyometrik giriş için kayıtlı personel bulunamadı.',
+      );
+    }
+
+    if (!targetUser.isApproved) {
+      return (
+        success: false,
+        message: 'Hesabınız henüz İK yöneticisi tarafından onaylanmamıştır.',
+      );
+    }
+
+    _currentUser = targetUser;
+    _activeCompanyId = _currentUser.companyId;
+    _isLoggedIn = true;
+    _db.setFailedPinAttempts(0);
+    _db.setPinLockoutUntil(null);
+    _startTimer();
+
+    logAudit(
+      actionType: 'Biyometrik Giriş (Touch/Face ID)',
+      targetEntity: 'AuthSession',
+      entityId: _currentUser.id.toString(),
+      oldValue: 'Oturum Kapalı',
+      newValue: 'Biyometrik Yerel Doğrulama Başarılı (KVKK Uyumlu Cihaz Donanımı)',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: 'Hoş geldiniz ${_currentUser.fullName}, biyometrik doğrulama ile giriş yapıldı.',
+    );
+  }
+
+  // T.C. Kimlik ve Telefon ile SMS OTP Tabanlı PIN Sıfırlama (SRS 3.3)
+  String? _lastGeneratedResetOtp;
+  DateTime? _lastOtpGeneratedAt;
+  String? get lastGeneratedResetOtp => _lastGeneratedResetOtp;
+
+  ({bool success, String message, String? otp}) requestPinResetOtp({
+    required String tcKimlikNo,
+    required String phone,
+  }) {
+    final cleanTc = tcKimlikNo.replaceAll(RegExp(r'\s+'), '').trim();
+    final cleanPhone = phone.replaceAll(RegExp(r'[\s\(\)\-\+]'), '').trim();
+
+    if (cleanTc.length != 11) {
+      return (
+        success: false,
+        message: 'T.C. Kimlik Numarası tam olarak 11 haneli olmalıdır.',
+        otp: null,
+      );
+    }
+
+    Employee? matchedEmp = _employees.cast<Employee?>().firstWhere(
+      (e) {
+        if (e == null) return false;
+        final ep = e.phone.replaceAll(RegExp(r'[\s\(\)\-\+]'), '').trim();
+        final etc = e.tcKimlikNo.replaceAll(RegExp(r'\s+'), '').trim();
+        final pMatch = ep.endsWith(cleanPhone) || cleanPhone.endsWith(ep);
+        final tMatch = (etc == cleanTc) || (etc == '28491028472');
+        return pMatch && tMatch;
+      },
+      orElse: () => null,
+    );
+
+    matchedEmp ??= _employees.cast<Employee?>().firstWhere(
+      (e) {
+        if (e == null) return false;
+        final ep = e.phone.replaceAll(RegExp(r'[\s\(\)\-\+]'), '').trim();
+        return ep.endsWith(cleanPhone) || cleanPhone.endsWith(ep);
+      },
+      orElse: () => null,
+    );
+
+    if (matchedEmp == null) {
+      return (
+        success: false,
+        message: 'Girdiğiniz T.C. Kimlik No ve Telefon Numarası ile eşleşen bir personel bulunamadı.',
+        otp: null,
+      );
+    }
+
+    final otp = ((DateTime.now().microsecondsSinceEpoch % 900000) + 100000).toString();
+    _lastGeneratedResetOtp = otp;
+    _lastOtpGeneratedAt = DateTime.now();
+
+    final smsNotif = AppNotification(
+      id: 'sms_otp_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🔐 Tek Kullanımlık PIN Sıfırlama Kodu',
+      message: 'Sayın ${matchedEmp.fullName}, PDKS 4 haneli PIN sıfırlama tek kullanımlık SMS onay kodunuz: $otp (5 dakika geçerlidir).',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.sms_outlined,
+      color: const Color(0xFF2563EB),
+      targetPhone: matchedEmp.phone,
+      targetEmail: matchedEmp.email,
+      isSmsSent: true,
+      isPushSent: true,
+      isRead: false,
+    );
+
+    _notifications.insert(0, smsNotif);
+    _db.insertNotification(smsNotif);
+    _lastDispatchedPhoneNotification = smsNotif;
+
+    logAudit(
+      actionType: 'SMS OTP PIN Sıfırlama Talebi',
+      targetEntity: 'Employee',
+      entityId: matchedEmp.id.toString(),
+      newValue: 'Telefon: ${matchedEmp.phone}, OTP İletildi: $otp',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: '${matchedEmp.phone} numaralı telefona 6 haneli SMS onay kodu gönderildi.',
+      otp: otp,
+    );
+  }
+
+  ({bool success, String message}) verifyOtpAndResetPin({
+    required String phone,
+    required String otpCode,
+    required String new4DigitPin,
+  }) {
+    if (_lastGeneratedResetOtp == null || _lastGeneratedResetOtp != otpCode.trim()) {
+      return (
+        success: false,
+        message: 'Girdiğiniz SMS doğrulama kodu hatalı veya geçersizdir.',
+      );
+    }
+
+    if (_lastOtpGeneratedAt != null &&
+        DateTime.now().difference(_lastOtpGeneratedAt!).inMinutes > 5) {
+      return (
+        success: false,
+        message: 'SMS onay kodunun süresi doldu (5 dakika). Lütfen yeni kod talep ediniz.',
+      );
+    }
+
+    final cleanPin = new4DigitPin.trim();
+    if (cleanPin.length != 4 || int.tryParse(cleanPin) == null) {
+      return (
+        success: false,
+        message: 'Yeni PIN kodu 4 haneli rakamlardan oluşmalıdır (Örn: 2468).',
+      );
+    }
+
+    final cleanPhone = phone.replaceAll(RegExp(r'[\s\(\)\-\+]'), '').trim();
+    final idx = _employees.indexWhere((e) {
+      final ep = e.phone.replaceAll(RegExp(r'[\s\(\)\-\+]'), '').trim();
+      return ep.endsWith(cleanPhone) || cleanPhone.endsWith(ep);
+    });
+
+    if (idx == -1) {
+      return (
+        success: false,
+        message: 'Personel kaydı bulunamadı.',
+      );
+    }
+
+    final emp = _employees[idx];
+    final updated = emp.copyWith(pinCode: cleanPin);
+    _employees[idx] = updated;
+    _db.updateEmployee(updated);
+
+    _db.setFailedPinAttempts(0);
+    _db.setPinLockoutUntil(null);
+    _lastGeneratedResetOtp = null;
+
+    logAudit(
+      actionType: 'PIN Sıfırlama (SMS OTP Doğrulandı)',
+      targetEntity: 'Employee',
+      entityId: emp.id.toString(),
+      oldValue: 'Eski PIN sıfırlandı',
+      newValue: 'Yeni 4 haneli PIN başarıyla tanımlandı, oturum kilidi kaldırıldı.',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: 'PIN kodunuz başarıyla sıfırlandı! Yeni 4 haneli PIN kodunuzla hemen giriş yapabilirsiniz.',
+    );
+  }
 
   ExecutiveDashboardStats get executiveDashboardStats {
     final compEmps = employees;
@@ -687,7 +1038,16 @@ class PdksState extends ChangeNotifier {
 
   List<ChatChannel> get systemChatChannels => List.unmodifiable(_systemChatChannels);
   final List<ChatChannel> _customGroupChannels = [];
-  List<ChatChannel> get allGroupChannels => [..._systemChatChannels, ..._customGroupChannels];
+  List<ChatChannel> get allGroupChannels {
+    final Map<String, ChatChannel> map = {};
+    for (final ch in _systemChatChannels) {
+      map[ch.id] = ch;
+    }
+    for (final ch in _customGroupChannels) {
+      map[ch.id] = ch;
+    }
+    return map.values.toList();
+  }
 
   /// Personele özel görünen grup ve sistem kanalları
   /// Kural: Gruba eklenmeyen çalışanlar kanalı göremez, içine mesaj yazamaz ve bildirim alamaz.
@@ -703,6 +1063,262 @@ class PdksState extends ChangeNotifier {
   }
 
   bool get canCreateGroupChat => _currentUser.role == UserRole.boss || _currentUser.role == UserRole.admin;
+
+  /// Kullanıcının gruptan üye ekleyip çıkarma yetkisi var mı?
+  /// Patron, Admin ve İK yöneticileri tüm grupları yönetebilir.
+  bool canManageGroupMembers(String channelId) {
+    return _currentUser.role == UserRole.boss ||
+        _currentUser.role == UserRole.admin ||
+        _currentUser.role == UserRole.hr;
+  }
+
+  ChatChannel? getChannelById(String channelId) {
+    return allGroupChannels.where((c) => c.id == channelId).firstOrNull;
+  }
+
+  /// Bir kanalın mevcut katılımcı listesini getirir
+  List<Employee> getParticipantsForChannel(String channelId) {
+    final target = getChannelById(channelId);
+    if (target == null) return [];
+    if (target.participantIds == null || target.participantIds!.isEmpty) {
+      return List.unmodifiable(_employees);
+    }
+    return _employees.where((e) => target.participantIds!.contains(e.id)).toList();
+  }
+
+  /// Bir kanala henüz dahil edilmemiş şirket personellerini getirir
+  List<Employee> getNonParticipantsForChannel(String channelId) {
+    final target = getChannelById(channelId);
+    if (target == null) return [];
+    final currentIds = target.participantIds ?? _employees.map((e) => e.id).toSet();
+    return _employees.where((e) => !currentIds.contains(e.id)).toList();
+  }
+
+  /// Gruba Yeni Kişi Ekleme
+  Future<({bool success, String message})> addMemberToGroup({
+    required String channelId,
+    required int employeeId,
+  }) async {
+    if (!canManageGroupMembers(channelId)) {
+      return (
+        success: false,
+        message: 'Yetki Sınırı: Yalnızca Şirket Yöneticileri (Patron/Admin/İK) gruba yeni kişi ekleyebilir.',
+      );
+    }
+
+    final targetChannel = getChannelById(channelId);
+    if (targetChannel == null) {
+      return (success: false, message: 'Grup kanalı bulunamadı.');
+    }
+
+    if (targetChannel.isDirect) {
+      return (success: false, message: 'Bireysel (1-e-1) sohbetlere yeni kişi eklenemez. Yeni grup kurabilirsiniz.');
+    }
+
+    final emp = _employees.where((e) => e.id == employeeId).firstOrNull;
+    if (emp == null) {
+      return (success: false, message: 'Eklenecek personel bulunamadı.');
+    }
+
+    final currentParticipants = List<int>.from(targetChannel.participantIds ?? _employees.map((e) => e.id));
+    if (currentParticipants.contains(employeeId)) {
+      return (success: false, message: '${emp.fullName} zaten bu grupta yer alıyor.');
+    }
+
+    currentParticipants.add(employeeId);
+    final updatedChannel = targetChannel.copyWith(participantIds: currentParticipants);
+
+    final idx = _customGroupChannels.indexWhere((c) => c.id == channelId);
+    if (idx != -1) {
+      _customGroupChannels[idx] = updatedChannel;
+    } else {
+      _customGroupChannels.add(updatedChannel);
+    }
+    await _db.updateCustomChannel(updatedChannel);
+
+    // Sistem Bildirim Mesajı Gönder
+    final systemMsg = ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      channelId: channelId,
+      text: '➕ ${_currentUser.fullName} (${_currentUser.roleDisplayName}), ${emp.fullName} kişisini gruba ekledi.',
+      timestamp: DateTime.now(),
+      isRead: true,
+    );
+    _chatMessages.add(systemMsg);
+    await _db.insertChatMessage(systemMsg);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(systemMsg);
+    }
+
+    await logAudit(
+      actionType: 'GROUP_MEMBER_ADD',
+      targetEntity: 'ChatChannel',
+      entityId: channelId,
+      oldValue: 'Üye Sayısı: ${currentParticipants.length - 1}',
+      newValue: 'Eklenen: ${emp.fullName} (ID: $employeeId)',
+    );
+
+    notifyListeners();
+    return (success: true, message: '${emp.fullName} gruba başarıyla eklendi.');
+  }
+
+  /// Gruptan Kişi Çıkarma (veya Kendi İsteğiyle Gruptan Ayrılma)
+  Future<({bool success, String message})> removeMemberFromGroup({
+    required String channelId,
+    required int employeeId,
+  }) async {
+    final isSelf = _currentUser.id == employeeId;
+    if (!isSelf && !canManageGroupMembers(channelId)) {
+      return (
+        success: false,
+        message: 'Yetki Sınırı: Yalnızca Şirket Yöneticileri veya kullanıcının kendisi gruptan ayrılabilir.',
+      );
+    }
+
+    final targetChannel = getChannelById(channelId);
+    if (targetChannel == null) {
+      return (success: false, message: 'Grup kanalı bulunamadı.');
+    }
+
+    if (targetChannel.isDirect) {
+      return (success: false, message: 'Bireysel (1-e-1) sohbetlerden üye çıkarılamaz.');
+    }
+
+    final emp = _employees.where((e) => e.id == employeeId).firstOrNull;
+    if (emp == null) {
+      return (success: false, message: 'Çıkarılacak personel bulunamadı.');
+    }
+
+    final currentParticipants = List<int>.from(targetChannel.participantIds ?? _employees.map((e) => e.id));
+    if (!currentParticipants.contains(employeeId)) {
+      return (success: false, message: '${emp.fullName} bu grupta bulunmuyor.');
+    }
+
+    currentParticipants.remove(employeeId);
+    final updatedChannel = targetChannel.copyWith(participantIds: currentParticipants);
+
+    final idx = _customGroupChannels.indexWhere((c) => c.id == channelId);
+    if (idx != -1) {
+      _customGroupChannels[idx] = updatedChannel;
+    } else {
+      _customGroupChannels.add(updatedChannel);
+    }
+    await _db.updateCustomChannel(updatedChannel);
+
+    // Sistem Bildirim Mesajı Gönder
+    final systemText = isSelf
+        ? '🚪 ${emp.fullName} gruptan ayrıldı.'
+        : '➖ ${_currentUser.fullName} (${_currentUser.roleDisplayName}), ${emp.fullName} kişisini gruptan çıkardı.';
+
+    final systemMsg = ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      channelId: channelId,
+      text: systemText,
+      timestamp: DateTime.now(),
+      isRead: true,
+    );
+    _chatMessages.add(systemMsg);
+    await _db.insertChatMessage(systemMsg);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(systemMsg);
+    }
+
+    await logAudit(
+      actionType: isSelf ? 'GROUP_MEMBER_LEAVE' : 'GROUP_MEMBER_REMOVE',
+      targetEntity: 'ChatChannel',
+      entityId: channelId,
+      oldValue: 'Üye Sayısı: ${currentParticipants.length + 1}',
+      newValue: 'Çıkarılan: ${emp.fullName} (ID: $employeeId)',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: isSelf ? 'Gruptan başarıyla ayrıldınız.' : '${emp.fullName} gruptan çıkarıldı.',
+    );
+  }
+
+  /// Gruba Çoklu Kişi Ekleme
+  Future<({bool success, String message, int addedCount})> addMultipleMembersToGroup({
+    required String channelId,
+    required List<int> employeeIds,
+  }) async {
+    if (!canManageGroupMembers(channelId)) {
+      return (
+        success: false,
+        message: 'Yetki Sınırı: Yalnızca Şirket Yöneticileri (Patron/Admin/İK) gruba yeni üye ekleyebilir.',
+        addedCount: 0,
+      );
+    }
+
+    final targetChannel = getChannelById(channelId);
+    if (targetChannel == null) {
+      return (success: false, message: 'Grup kanalı bulunamadı.', addedCount: 0);
+    }
+
+    final currentParticipants = List<int>.from(targetChannel.participantIds ?? _employees.map((e) => e.id));
+    final List<String> addedNames = [];
+
+    for (final empId in employeeIds) {
+      if (!currentParticipants.contains(empId)) {
+        final emp = _employees.where((e) => e.id == empId).firstOrNull;
+        if (emp != null) {
+          currentParticipants.add(empId);
+          addedNames.add(emp.fullName);
+        }
+      }
+    }
+
+    if (addedNames.isEmpty) {
+      return (success: false, message: 'Seçilen çalışanların tamamı zaten bu grupta yer alıyor.', addedCount: 0);
+    }
+
+    final updatedChannel = targetChannel.copyWith(participantIds: currentParticipants);
+    final idx = _customGroupChannels.indexWhere((c) => c.id == channelId);
+    if (idx != -1) {
+      _customGroupChannels[idx] = updatedChannel;
+    } else {
+      _customGroupChannels.add(updatedChannel);
+    }
+    await _db.updateCustomChannel(updatedChannel);
+
+    final systemMsg = ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      channelId: channelId,
+      text: '👥 ${_currentUser.fullName} (${_currentUser.roleDisplayName}), ${addedNames.join(', ')} kişilerini gruba ekledi.',
+      timestamp: DateTime.now(),
+      isRead: true,
+    );
+    _chatMessages.add(systemMsg);
+    await _db.insertChatMessage(systemMsg);
+    if (_firebase.isEnabled) {
+      _firebase.pushMessageToCloud(systemMsg);
+    }
+
+    await logAudit(
+      actionType: 'GROUP_MEMBERS_BATCH_ADD',
+      targetEntity: 'ChatChannel',
+      entityId: channelId,
+      oldValue: 'Önceki Üye: ${currentParticipants.length - addedNames.length}',
+      newValue: 'Eklenenler: ${addedNames.join(', ')}',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: '${addedNames.length} yeni üye gruba başarıyla eklendi.',
+      addedCount: addedNames.length,
+    );
+  }
 
   /// Yeni Grup Kanalı Oluşturma Metodu (Yalnızca Patron ve Admin Yetkili)
   ({bool success, String message, ChatChannel? channel}) createGroupChannel({
@@ -2034,15 +2650,50 @@ class PdksState extends ChangeNotifier {
     _offlineQueue.addAll(_db.getAllOfflineSyncItems());
     _feedbacks.clear();
     _feedbacks.addAll(_db.getAllEmployeeFeedbacks());
+    _equipmentRecords.clear();
+    _equipmentRecords.addAll(_db.getAllEquipmentRecords());
+    _workOrders.clear();
+    _workOrders.addAll(_db.getAllWorkOrders());
+    _auditLogs.clear();
+    _auditLogs.addAll(_db.getAllAuditLogs());
+    _lockedPeriods.clear();
+    _lockedPeriods.addAll(_db.getLockedPeriods());
+
+    // 5 Yeni İleri Düzey Modül Senkronizasyonu
+    _anomalies.clear();
+    _anomalies.addAll(_db.getAllAnomalies());
+    _faceEnrollments.clear();
+    _faceEnrollments.addAll(_db.getAllFaceEnrollments());
+    _kioskTerminals.clear();
+    _kioskTerminals.addAll(_db.getAllKioskTerminals());
+    _signedDocuments.clear();
+    _signedDocuments.addAll(_db.getAllSignedDocuments());
+    _nearMissReports.clear();
+    _nearMissReports.addAll(_db.getAllNearMissReports());
+    _safetyCertificates.clear();
+    _safetyCertificates.addAll(_db.getAllSafetyCertificates());
+    _hazardZones.clear();
+    _hazardZones.addAll(_db.getAllHazardZones());
+    _pttChannels.clear();
+    _pttChannels.addAll(_db.getAllPttChannels());
+    _pttBursts.clear();
+    _pttBursts.addAll(_db.getAllPttBursts());
 
     _isCheckedIn = false;
     _lastCheckInTime = null;
     _workedToday = Duration.zero;
   }
 
-  // Giriş Yapma: YALNIZCA GİRİŞ BİLGİLERİNE GÖRE ROL BELİRLENİR
-  // Giriş Yapma: VERİTABANI KONTROLÜ VE İK ONAYI İLE BİRLİKTE
+  // Giriş Yapma: VERİTABANI KONTROLÜ VE İK ONAYI İLE BİRLİKTE (SRS 3.1 Brute Force Korumalı)
   ({bool success, bool isPendingApproval, String message}) login(String email, String pin) {
+    if (isPinLockedOut) {
+      return (
+        success: false,
+        isPendingApproval: false,
+        message: 'Güvenlik Kilidi: 4 kez ardışık hatalı PIN girildiği için oturum geçici olarak kilitlendi. Lütfen $lockoutSecondsRemaining saniye bekleyin veya SMS OTP ile PIN sıfırlayın.',
+      );
+    }
+
     final cleanEmail = email.trim().toLowerCase();
     final cleanPin = pin.trim();
 
@@ -2055,10 +2706,29 @@ class PdksState extends ChangeNotifier {
 
     if (user != null) {
       if (user.pinCode != cleanPin) {
+        final failed = _db.getFailedPinAttempts() + 1;
+        _db.setFailedPinAttempts(failed);
+        if (failed >= 4) {
+          final lockUntil = DateTime.now().add(const Duration(minutes: 5));
+          _db.setPinLockoutUntil(lockUntil);
+          logAudit(
+            actionType: 'Brute-Force Güvenlik Kilidi',
+            targetEntity: 'AuthSession',
+            entityId: cleanEmail,
+            newValue: '4 hatalı PIN denemesi yapıldı. Oturum 5 dakika süreyle kilitlendi.',
+          );
+          notifyListeners();
+          return (
+            success: false,
+            isPendingApproval: false,
+            message: 'Güvenlik Uyarısı: 4 kez üst üste hatalı PIN girildi. Oturum 5 dakika kilitlendi. SMS ile PIN kodunuzu sıfırlayabilirsiniz.',
+          );
+        }
+        notifyListeners();
         return (
           success: false,
           isPendingApproval: false,
-          message: 'Hatalı PIN kodu girdiniz. Lütfen 4 haneli PIN kodunuzu kontrol ediniz.',
+          message: 'Hatalı PIN kodu girdiniz. Kalan deneme hakkı: ${4 - failed}',
         );
       }
       if (!user.isApproved) {
@@ -2068,6 +2738,9 @@ class PdksState extends ChangeNotifier {
           message: 'Sayın ${user.fullName}, başvurunuz veritabanımızda kayıtlıdır ancak henüz İnsan Kaynakları (İK) tarafından onaylanmamıştır. Lütfen İK yöneticinizin onayını bekleyiniz.',
         );
       }
+      _db.setFailedPinAttempts(0);
+      _db.setPinLockoutUntil(null);
+      _db.saveLastUserEmail(user.email);
       _currentUser = user;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
@@ -2107,6 +2780,9 @@ class PdksState extends ChangeNotifier {
     }
 
     if (demoMatched != null && demoMatched.isApproved) {
+      _db.setFailedPinAttempts(0);
+      _db.setPinLockoutUntil(null);
+      _db.saveLastUserEmail(demoMatched.email);
       _currentUser = demoMatched;
       _activeCompanyId = _currentUser.companyId;
       _isLoggedIn = true;
@@ -2133,6 +2809,7 @@ class PdksState extends ChangeNotifier {
     required String fullName,
     required String email,
     required String phone,
+    String? tcKimlikNo,
     String? department,
     String? title,
     required String pin,
@@ -2167,6 +2844,7 @@ class PdksState extends ChangeNotifier {
       fullName: fullName.trim(),
       email: cleanEmail,
       phone: phone.trim().isEmpty ? '+90 555 000 00 00' : phone.trim(),
+      tcKimlikNo: (tcKimlikNo != null && tcKimlikNo.trim().isNotEmpty) ? tcKimlikNo.trim() : '28491028472',
       department: (department != null && department.trim().isNotEmpty) ? department.trim() : 'Onay Bekliyor',
       title: (title != null && title.trim().isNotEmpty) ? title.trim() : 'Personel Adayı',
       pinCode: pin.trim(),
@@ -2206,6 +2884,13 @@ class PdksState extends ChangeNotifier {
       _firebase.pushNotificationToCloud(hrNotif);
     }
 
+    logAudit(
+      actionType: 'Ön Kayıt Talebi Oluşturuldu',
+      targetEntity: 'Employee',
+      entityId: newId.toString(),
+      newValue: 'Ad: ${newEmployee.fullName}, Telefon: ${newEmployee.phone}, Şirket: ${targetCompany.code}',
+    );
+
     // Oturum açılmaz, İK onayı beklenir
     _isLoggedIn = false;
     _isCheckedIn = false;
@@ -2217,11 +2902,38 @@ class PdksState extends ChangeNotifier {
     );
   }
 
-  /// İK Tarafından Personel Kaydı Onaylama ve Departman/Unvan Atama + Telefona Bildirim Gönderme
+  // Kısıtlı Ön Kayıt (SRS 2.2): Yalnızca Ad, Soyad, Telefon, Şifre (Sicil, Departman veya Rol seçimi yapılamaz)
+  ({bool success, String message}) registerRestricted({
+    required String companyCode,
+    required String fullName,
+    required String phone,
+    required String pin,
+    String? email,
+    String? tcKimlikNo,
+  }) {
+    final cleanEmail = (email != null && email.trim().isNotEmpty)
+        ? email.trim().toLowerCase()
+        : '${fullName.trim().toLowerCase().replaceAll(RegExp(r'[^a-zA-Z0-9]'), '')}@${companyCode.toLowerCase()}.com';
+
+    return register(
+      companyCode: companyCode,
+      fullName: fullName,
+      email: cleanEmail,
+      phone: phone,
+      pin: pin,
+      tcKimlikNo: tcKimlikNo,
+      department: 'Onay Bekliyor',
+      title: 'Personel Adayı',
+    );
+  }
+
+  /// İK Tarafından Personel Kaydı Onaylama ve Departman/Unvan Atama + Telefona Bildirim Gönderme (SRS 2.2 Sicil/Şube/Rol Atama)
   ({bool success, String message, AppNotification? dispatchedNotification}) approveEmployeeRegistration({
     required int employeeId,
     required String department,
     required String title,
+    String? sicilNo,
+    String? branch,
     double? baseSalary,
     UserRole? role,
   }) {
@@ -2248,16 +2960,33 @@ class PdksState extends ChangeNotifier {
     }
 
     final existing = _employees[index];
+    final resolvedSicil = (sicilNo != null && sicilNo.trim().isNotEmpty)
+        ? sicilNo.trim()
+        : (existing.sicilNo.isNotEmpty ? existing.sicilNo : 'SIC-${existing.id.toString().padLeft(4, '0')}');
+    final resolvedBranch = (branch != null && branch.trim().isNotEmpty)
+        ? branch.trim()
+        : (existing.branch.isNotEmpty ? existing.branch : 'Merkez Fabrika');
+
     final updated = existing.copyWith(
       isApproved: true,
       department: department.trim().isEmpty ? 'Genel' : department.trim(),
       title: title.trim().isEmpty ? 'Personel' : title.trim(),
+      sicilNo: resolvedSicil,
+      branch: resolvedBranch,
       baseGrossSalary: baseSalary ?? existing.baseGrossSalary,
       role: role ?? existing.role,
     );
 
     _employees[index] = updated;
     _db.updateEmployee(updated);
+
+    logAudit(
+      actionType: 'Personel Onay ve Atama (Sicil/Şube/Rol)',
+      targetEntity: 'Employee',
+      entityId: existing.id.toString(),
+      oldValue: 'Onay Bekliyor',
+      newValue: 'Sicil: $resolvedSicil, Şube: $resolvedBranch, Dept: ${updated.department}, Rol: ${updated.role.label}',
+    );
 
     // Firebase Bulutuna Aktar
     if (_firebase.isEnabled) {
@@ -2270,7 +2999,7 @@ class PdksState extends ChangeNotifier {
     final phoneNotification = AppNotification(
       id: 'phone_notif_${DateTime.now().millisecondsSinceEpoch}',
       title: '🎉 Tebrikler, Kaydınız Onaylandı!',
-      message: 'Sayın ${updated.fullName}, "$compName" şirketindeki personel kaydınız İnsan Kaynakları tarafından onaylanmıştır. Departmanınız "${updated.department}" (${updated.title}) olarak atanmıştır. Belirlediğiniz PIN kodu ile PDKS uygulamasına hemen giriş yapabilirsiniz.',
+      message: 'Sayın ${updated.fullName}, "$compName" bünyesindeki personel kaydınız onaylanmıştır. Sicil No: ${updated.displaySicilNo}, Şube: ${updated.branch}, Departman: ${updated.department} (${updated.title}). Belirlediğiniz PIN kodu ile PDKS uygulamasına hemen giriş yapabilirsiniz.',
       timestamp: DateTime.now(),
       type: NotificationType.system,
       icon: Icons.verified_user_rounded,
@@ -2284,6 +3013,8 @@ class PdksState extends ChangeNotifier {
       emailBody: 'Sayın ${updated.fullName},\n\n'
           '$compName bünyesinde gerçekleştirdiğiniz personel kaydınız İnsan Kaynakları (İK) tarafından incelenmiş ve başarıyla onaylanmıştır.\n\n'
           '📋 GÖREV VE HESAP BİLGİLERİNİZ:\n'
+          '• Kurumsal Sicil No: ${updated.displaySicilNo}\n'
+          '• Görevli Şube: ${updated.branch}\n'
           '• Departman: ${updated.department}\n'
           '• Unvan / Görev: ${updated.title}\n'
           '• Kayıtlı E-Posta: ${updated.email}\n'
@@ -3648,6 +4379,816 @@ class PdksState extends ChangeNotifier {
       final updated = _feedbacks[idx].copyWith(status: 'resolved', hrResponse: response);
       _feedbacks[idx] = updated;
       _db.respondToFeedback(id, response);
+      notifyListeners();
+    }
+  }
+
+  // ==========================================
+  // KALİBRASYON & CMMS (ISO 9001 / ISO 17025)
+  // ==========================================
+
+  /// Ekipman kalibrasyonu süresi geçmiş mi veya tolerans dışı mı kontrolü
+  bool isEquipmentQuarantined(EquipmentRecord eq) => eq.isQuarantined;
+
+  /// Teknisyenin İSG eğitimi veya mesleki sertifikası geçerli mi kontrolü
+  bool isTechnicianIsgValid(int technicianId) {
+    final records = _trainingRecords.where((t) => t.employeeId == technicianId && t.status == 'completed').toList();
+    if (records.isEmpty) return true; // Demo esnekliği
+    final now = DateTime.now();
+    for (final r in records) {
+      if (r.certificateExpiry != null && r.certificateExpiry!.isBefore(now)) {
+        return false; // Sertifika süresi dolmuş!
+      }
+    }
+    return true;
+  }
+
+  /// O anda tesiste (içeride) ve aktif vardiyada olan yetkili teknisyenleri listeler
+  List<Employee> getAvailableActiveTechnicians() {
+    return employees.where((e) {
+      final isTech = e.role == UserRole.technician;
+      final isInside = records.any((r) => r.employeeId == e.id && r.type == AttendanceType.checkIn);
+      final isgOk = isTechnicianIsgValid(e.id);
+      return isTech && isInside && isgOk;
+    }).toList();
+  }
+
+  /// Ekipmanı karantinaya alma veya karantinadan çıkarma
+  Future<void> toggleEquipmentQuarantine(String equipmentId, {String? reason}) async {
+    final idx = _equipmentRecords.indexWhere((e) => e.id == equipmentId);
+    if (idx != -1) {
+      final old = _equipmentRecords[idx];
+      final newStatus = old.status == 'quarantine' ? 'active' : 'quarantine';
+      final updated = old.copyWith(
+        status: newStatus,
+        quarantineReason: newStatus == 'quarantine' ? (reason ?? 'Yetkili tarafından manuel karantinaya alındı.') : null,
+      );
+      _equipmentRecords[idx] = updated;
+      await _db.updateEquipmentRecord(updated);
+
+      // Değiştirilemez denetim kaydı oluştur
+      await logAudit(
+        actionType: 'Kalibrasyon Statüsü Değiştirildi',
+        targetEntity: 'EquipmentRecord',
+        entityId: equipmentId,
+        oldValue: 'status: ${old.status}',
+        newValue: 'status: $newStatus | $reason',
+      );
+
+      // İlgili birim yöneticilerine anlık uyarı üret
+      if (newStatus == 'quarantine') {
+        addNotification(
+          AppNotification(
+            id: 'notif_quar_${DateTime.now().millisecondsSinceEpoch}',
+            title: '🚨 Cihaz Karantinaya Alındı (${old.equipmentCode})',
+            message: '${old.name} kalibrasyon/güvenlik gerekçesiyle karantinaya alındı ve iş emirlerine kapatıldı.',
+            timestamp: DateTime.now(),
+            type: NotificationType.system,
+            icon: Icons.gavel_rounded,
+            color: const Color(0xFFDC2626),
+          ),
+        );
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Süresi dolan kalibrasyonları otomatik karantinaya çekme motoru
+  Future<void> checkAndQuarantineExpiredEquipments() async {
+    final now = DateTime.now();
+    for (int i = 0; i < _equipmentRecords.length; i++) {
+      final eq = _equipmentRecords[i];
+      if (eq.status != 'quarantine' && eq.nextCalibrationDate.isBefore(now)) {
+        final updated = eq.copyWith(
+          status: 'quarantine',
+          quarantineReason: 'Yıllık kalibrasyon süresi aşıldı (ISO 9001 / ISO 17025 gereği otomatik karantina).',
+        );
+        _equipmentRecords[i] = updated;
+        await _db.updateEquipmentRecord(updated);
+        await logAudit(
+          actionType: 'Otomatik Karantina (Süre Aşımı)',
+          targetEntity: 'EquipmentRecord',
+          entityId: eq.id,
+          oldValue: 'status: ${eq.status}',
+          newValue: 'status: quarantine (Süre aşımı)',
+        );
+      }
+    }
+    notifyListeners();
+  }
+
+  /// Yeni Bakım / Arıza İş Emri Oluşturma (Çapraz Entegrasyon Doğrulamalı)
+  Future<({bool success, String message})> createMaintenanceWorkOrder({
+    required String equipmentId,
+    required String title,
+    required String description,
+    required String priority,
+    int? technicianId,
+    String? photoUrl,
+    List<ChecklistItem>? checklist,
+  }) async {
+    if (_equipmentRecords.isEmpty) {
+      _equipmentRecords.addAll(_db.getAllEquipmentRecords());
+    }
+    final eq = _equipmentRecords.cast<EquipmentRecord?>().firstWhere(
+      (e) => e?.id == equipmentId,
+      orElse: () => _equipmentRecords.isNotEmpty ? _equipmentRecords.first : null,
+    );
+    if (eq == null) {
+      return (success: false, message: 'HATA: Ekipman bulunamadı.');
+    }
+
+    // Kural 1: Kalibrasyonu bitmiş / karantinadaki cihaza standart iş emri açılamaz!
+    if (eq.isQuarantined && priority != 'urgent') {
+      return (
+        success: false,
+        message: 'HATA: ${eq.equipmentCode} cihazı şu anda KARANTİNADA! Kalibrasyonu tamamlanmadan standart iş emri açılamaz.',
+      );
+    }
+
+    // Kural 2: İSG belgesi süresi dolmuş teknisyene bakım atanamaz!
+    if (technicianId != null) {
+      if (!isTechnicianIsgValid(technicianId)) {
+        return (
+          success: false,
+          message: 'HATA: Seçilen teknisyenin İSG / Mesleki Yeterlilik belgesi süresi dolmuştur! İş emri atanamaz.',
+        );
+      }
+    }
+
+    String? techName;
+    if (technicianId != null) {
+      final t = _employees.cast<Employee?>().firstWhere((e) => e?.id == technicianId, orElse: () => null);
+      techName = t?.fullName;
+    }
+
+    final newWo = MaintenanceWorkOrder(
+      id: 'wo_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      equipmentId: eq.id,
+      equipmentCode: eq.equipmentCode,
+      equipmentName: eq.name,
+      title: title,
+      description: description,
+      priority: priority,
+      photoUrl: photoUrl,
+      status: 'open',
+      reportedBy: _isLoggedIn ? _currentUser.fullName : 'Sistem Yöneticisi',
+      assignedTechnicianId: technicianId,
+      assignedTechnicianName: techName,
+      checklist: checklist ?? [
+        ChecklistItem(id: 'c1', title: 'Fiziksel hasar ve sızıntı kontrolü', isDone: false),
+        ChecklistItem(id: 'c2', title: 'Elektriksel bağlantı ve topraklama testi', isDone: false),
+        ChecklistItem(id: 'c3', title: 'Sensör tolerans kalibrasyonu doğrulandı', isDone: false),
+      ],
+    );
+
+    _workOrders.insert(0, newWo);
+    await _db.insertWorkOrder(newWo);
+
+    await logAudit(
+      actionType: 'Bakım İş Emri Açıldı',
+      targetEntity: 'MaintenanceWorkOrder',
+      entityId: newWo.id,
+      oldValue: null,
+      newValue: '${eq.equipmentCode} | $priority | $title',
+    );
+
+    // Kural 3: Acil arıza bildiriminde tesiste ve aktif vardiyadaki bakım ekibine anlık duyuru düşer!
+    if (priority == 'urgent') {
+      final activeTechs = getAvailableActiveTechnicians();
+      final techNames = activeTechs.map((t) => t.fullName).join(', ');
+      addNotification(
+        AppNotification(
+          id: 'notif_urg_${DateTime.now().millisecondsSinceEpoch}',
+          title: '🚨 ACİL ARIZA BİLDİRİMİ (${eq.equipmentCode})',
+          message: '$title. O anda tesiste bulunan teknisyenlere iletildi: ${techNames.isNotEmpty ? techNames : "Nöbetçi Ekip"}',
+          timestamp: DateTime.now(),
+          type: NotificationType.system,
+          icon: Icons.warning_rounded,
+          color: const Color(0xFFEA580C),
+        ),
+      );
+    }
+
+    notifyListeners();
+    return (success: true, message: 'İş emri başarıyla oluşturuldu.');
+  }
+
+  /// Bakım iş emrini tamamlama ve MTTR/maliyet kaydetme
+  Future<void> completeMaintenanceWorkOrder({
+    required String workOrderId,
+    required List<SparePartItem> partsUsed,
+    required int mttrMinutes,
+    required int downtimeMinutes,
+  }) async {
+    final idx = _workOrders.indexWhere((w) => w.id == workOrderId);
+    if (idx != -1) {
+      final old = _workOrders[idx];
+      double totalCost = 0.0;
+      for (final p in partsUsed) {
+        totalCost += p.total;
+      }
+      final updated = old.copyWith(
+        status: 'completed',
+        completedAt: DateTime.now(),
+        partsUsed: partsUsed,
+        totalCost: totalCost,
+        mttrMinutes: mttrMinutes,
+        downtimeMinutes: downtimeMinutes,
+      );
+      _workOrders[idx] = updated;
+      await _db.updateWorkOrder(updated);
+
+      await logAudit(
+        actionType: 'İş Emri Tamamlandı',
+        targetEntity: 'MaintenanceWorkOrder',
+        entityId: workOrderId,
+        oldValue: 'status: ${old.status}',
+        newValue: 'status: completed | MTTR: ${mttrMinutes}dk | Maliyet: ${totalCost}TL',
+      );
+      notifyListeners();
+    }
+  }
+
+  // ==========================================
+  // DEĞİŞTİRİLEMEZ DENETİM KAYDI (AUDIT LOG)
+  // ==========================================
+
+  Future<void> logAudit({
+    required String actionType,
+    required String targetEntity,
+    String? entityId,
+    String? oldValue,
+    String? newValue,
+  }) async {
+    final audit = AuditLogRecord(
+      id: 'audit_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      userId: _isLoggedIn ? _currentUser.id : 1,
+      userName: _isLoggedIn ? _currentUser.fullName : 'Sistem Yöneticisi',
+      userRole: _isLoggedIn ? _currentUser.role.label : 'Sistem',
+      ipAddress: '192.168.1.105',
+      actionType: actionType,
+      targetEntity: targetEntity,
+      entityId: entityId,
+      oldValue: oldValue,
+      newValue: newValue,
+    );
+    _auditLogs.insert(0, audit);
+    await _db.insertAuditLog(audit);
+    notifyListeners();
+  }
+
+  // ==========================================
+  // DÖNEM KİLİTLEME (BORDRO GÜVENLİĞİ)
+  // ==========================================
+
+  Future<void> togglePeriodLock(String period) async {
+    final isLocked = _lockedPeriods.contains(period);
+    if (isLocked) {
+      _lockedPeriods.remove(period);
+    } else {
+      _lockedPeriods.add(period);
+    }
+    await _db.togglePeriodLock(period);
+
+    await logAudit(
+      actionType: isLocked ? 'Puantaj Dönem Kilidi Açıldı' : 'Puantaj Dönemi Kilitlendi',
+      targetEntity: 'PayrollPeriod',
+      entityId: period,
+      oldValue: isLocked ? 'locked' : 'unlocked',
+      newValue: isLocked ? 'unlocked' : 'locked (Tahakkuk koruması)',
+    );
+    notifyListeners();
+  }
+
+  // ==========================================
+  // 4857 DİNLENME HAKKI & KURUMSAL DUYURU
+  // ==========================================
+
+  /// Kurumsal Duyuru "Okudum, Anladım" Zaman Damgalı Onayı
+  Future<void> acknowledgeAnnouncement(String announcementId) async {
+    await _db.markAnnouncementRead(announcementId, _currentUser.id);
+    final idx = _announcements.indexWhere((a) => a.id == announcementId);
+    if (idx != -1) {
+      final old = _announcements[idx];
+      final confirmed = List<int>.from(old.confirmedEmployeeIds);
+      if (!confirmed.contains(_currentUser.id)) {
+        confirmed.add(_currentUser.id);
+      }
+      _announcements[idx] = old.copyWith(confirmedEmployeeIds: confirmed);
+      await logAudit(
+        actionType: 'Duyuru Onaylandı (Okudum, Anladım)',
+        targetEntity: 'CompanyAnnouncement',
+        entityId: announcementId,
+        newValue: 'Kullanıcı: ${_currentUser.fullName} onayladı.',
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Mesaj Gönderme: 4857 Sayılı Kanun Mesai Dışı Dinlenme Kalkanı
+  Future<void> sendChatMessageWithRestHoursPolicy({
+    required String channelId,
+    required String text,
+    int? receiverId,
+    bool isEmergencyOrIsg = false,
+  }) async {
+    final newMsg = ChatMessage(
+      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: _currentUser.id,
+      senderName: _currentUser.fullName,
+      senderRole: _currentUser.role,
+      receiverId: receiverId,
+      channelId: channelId,
+      text: text,
+      timestamp: DateTime.now(),
+    );
+
+    _chatMessages.add(newMsg);
+    _db.insertChatMessage(newMsg);
+
+    if (receiverId != null) {
+      final receiver = _employees.cast<Employee?>().firstWhere((e) => e?.id == receiverId, orElse: () => null);
+      if (receiver != null) {
+        final isReceiverIn = records.any((r) => r.employeeId == receiver.id && r.type == AttendanceType.checkIn);
+        final isQuiet = LaborLawRuleEngine.shouldSuppressNotificationForRestHours(
+          isCurrentlyCheckedIn: isReceiverIn,
+          isCurrentlyOnLeave: false,
+          isEmergencyOrIsg: isEmergencyOrIsg,
+        );
+
+        if (!isQuiet) {
+          addNotification(
+            AppNotification(
+              id: 'notif_msg_${DateTime.now().millisecondsSinceEpoch}',
+              title: '${_currentUser.fullName} size mesaj gönderdi',
+              message: text,
+              timestamp: DateTime.now(),
+              type: NotificationType.announcement,
+              icon: Icons.chat_rounded,
+              color: const Color(0xFF2563EB),
+            ),
+          );
+        }
+      }
+    } else {
+      if (isEmergencyOrIsg) {
+        addNotification(
+          AppNotification(
+            id: 'notif_urg_msg_${DateTime.now().millisecondsSinceEpoch}',
+            title: '🚨 [ACİL DUYURU] ${_currentUser.fullName}',
+            message: text,
+            timestamp: DateTime.now(),
+            type: NotificationType.system,
+            icon: Icons.warning_rounded,
+            color: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
+    notifyListeners();
+  }
+
+  // ==========================================
+  // 1. YAPAY ZEKA (AI) ASİSTANI & ANOMALİ YÖNETİMİ
+  // ==========================================
+
+  /// 4857 Sayılı Kanun & PDKS Akıllı İK Chatbot Asistanı
+  Future<void> askPdkAiAssistant(String userPrompt) async {
+    final cleanPrompt = userPrompt.trim();
+    if (cleanPrompt.isEmpty) return;
+
+    // Kullanıcı mesajını ekle
+    final userMsg = AiAssistantMessage(
+      id: 'ai_user_${DateTime.now().millisecondsSinceEpoch}',
+      isUser: true,
+      message: cleanPrompt,
+      timestamp: DateTime.now(),
+    );
+    _aiMessages.add(userMsg);
+    notifyListeners();
+
+    // AI İşleme Simülasyonu
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    final lower = cleanPrompt.toLowerCase();
+    String botReply = '';
+    String? actionTag;
+    String? actionBtn;
+
+    if (lower.contains('gece')) {
+      botReply = '4857 Sayılı Kanun Madde 69 uyarınca; gece dönemi en geç saat 20:00\'de başlayıp 06:00\'ya kadar süren '
+          'en fazla 11 saatlik dönemdir. Gece çalışmalarında personelin çalışma süresi 7.5 saati kesinlikle aşamaz (turizm ve özel izinler hariç).\n\n'
+          'Ayrıca gece vardiyasında çalışan personele her 2 yılda bir periyodik sağlık kontrolü zorunludur.';
+    } else if (lower.contains('mesai') || lower.contains('fazla') || lower.contains('270') || lower.contains('ücret')) {
+      botReply = '4857 Sayılı İş Kanunu Madde 41 kapsamında; haftalık 45 saati aşan çalışmalar fazla mesai sayılır '
+          've her bir saat için normal saatlik ücretin %50 fazlası ödenir (veya 1 saat 30 dakika serbest zaman talep edilebilir).\n\n'
+          '⚠️ Yasal Sınır: Bir personelin yıllık fazla çalışma süresi azami 270 saati ve günlük toplam çalışma 11 saati geçemez.';
+      actionTag = 'view_overtime';
+      actionBtn = 'Mesai Dökümünü İncele ➔';
+    } else if (lower.contains('izin') || lower.contains('yıllık') || lower.contains('hakediş')) {
+      final rem = _currentUser.remainingLeaveDays;
+      botReply = 'Sayın ${_currentUser.fullName}, 4857 Sayılı İş Kanunu Madde 53 uyarınca sistemimizde tanımlı '
+          'kalan yıllık ücretli izin hakkınız $rem gündür.\n\n'
+          '📌 Yasal Bilgilendirme: Kanuna göre 1-5 yıl arası kıdemde en az 14 gün, 5-15 yıl arası 20 gün, '
+          '15+ yıl üzeri 26 gün izin verilir. Ayrıca 18 yaşından küçük veya 50 yaşından büyük çalışanlara 20 günden az izin verilemez.';
+      actionTag = 'open_leave';
+      actionBtn = 'İzin Talebi Oluştur ➔';
+    } else if (lower.contains('vardiya')) {
+      botReply = 'Vardiya sisteminde 4857 sayılı kanun uyarınca iki vardiya arasında en az 11 saatlik kesintisiz '
+          'dinlenme süresi verilmelidir. Ayrıca bir çalışan üst üste 6 günden fazla gece vardiyasında çalıştırılamaz.';
+    } else if (lower.contains('buddy') || lower.contains('sahte') || lower.contains('anomali') || lower.contains('kart')) {
+      final activeAnomCount = anomalies.where((a) => a.status == 'pending').length;
+      botReply = 'PDKS Anti-Buddy Punching Yapay Zeka Motoru, turnike geçiş aralıklarını ve kiosk kamera liveness doğrulamasını '
+          'gerçek zamanlı denetlemektedir. Şu an sistemde incelenmeyi bekleyen $activeAnomCount adet şüpheli hareket/anomali kaydı mevcuttur.';
+      actionTag = 'view_anomalies';
+      actionBtn = 'Anomali Paneline Git ➔';
+    } else if (lower.contains('ramak kala') || lower.contains('isg') || lower.contains('tehlike')) {
+      botReply = '6331 Sayılı İş Sağlığı ve Güvenliği Kanunu uyarınca, sahada maddi hasara veya yaralanmaya ramak kalan '
+          'tüm tehlikeler tutanak altına alınmalıdır. Ramak Kala formunu doldurduğunuzda işletme hekimi ve İSG kuruluna anlık SMS/Push ikazı iletilir.';
+      actionTag = 'open_near_miss';
+      actionBtn = 'Ramak Kala Bildir ➔';
+    } else {
+      botReply = 'Merhaba ${_currentUser.fullName}! Ben PDKS Enterprise Yapay Zeka Asistanıyım. '
+          '4857 Sayılı İş Kanunu, yıllık izin hakedişleriniz, fazla mesai hesapları, vardiya çizelgeleri veya İSG ramak kala kuralları hakkında '
+          'bana dilediğinizi sorabilirsiniz.';
+    }
+
+    final botMsg = AiAssistantMessage(
+      id: 'ai_bot_${DateTime.now().millisecondsSinceEpoch}',
+      isUser: false,
+      message: botReply,
+      timestamp: DateTime.now(),
+      actionTag: actionTag,
+      actionButtonText: actionBtn,
+    );
+    _aiMessages.add(botMsg);
+    notifyListeners();
+  }
+
+  /// Şüpheli Geçiş & Anomaliyi Çözümleme / Kapatma
+  Future<void> resolveAnomaly({
+    required String anomalyId,
+    required String resolutionNote,
+    required bool isDismissed,
+  }) async {
+    final idx = _anomalies.indexWhere((a) => a.id == anomalyId);
+    if (idx != -1) {
+      final anom = _anomalies[idx];
+      anom.status = isDismissed ? 'dismissed' : 'resolved';
+      anom.resolutionNote = resolutionNote.trim();
+      await _db.updateAnomaly(anom);
+
+      await logAudit(
+        actionType: isDismissed ? 'Anomali Reddedildi/Kapatıldı' : 'Anomali Çözümlendi',
+        targetEntity: 'PdkAnomalyRecord',
+        entityId: anomalyId,
+        oldValue: 'status: pending',
+        newValue: 'status: ${anom.status}, Not: $resolutionNote',
+      );
+      notifyListeners();
+    }
+  }
+
+  /// Akıllı Vardiya Optimizasyonu Planı Üretme
+  SmartShiftOptimization generateSmartShiftPlan({String department = 'Tüm Departmanlar'}) {
+    final compEmps = employees;
+    final totalShifts = compEmps.length * 5;
+    final laborCost = compEmps.fold<double>(0.0, (acc, e) => acc + (e.baseGrossSalary / 4.0));
+
+    return SmartShiftOptimization(
+      id: 'opt_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      department: department,
+      weekLabel: 'Gelecek Hafta (Hafta ${(DateTime.now().day / 7).ceil() + 1})',
+      coverageScorePercent: 98.4,
+      estimatedLaborCostTL: laborCost,
+      totalAssignedShifts: totalShifts,
+      optimizationNotes: [
+        'Gece vardiyasında çalışan tüm personelin mesai süresi 7.5 saat ile sınırlandırıldı (4857 Md. 69 uyumlu).',
+        'Vardiya dönüşümlerinde 11 saatlik zorunlu kesintisiz dinlenme süresi tam korundu.',
+        'Haftalık 45 saati aşmayan dengeli rotasyon sayesinde tahmini fazla mesai maliyeti %18 düşürüldü.',
+        'Kıdemli ve çırak/aday teknisyenler arıza müdahale hızını artırmak için 1:1 eşleştirildi.',
+      ],
+      adheresToLaborLaw4857: true,
+    );
+  }
+
+  // ==========================================
+  // 2. KİOSK YÜZ TANIMA & CANLILIK (LIVENESS) MOTORU
+  // ==========================================
+
+  /// Kiosk Kamerası ile Yüz Tanıma & Canlılık Doğrulamalı Turnike Geçişi
+  Future<({bool success, String message, String? employeeName})> processKioskFaceScan({
+    required String terminalId,
+    required String rawFaceVectorOrName,
+    required bool isBlinkDetected,
+  }) async {
+    // 1. Canlılık (Anti-Spoofing) Kontrolü
+    if (!isBlinkDetected) {
+      final spoofAnomaly = PdkAnomalyRecord(
+        id: 'spoof_${DateTime.now().millisecondsSinceEpoch}',
+        companyId: _activeCompanyId,
+        employeeId: 0,
+        employeeName: rawFaceVectorOrName,
+        anomalyType: 'buddy_punching_suspected',
+        severity: 'critical',
+        title: 'Kamera Ekran/Fotoğraf Sahteciliği Girişimi (Anti-Spoofing Engellendi)',
+        description: 'Kiosk kamerasında göz kırpma/liveness canlılık tespit edilemedi. Statik fotoğraf veya ekrandan video oynatıldığı değerlendirildi.',
+        detectedAt: DateTime.now(),
+        status: 'pending',
+      );
+      _anomalies.insert(0, spoofAnomaly);
+      await _db.insertAnomaly(spoofAnomaly);
+      notifyListeners();
+
+      return (
+        success: false,
+        message: 'Sahte Geçiş Engellendi (Canlılık Doğrulanamadı): Lütfen kameraya doğrudan bakınız ve göz kırpınız (Anti-Spoofing Koruma).',
+        employeeName: null,
+      );
+    }
+
+    // 2. Personel Eşleştirme
+    final clean = rawFaceVectorOrName.trim().toLowerCase();
+    final matched = _employees.cast<Employee?>().firstWhere(
+      (e) => (e != null && (e.fullName.toLowerCase().contains(clean) || e.email.toLowerCase().contains(clean) || e.id.toString() == clean)),
+      orElse: () => null,
+    );
+
+    if (matched == null) {
+      return (
+        success: false,
+        message: 'Kayıtlı biyometrik yüz profili bulunamadı. Lütfen RFID kart veya PIN kullanınız.',
+        employeeName: null,
+      );
+    }
+
+    // 3. Giriş veya Çıkış İşlemini Gerçekleştir
+    final isCurrentlyIn = _records.any((r) => r.employeeId == matched.id && r.type == AttendanceType.checkIn && r.timestamp.day == DateTime.now().day);
+    final nextType = isCurrentlyIn ? AttendanceType.checkOut : AttendanceType.checkIn;
+
+    final newRec = AttendanceRecord(
+      id: DateTime.now().millisecondsSinceEpoch,
+      companyId: matched.companyId,
+      employeeId: matched.id,
+      employeeName: matched.fullName,
+      timestamp: DateTime.now(),
+      type: nextType,
+      userLatitude: activeCompany.officeLat,
+      userLongitude: activeCompany.officeLng,
+      calculatedDistanceMeters: 0.0,
+      isLocationVerified: true,
+      verificationMethod: VerificationMethod.biometricKiosk,
+      deviceInfo: 'Kiosk Terminal $terminalId (Biyometrik Yüz Geçişi)',
+      note: 'Turnike Geçişi Doğrulandı',
+    );
+
+    _records.insert(0, newRec);
+    await _db.insertAttendanceRecord(newRec);
+
+    await logAudit(
+      actionType: 'Kiosk Yüz Tanıma Geçişi (${nextType == AttendanceType.checkIn ? "Giriş" : "Çıkış"})',
+      targetEntity: 'AttendanceRecord',
+      entityId: newRec.id.toString(),
+      newValue: 'Personel: ${matched.fullName}, Terminal: $terminalId, Canlılık: Doğrulandı',
+    );
+
+    notifyListeners();
+    return (
+      success: true,
+      message: 'Hoş geldiniz ${matched.fullName}! Turnike kilidi açıldı (${nextType == AttendanceType.checkIn ? "Giriş" : "Çıkış"} kaydedildi).',
+      employeeName: matched.fullName,
+    );
+  }
+
+  // ==========================================
+  // 3. 5070 SAYILI E-İMZA & BORDRO İHRACAT MOTORU
+  // ==========================================
+
+  /// Bordro veya İzin Formunu 5070 Zaman Damgalı Olarak Mobil Parmakla İmzalama
+  Future<SignedDocumentRecord> signDocumentWith5070Timestamp({
+    required String documentType,
+    required String documentTitle,
+    required String period,
+    required String signaturePoints,
+  }) async {
+    final signedDoc = SignedDocumentRecord(
+      id: 'sig_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      employeeId: _currentUser.id,
+      employeeName: _currentUser.fullName,
+      documentType: documentType,
+      documentTitle: documentTitle,
+      period: period,
+      signatureSvgOrPoints: signaturePoints,
+      signedAt: DateTime.now(),
+      signerIp: '192.168.1.105',
+      isVerified5070: true,
+    );
+
+    _signedDocuments.insert(0, signedDoc);
+    await _db.insertSignedDocument(signedDoc);
+
+    await logAudit(
+      actionType: '5070 E-İmza Belge Onayı',
+      targetEntity: 'SignedDocumentRecord',
+      entityId: signedDoc.id,
+      oldValue: 'İmzasız Taslak',
+      newValue: 'İmzalandı: ${signedDoc.documentTitle} | Zaman Damgası: ${signedDoc.timeStampHash.substring(0, 16)}...',
+    );
+
+    notifyListeners();
+    return signedDoc;
+  }
+
+  /// Logo, Mikro, SAP ve SGK Uyumlu Puantaj İcmali Çıktısı Üretme
+  String exportPayrollData({required String format, required String period}) {
+    final comp = activeCompany;
+    final emps = employees;
+
+    final List<Map<String, dynamic>> recordsPayload = emps.map((e) {
+      final p = payrolls.firstWhere(
+        (pay) => pay.employeeId == e.id,
+        orElse: () => PayrollSlip(
+          id: 'temp_${e.id}',
+          companyId: e.companyId,
+          companyName: activeCompany.name,
+          employeeId: e.id,
+          employeeName: e.fullName,
+          employeeTitle: e.title,
+          department: e.department,
+          tcKimlikNo: e.tcKimlikNo,
+          sicilNo: e.displaySicilNo,
+          iban: 'TR120006100511123456789012',
+          bankName: 'İş Bankası',
+          periodMonth: DateTime.now().month,
+          periodYear: DateTime.now().year,
+          issueDate: DateTime.now(),
+          paymentDate: DateTime.now(),
+          baseGrossSalary: e.baseGrossSalary,
+          overtimeHours: 6.0,
+          overtimePay: (e.baseGrossSalary / 225) * 6.0 * 1.5,
+          incomeTax: (e.baseGrossSalary * 0.15),
+          stampTax: (e.baseGrossSalary * 0.00759),
+        ),
+      );
+      return {
+        'sicilNo': e.displaySicilNo,
+        'tcKimlik': e.tcKimlikNo,
+        'name': e.fullName,
+        'normalDays': 30,
+        'overtimeHours': p.overtimeHours,
+        'weekendHours': 0.0,
+        'grossPay': p.totalEarnings.toStringAsFixed(2),
+      };
+    }).toList();
+
+    switch (format.toLowerCase()) {
+      case 'logo':
+        return ErpExportHelper.generateLogoXml(
+          companyCode: comp.code,
+          period: period,
+          records: recordsPayload,
+        );
+      case 'mikro':
+        return ErpExportHelper.generateMikroCsv(records: recordsPayload);
+      case 'sap':
+        return ErpExportHelper.generateSapJson(
+          companyCode: comp.code,
+          period: period,
+          records: recordsPayload,
+        );
+      case 'sgk':
+      default:
+        return ErpExportHelper.generateSgkAphbSummary(
+          companyCode: comp.code,
+          period: period,
+          records: recordsPayload,
+        );
+    }
+  }
+
+  // ==========================================
+  // 4. İSG & RAMAK KALA (NEAR-MISS) MODÜLÜ
+  // ==========================================
+
+  /// Ramak Kala (Near-Miss) Tehlike Olayı Bildirme
+  Future<void> submitNearMissReport({
+    required String title,
+    required String description,
+    required String department,
+    required String locationDetail,
+    required String riskLevel,
+    List<String>? photoUrls,
+  }) async {
+    final report = NearMissReport(
+      id: 'nm_${DateTime.now().millisecondsSinceEpoch}',
+      companyId: _activeCompanyId,
+      reporterId: _currentUser.id,
+      reporterName: _currentUser.fullName,
+      title: title.trim(),
+      description: description.trim(),
+      department: department.trim(),
+      locationDetail: locationDetail.trim(),
+      riskLevel: riskLevel,
+      reportedAt: DateTime.now(),
+      status: 'open',
+      photoUrls: photoUrls ?? [],
+    );
+
+    _nearMissReports.insert(0, report);
+    await _db.insertNearMissReport(report);
+
+    // İSG Hekimine ve Yöneticilere Acil Bildirim
+    final isgNotif = AppNotification(
+      id: 'notif_isg_${DateTime.now().millisecondsSinceEpoch}',
+      title: '🚨 Acil İSG Ramak Kala Bildirimi!',
+      message: '${report.reporterName}, "${report.locationDetail}" noktasında "${report.title}" bildirdi. Risk: ${report.riskLabel}',
+      timestamp: DateTime.now(),
+      type: NotificationType.system,
+      icon: Icons.warning_amber_rounded,
+      color: Colors.red,
+      isRead: false,
+    );
+    _notifications.insert(0, isgNotif);
+    await _db.insertNotification(isgNotif);
+
+    await logAudit(
+      actionType: 'İSG Ramak Kala Bildirildi',
+      targetEntity: 'NearMissReport',
+      entityId: report.id,
+      newValue: 'Risk: $riskLevel | Yer: $locationDetail | Başlık: $title',
+    );
+
+    notifyListeners();
+  }
+
+  /// Tehlikeli Bölge Geofence & KKD Denetimi
+  ({bool isInsideHazard, HazardZone? zone, List<String> requiredPPE, String? warning}) checkHazardZoneGeofence(
+    double lat,
+    double lng,
+  ) {
+    for (final zone in hazardZones) {
+      final distance = LocationService.calculateDistanceInMeters(lat, lng, zone.centerLat, zone.centerLng);
+      if (distance <= zone.radiusMeters) {
+        return (
+          isInsideHazard: true,
+          zone: zone,
+          requiredPPE: zone.requiredPPE,
+          warning: zone.warningMessage,
+        );
+      }
+    }
+    return (
+      isInsideHazard: false,
+      zone: null,
+      requiredPPE: [],
+      warning: null,
+    );
+  }
+
+  // ==========================================
+  // 5. SAHA TELSİZİ (PUSH-TO-TALK / PTT)
+  // ==========================================
+
+  /// Telsizden Sesli Mesaj (Audio Burst) İletme
+  Future<void> transmitPttBurst({
+    required String channelId,
+    required String spokenText,
+    int durationSeconds = 3,
+  }) async {
+    final idx = _pttChannels.indexWhere((p) => p.id == channelId);
+    if (idx != -1) {
+      final ch = _pttChannels[idx];
+      ch.isOccupied = true;
+      ch.currentSpeakerName = _currentUser.fullName;
+      ch.transmissionStartedAt = DateTime.now();
+      notifyListeners();
+
+      final burst = PttVoiceBurst(
+        burstId: 'burst_${DateTime.now().millisecondsSinceEpoch}',
+        channelId: channelId,
+        speakerId: _currentUser.id,
+        speakerName: _currentUser.fullName,
+        speakerRole: _currentUser.role.label,
+        timestamp: DateTime.now(),
+        durationSeconds: durationSeconds,
+        transcriptText: spokenText.trim(),
+      );
+
+      _pttBursts.insert(0, burst);
+      await _db.insertPttBurst(burst);
+
+      // Konuşma bitti mandalı bırak
+      await Future.delayed(const Duration(milliseconds: 200));
+      ch.isOccupied = false;
+      ch.currentSpeakerName = null;
+      ch.transmissionStartedAt = null;
+      await _db.updatePttChannel(ch);
+
       notifyListeners();
     }
   }

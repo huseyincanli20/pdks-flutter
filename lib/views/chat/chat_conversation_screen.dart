@@ -7,6 +7,7 @@ import '../../models/chat_message.dart';
 import '../../models/employee.dart';
 import '../../state/pdks_state.dart';
 import '../../core/utils/platform_file_helper.dart';
+import 'group_member_management_sheet.dart';
 
 class ChatConversationScreen extends StatefulWidget {
   final String channelId;
@@ -437,63 +438,72 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         titleSpacing: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    (widget.iconColor ?? AppColors.primaryOf(context)).withOpacity(0.2),
-                    widget.iconColor ?? AppColors.primaryOf(context),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: widget.directUser != null
-                    ? Text(
-                        widget.directUser!.fullName.isNotEmpty ? widget.directUser!.fullName.substring(0, 2).toUpperCase() : 'P',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                      )
-                    : Icon(widget.icon ?? Icons.chat_bubble_outline_rounded, color: Colors.white, size: 20),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context)),
-                    overflow: TextOverflow.ellipsis,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: widget.directUser == null
+              ? () => GroupMemberManagementSheet.show(context, widget.channelId)
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        (widget.iconColor ?? AppColors.primaryOf(context)).withOpacity(0.2),
+                        widget.iconColor ?? AppColors.primaryOf(context),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
-                  Row(
+                  child: Center(
+                    child: widget.directUser != null
+                        ? Text(
+                            widget.directUser!.fullName.isNotEmpty ? widget.directUser!.fullName.substring(0, 2).toUpperCase() : 'P',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                          )
+                        : Icon(widget.icon ?? Icons.chat_bubble_outline_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
                       Text(
-                        widget.subtitle ?? (widget.directUser != null ? '${widget.directUser!.department} • Çevrimiçi' : 'Şirket Kanalı'),
-                        style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                        widget.title,
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.text(context)),
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            widget.subtitle ?? (widget.directUser != null ? '${widget.directUser!.department} • Çevrimiçi' : 'Şirket Kanalı'),
+                            style: TextStyle(fontSize: 11, color: AppColors.textSub(context)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           IconButton(
@@ -501,9 +511,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             tooltip: 'Hızlı Şablonlar',
             onPressed: () => setState(() => _showQuickTemplates = !_showQuickTemplates),
           ),
+          if (widget.directUser == null)
+            IconButton(
+              icon: const Icon(Icons.group_add_rounded),
+              tooltip: 'Grup Üyeleri & Kişi Ekle/Çıkar',
+              onPressed: () => GroupMemberManagementSheet.show(context, widget.channelId),
+            ),
           IconButton(
             icon: const Icon(Icons.info_outline_rounded),
-            tooltip: 'Kanal Bilgisi',
+            tooltip: widget.directUser == null ? 'Grup Bilgisi & Üyeler' : 'Kişi Bilgisi',
             onPressed: () => _showChannelInfo(context),
           ),
         ],
@@ -1068,6 +1084,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   void _showChannelInfo(BuildContext context) {
+    if (widget.directUser == null) {
+      GroupMemberManagementSheet.show(context, widget.channelId);
+      return;
+    }
+
     final pdks = context.read<PdksState>();
     final channel = pdks.allGroupChannels.where((c) => c.id == widget.channelId).firstOrNull;
     final isRestricted = channel?.participantIds != null && channel!.participantIds!.isNotEmpty;

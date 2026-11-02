@@ -61,5 +61,17 @@
 	
 	<key>NSFaceIDUsageDescription</key>
 	<string>PDKS giriş ve çıkış işlemlerinizi FaceID ile hızlı ve güvenli şekilde onaylamak için izin gereklidir.</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Kurumsal Bas-Konuş (PTT) telsiz ve sesli anons göndermek için mikrofon izni gereklidir.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ramak Kala olay bildirimlerine ve profillere görsel eklemek için galeri izni gereklidir.</string>
+
+	<key>UIFileSharingEnabled</key>
+	<true/>
+
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

@@ -158,6 +158,28 @@ class ChatChannel {
     this.participantIds,
   });
 
+  ChatChannel copyWith({
+    String? id,
+    String? title,
+    String? subtitle,
+    bool? isDirect,
+    int? directUserId,
+    IconData? icon,
+    Color? iconColor,
+    List<int>? participantIds,
+  }) {
+    return ChatChannel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      isDirect: isDirect ?? this.isDirect,
+      directUserId: directUserId ?? this.directUserId,
+      icon: icon ?? this.icon,
+      iconColor: iconColor ?? this.iconColor,
+      participantIds: participantIds ?? this.participantIds,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
