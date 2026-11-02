@@ -196,93 +196,9 @@ class _CafeteriaMenuViewScreenState extends State<CafeteriaMenuViewScreen> with 
             pageId: 'cafeteria_menu',
             pageTitle: 'Yemekhane Menüsü',
             editableSections: [
-              PageSectionItem(id: 'today_header', title: 'Günün Menüsü Başlık Kartı'),
               PageSectionItem(id: 'food_list', title: 'Öğle Yemeği Lezzetleri Listesi'),
             ],
           ),
-
-          // Üst Tarih ve Şef Başlığı Banner'ı
-          AdminEditableSection(
-            pageId: 'cafeteria_menu',
-            sectionId: 'today_header',
-            sectionTitle: 'Günün Menüsü Başlık Kartı',
-            child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEA580C), Color(0xFFC2410C), Color(0xFF9A3412)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFEA580C).withOpacity(0.35),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        DateFormat('EEEE, d MMMM yyyy', 'tr_TR').format(menu.date),
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '🔥 ~${menu.totalCalories} kcal',
-                        style: const TextStyle(color: Color(0xFFEA580C), fontSize: 12, fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'ÖĞLE YEMEĞİ MENÜSÜ',
-                  style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1.5, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Afiyet Olsun! 🍽️',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(Icons.soup_kitchen_rounded, color: Colors.white70, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Hazırlayan: ${menu.updatedBy}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          ),
-
-          const SizedBox(height: 24),
 
           AdminEditableSection(
             pageId: 'cafeteria_menu',

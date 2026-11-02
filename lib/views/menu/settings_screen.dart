@@ -312,7 +312,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildActionItem(
                     context,
                     title: 'Görünüm Teması',
-                    subtitle: 'Aydınlık, Koyu, Lacivert, Zümrüt, Mor & Kehribar (7 Tema)',
                     icon: Icons.palette_outlined,
                     iconColor: pdks.currentTheme.primaryColor,
                     trailingText: pdks.themeModeName,
@@ -558,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildActionItem(
     BuildContext context, {
     required String title,
-    required String subtitle,
+    String? subtitle,
     required IconData icon,
     required Color iconColor,
     required String trailingText,
@@ -588,8 +587,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.text(context))),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
+                    if (subtitle != null && subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: TextStyle(fontSize: 11, color: AppColors.textSub(context))),
+                    ],
                   ],
                 ),
               ),

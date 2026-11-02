@@ -6,7 +6,6 @@ import '../../state/pdks_state.dart';
 import '../menu/profile_screen.dart';
 import '../menu/contacts_screen.dart';
 import '../menu/business_card_screen.dart';
-import '../menu/favorites_screen.dart';
 import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -15,7 +14,6 @@ import '../payroll/my_payrolls_screen.dart';
 import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../vehicle/vehicle_request_screen.dart';
-import '../enterprise/enterprise_hub_screen.dart';
 import '../kiosk/kiosk_terminal_screen.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
@@ -116,13 +114,13 @@ class AppDrawer extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: roleColor, width: 2),
-                          image: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                          image: user.avatarImageProvider != null
                               ? DecorationImage(
-                                  image: NetworkImage(user.avatarUrl!),
+                                  image: user.avatarImageProvider!,
                                   fit: BoxFit.cover,
                                 )
                               : null,
-                          gradient: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                          gradient: user.avatarImageProvider == null
                               ? LinearGradient(
                                   colors: [roleColor.withOpacity(0.3), roleColor],
                                   begin: Alignment.topLeft,
@@ -130,7 +128,7 @@ class AppDrawer extends StatelessWidget {
                                 )
                               : null,
                         ),
-                        child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                        child: user.avatarImageProvider == null
                             ? Center(
                                 child: Text(
                                   user.fullName.isNotEmpty ? user.fullName.substring(0, 2).toUpperCase() : 'P',
@@ -412,14 +410,6 @@ class AppDrawer extends StatelessWidget {
                     subtitle: 'Dijital QR kodlu şirket kartı',
                     destination: const BusinessCardScreen(),
                   ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.star_border_rounded,
-                    color: const Color(0xFFD97706),
-                    title: 'Sık Kullanılanlar',
-                    subtitle: 'Hızlı kısayollar, yemek & servis',
-                    destination: const FavoritesScreen(),
-                  ),
                   if (pdks.hasPagePermission('vehicle_request'))
                     _buildDrawerTile(
                       context,
@@ -430,15 +420,6 @@ class AppDrawer extends StatelessWidget {
                           ? 'Filo yönetimi & araç tahsis'
                           : 'Şirket havuz araçları ve talep takibi',
                       destination: const VehicleRequestScreen(),
-                    ),
-                  if (pdks.hasPagePermission('enterprise_hub'))
-                    _buildDrawerTile(
-                      context,
-                      icon: Icons.hub_rounded,
-                      color: const Color(0xFF6366F1),
-                      title: 'Kurumsal Modüller (19 Modül)',
-                      subtitle: 'AI mevzuat, e-imza, İSG ramak kala, telsiz...',
-                      destination: const EnterpriseHubScreen(),
                     ),
                   _buildDrawerTile(
                     context,

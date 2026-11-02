@@ -1,4 +1,4 @@
-enum LeaveType { annual, medical, excused, unpaid }
+enum LeaveType { annual, medical, excused, unpaid, hourly }
 
 enum LeaveStatus { pending, approved, rejected }
 
@@ -11,6 +11,10 @@ class LeaveRequest {
   final DateTime startDate;
   final DateTime endDate;
   final int totalDays;
+  final double? totalHours;
+  final String? documentName;
+  final String? documentPath;
+  final String? documentBase64;
   final String reason;
   final LeaveStatus status;
   final String? managerComment;
@@ -25,6 +29,10 @@ class LeaveRequest {
     required this.startDate,
     required this.endDate,
     required this.totalDays,
+    this.totalHours,
+    this.documentName,
+    this.documentPath,
+    this.documentBase64,
     required this.reason,
     this.status = LeaveStatus.pending,
     this.managerComment,
@@ -36,11 +44,13 @@ class LeaveRequest {
       case LeaveType.annual:
         return 'Yıllık İzin';
       case LeaveType.medical:
-        return 'Hastalık / Rapor';
+        return 'Sağlık / Rapor';
       case LeaveType.excused:
         return 'Mazeret İzni';
       case LeaveType.unpaid:
         return 'Ücretsiz İzin';
+      case LeaveType.hourly:
+        return 'Saatlik İzin';
     }
   }
 
@@ -68,6 +78,10 @@ class LeaveRequest {
       startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
       endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
       totalDays: json['totalDays'] ?? 1,
+      totalHours: json['totalHours'] != null ? (json['totalHours'] as num).toDouble() : null,
+      documentName: json['documentName'],
+      documentPath: json['documentPath'],
+      documentBase64: json['documentBase64'],
       reason: json['reason'] ?? '',
       status: LeaveStatus.values.firstWhere(
         (e) => e.name == json['status'],
@@ -88,6 +102,10 @@ class LeaveRequest {
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
       'totalDays': totalDays,
+      'totalHours': totalHours,
+      'documentName': documentName,
+      'documentPath': documentPath,
+      'documentBase64': documentBase64,
       'reason': reason,
       'status': status.name,
       'managerComment': managerComment,

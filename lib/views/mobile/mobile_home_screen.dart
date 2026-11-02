@@ -30,6 +30,7 @@ import '../common/quick_menu_manager_dialog.dart';
 import '../common/field_work_dialog.dart';
 import '../vehicle/vehicle_request_screen.dart';
 import '../enterprise/enterprise_hub_screen.dart';
+import '../kiosk/kiosk_terminal_screen.dart';
 import '../../models/page_customization.dart';
 
 class MobileHomeScreen extends StatefulWidget {
@@ -706,6 +707,139 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                                 break;
                               case 'vehicle_request':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
+                                break;
+                              case 'shift_swap':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 1)));
+                                break;
+                              case 'helpdesk':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 2)));
+                                break;
+                              case 'announcements':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 3)));
+                                break;
+                              case 'onboarding':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 4)));
+                                break;
+                              case 'training':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 5)));
+                                break;
+                              case 'okr':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 6)));
+                                break;
+                              case 'visitors':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 7)));
+                                break;
+                              case 'hybrid_desk':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 8)));
+                                break;
+                              case 'branches':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 9)));
+                                break;
+                              case 'feedback':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 10)));
+                                break;
+                              case 'calibration':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 12)));
+                                break;
+                              case 'pdks_ai':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 14)));
+                                break;
+                              case 'kiosk_face':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const KioskTerminalScreen()));
+                                break;
+                              case 'digital_docs':
+                              case 'digital_signature':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 16)));
+                                break;
+                              case 'near_miss':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 17)));
+                                break;
+                              case 'ptt_radio':
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 18)));
+                                break;
+                              case 'shuttle':
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    title: const Row(
+                                      children: [
+                                        Icon(Icons.directions_bus_rounded, color: Color(0xFF3B82F6), size: 22),
+                                        SizedBox(width: 8),
+                                        Expanded(child: Text('Şirket Servis Saatleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n'
+                                      '1. Maslak - Levent - Zincirlikuyu - Kadıköy\n'
+                                      '2. Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n'
+                                      '3. Maslak - Kozyatağı - Ataşehir - Ümraniye\n'
+                                      '4. Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\n'
+                                      'Servis Sorumlusu İletişim: 0532 000 11 22',
+                                      style: TextStyle(fontSize: 13, height: 1.5),
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+                                    ],
+                                  ),
+                                );
+                                break;
+                              case 'holidays':
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    title: const Row(
+                                      children: [
+                                        Icon(Icons.calendar_month_rounded, color: Color(0xFF6366F1), size: 22),
+                                        SizedBox(width: 8),
+                                        Expanded(child: Text('2026 Resmi Tatiller', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      '• 1 Ocak (Perşembe): Yılbaşı\n'
+                                      '• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n'
+                                      '• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n'
+                                      '• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n'
+                                      '• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n'
+                                      '• 30 Ağustos (Pazar): Zafer Bayramı\n'
+                                      '• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
+                                      style: TextStyle(fontSize: 13, height: 1.5),
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+                                    ],
+                                  ),
+                                );
+                                break;
+                              case 'doctor':
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    title: const Row(
+                                      children: [
+                                        Icon(Icons.medical_services_outlined, color: Color(0xFFEF4444), size: 22),
+                                        SizedBox(width: 8),
+                                        Expanded(child: Text('İş Yeri Hekimi & Revir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      'İş Yeri Hekimi: Dr. Mehmet Yılmaz\n'
+                                      'Çalışma Saatleri: Hafta içi 09:00 - 17:30\n'
+                                      'Konum: B Blok, Giriş Kat, Oda No: 104\n\n'
+                                      'Acil Dahili Hatlar:\n'
+                                      '• Revir: Dahili 1044\n'
+                                      '• İK Masası: Dahili 1002\n'
+                                      '• Güvenlik Masası: Dahili 1000\n'
+                                      '• Genel Acil Çağrı: 112',
+                                      style: TextStyle(fontSize: 13, height: 1.5),
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+                                    ],
+                                  ),
+                                );
                                 break;
                               case 'enterprise_hub':
                                 Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));

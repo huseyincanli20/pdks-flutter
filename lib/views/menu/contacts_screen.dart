@@ -255,11 +255,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  '${emp.department} • ${emp.title}',
-                  style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    '${emp.department} • ${emp.title}',
+                    style: TextStyle(color: AppColors.textSub(context), fontSize: 12),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(emp.phone, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),

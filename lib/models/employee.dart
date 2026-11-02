@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 enum UserRole {
@@ -149,6 +150,18 @@ const List<AppPageDefinition> kAllAppPages = [
   AppPageDefinition(id: 'field_work', title: 'Dışarıda Çalışma (Saha)', category: 'Operasyon', icon: Icons.location_on_rounded),
   AppPageDefinition(id: 'overtime', title: 'Fazla Mesai Talebi', category: 'Operasyon', icon: Icons.more_time_rounded),
   AppPageDefinition(id: 'vehicle_request', title: 'Araç Talebi & Filo', category: 'Operasyon', icon: Icons.directions_car_rounded),
+  AppPageDefinition(id: 'shift_swap', title: 'Vardiya & Takas', category: 'Operasyon', icon: Icons.swap_horiz_rounded),
+  AppPageDefinition(id: 'helpdesk', title: 'Destek & Arıza', category: 'Operasyon', icon: Icons.build_circle_rounded),
+  AppPageDefinition(id: 'near_miss', title: 'İSG Ramak Kala', category: 'Kurumsal & İSG', icon: Icons.health_and_safety_rounded),
+  AppPageDefinition(id: 'digital_docs', title: '5070 E-İmza & ERP', category: 'Kurumsal', icon: Icons.draw_rounded),
+  AppPageDefinition(id: 'ptt_radio', title: 'Saha Telsizi (PTT)', category: 'İletişim', icon: Icons.radio_rounded),
+  AppPageDefinition(id: 'shuttle', title: 'Servis Saatleri', category: 'Sosyal Tesis', icon: Icons.directions_bus_rounded),
+  AppPageDefinition(id: 'holidays', title: 'Resmi Tatiller', category: 'Kurumsal', icon: Icons.calendar_month_rounded),
+  AppPageDefinition(id: 'doctor', title: 'Revir & Hekim', category: 'Sosyal Tesis', icon: Icons.medical_services_outlined),
+  AppPageDefinition(id: 'hybrid_desk', title: 'Hibrit & Masa Rezervasyonu', category: 'Operasyon', icon: Icons.desk_rounded),
+  AppPageDefinition(id: 'training', title: 'Akademi & Eğitim', category: 'Kurumsal', icon: Icons.school_rounded),
+  AppPageDefinition(id: 'okr', title: 'Hedef & OKR', category: 'Kurumsal', icon: Icons.track_changes_rounded),
+  AppPageDefinition(id: 'visitors', title: 'Ziyaretçi & Taşeron', category: 'Operasyon', icon: Icons.badge_rounded),
   AppPageDefinition(id: 'enterprise_hub', title: 'Kurumsal Modüller (19 Modül)', category: 'Kurumsal & Operasyon', icon: Icons.hub_rounded),
   AppPageDefinition(id: 'settings', title: 'Uygulama Ayarları', category: 'Sistem', icon: Icons.settings_rounded),
   AppPageDefinition(id: 'about', title: 'Hakkımda & Güvenlik', category: 'Sistem', icon: Icons.info_rounded),
@@ -181,7 +194,19 @@ class AppRoleItem {
   bool canAccessPage(String pageId) {
     if (baseRole == UserRole.admin || id == 'role_admin') return true;
     if (allowedPageIds.isEmpty) return true;
-    return allowedPageIds.contains(pageId);
+    if (allowedPageIds.contains(pageId)) return true;
+    if (allowedPageIds.contains('enterprise_hub') &&
+        (pageId.startsWith('qm_') || pageId.startsWith('info_') ||
+         pageId == 'shift_swap' || pageId == 'helpdesk' || pageId == 'announcements' ||
+         pageId == 'onboarding' || pageId == 'training' || pageId == 'okr' ||
+         pageId == 'visitors' || pageId == 'hybrid_desk' || pageId == 'branches' ||
+         pageId == 'feedback' || pageId == 'calibration' || pageId == 'pdks_ai' ||
+         pageId == 'kiosk_face' || pageId == 'digital_docs' || pageId == 'digital_signature' ||
+         pageId == 'near_miss' || pageId == 'ptt_radio' || pageId == 'shuttle' ||
+         pageId == 'holidays' || pageId == 'doctor')) {
+      return true;
+    }
+    return false;
   }
 
   AppRoleItem copyWith({
@@ -306,6 +331,32 @@ class Employee {
   int get remainingLeaveDays => annualLeaveAllowance - usedLeaveDays;
 
   String get roleDisplayName => customRoleName ?? role.label;
+
+  ImageProvider? get avatarImageProvider {
+    if (avatarUrl == null || avatarUrl!.trim().isEmpty) return null;
+    final url = avatarUrl!.trim();
+    if (url.startsWith('data:image')) {
+      final commaIndex = url.indexOf(',');
+      if (commaIndex != -1) {
+        try {
+          final base64Str = url.substring(commaIndex + 1);
+          final bytes = base64Decode(base64Str);
+          return MemoryImage(bytes);
+        } catch (_) {
+          return null;
+        }
+      }
+    }
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return NetworkImage(url);
+    }
+    try {
+      final bytes = base64Decode(url);
+      return MemoryImage(bytes);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Employee copyWith({
     int? id,
