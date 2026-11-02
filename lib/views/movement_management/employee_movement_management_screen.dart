@@ -113,6 +113,119 @@ class _EmployeeMovementManagementScreenState
     );
   }
 
+  ThemeData _buildPanelTheme() {
+    final baseLight = ThemeData.light(useMaterial3: true);
+    return baseLight.copyWith(
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: kBgLight,
+      canvasColor: Colors.white,
+      cardColor: Colors.white,
+      dividerColor: kBorderColor,
+      colorScheme: const ColorScheme.light(
+        primary: kTurquoise,
+        secondary: kTurquoise,
+        surface: Colors.white,
+        onSurface: kTextPrimary,
+        onPrimary: Colors.white,
+      ),
+      iconTheme: const IconThemeData(color: kTextPrimary),
+      textTheme: baseLight.textTheme.apply(
+        bodyColor: kTextPrimary,
+        displayColor: kTextPrimary,
+      ),
+      primaryTextTheme: baseLight.primaryTextTheme.apply(
+        bodyColor: kTextPrimary,
+        displayColor: kTextPrimary,
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+        dataRowColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return kTurquoiseLight.withOpacity(0.45);
+          }
+          return Colors.white;
+        }),
+        headingTextStyle: const TextStyle(
+          color: kTextPrimary,
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
+        dataTextStyle: const TextStyle(
+          color: kTextPrimary,
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+        dividerThickness: 1,
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        textStyle: TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        selectedColor: kTurquoiseLight,
+        labelStyle: const TextStyle(
+          color: kTextPrimary,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: kTextPrimary,
+          fontSize: 12.5,
+          fontWeight: FontWeight.bold,
+        ),
+        side: const BorderSide(color: kBorderColor),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      dialogTheme: DialogTheme(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titleTextStyle: const TextStyle(
+          color: kTextPrimary,
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: const TextStyle(
+          color: kTextPrimary,
+          fontSize: 13.5,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        labelStyle: const TextStyle(
+          color: kTextSecondary,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: kTurquoise,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+        hintStyle: const TextStyle(
+          color: Color(0xFF64748B),
+          fontSize: 13,
+        ),
+        prefixIconColor: kTextSecondary,
+        suffixIconColor: kTextSecondary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kBorderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kBorderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kTurquoise, width: 2),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
@@ -120,78 +233,57 @@ class _EmployeeMovementManagementScreenState
     final isDesktop = screenWidth >= 960;
 
     return Theme(
-      data: Theme.of(context).copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: kTurquoise,
-          primary: kTurquoise,
-          surface: Colors.white,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: kBorderColor),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: kBorderColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: kTurquoise, width: 2),
-          ),
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: kBgLight,
-        drawer: isDesktop
-            ? null
-            : Drawer(
-                backgroundColor: kNavySidebar,
-                child: SafeArea(child: _buildSidebarMenu(pdks, isInDrawer: true)),
-              ),
-        body: SafeArea(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (isDesktop)
-                SizedBox(
-                  width: 260,
-                  child: _buildSidebarMenu(pdks, isInDrawer: false),
+      data: _buildPanelTheme(),
+      child: Builder(
+        builder: (panelCtx) => Scaffold(
+          backgroundColor: kBgLight,
+          drawer: isDesktop
+              ? null
+              : Drawer(
+                  backgroundColor: kNavySidebar,
+                  child: SafeArea(child: _buildSidebarMenu(pdks, isInDrawer: true)),
                 ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildTopToolbar(context, pdks, isDesktop: isDesktop),
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: _buildActiveScreenContent(context, pdks),
-                          ),
-                          if (_selectedMovementForDetail != null && _selectedTab == 1)
-                            _buildMovementDetailSidePanel(
-                              context,
-                              pdks,
-                              _selectedMovementForDetail!,
+          body: SafeArea(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isDesktop)
+                  SizedBox(
+                    width: 260,
+                    child: _buildSidebarMenu(pdks, isInDrawer: false),
+                  ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildTopToolbar(panelCtx, pdks, isDesktop: isDesktop),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _buildActiveScreenContent(panelCtx, pdks),
                             ),
-                          if (_selectedEmployeeForDetail != null && _selectedTab == 2)
-                            _buildEmployeeDetailSidePanel(
-                              context,
-                              pdks,
-                              _selectedEmployeeForDetail!,
-                            ),
-                        ],
+                            if (_selectedMovementForDetail != null && _selectedTab == 1)
+                              _buildMovementDetailSidePanel(
+                                panelCtx,
+                                pdks,
+                                _selectedMovementForDetail!,
+                              ),
+                            if (_selectedEmployeeForDetail != null && _selectedTab == 2)
+                              _buildEmployeeDetailSidePanel(
+                                panelCtx,
+                                pdks,
+                                _selectedEmployeeForDetail!,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1206,6 +1298,7 @@ class _EmployeeMovementManagementScreenState
                       width: 260,
                       child: TextField(
                         controller: _movSearchCtrl,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                         decoration: const InputDecoration(
                           labelText: 'Ad, Soyad veya Sicil No Ara',
                           prefixIcon: Icon(Icons.search_rounded, size: 18),
@@ -1222,11 +1315,13 @@ class _EmployeeMovementManagementScreenState
                             ? _movFilterDepartment
                             : 'Tümü',
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Departman'),
                         items: departments
                             .map((d) => DropdownMenuItem(
                                   value: d,
-                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
                                 ))
                             .toList(),
                         onChanged: (val) {
@@ -1244,11 +1339,13 @@ class _EmployeeMovementManagementScreenState
                       child: DropdownButtonFormField<int?>(
                         value: _movFilterEmployeeId,
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Personel'),
                         items: [
                           const DropdownMenuItem<int?>(
                             value: null,
-                            child: Text('Tüm Personeller', style: TextStyle(fontSize: 13)),
+                            child: Text('Tüm Personeller', style: TextStyle(fontSize: 13, color: kTextPrimary)),
                           ),
                           ...pdks.employees.map(
                             (e) => DropdownMenuItem<int?>(
@@ -1256,7 +1353,7 @@ class _EmployeeMovementManagementScreenState
                               child: Text(
                                 '${e.fullName} (${e.displaySicilNo})',
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 13),
+                                style: const TextStyle(fontSize: 13, color: kTextPrimary),
                               ),
                             ),
                           ),
@@ -1276,16 +1373,18 @@ class _EmployeeMovementManagementScreenState
                       child: DropdownButtonFormField<MovementType?>(
                         value: _movFilterType,
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Hareket Türü'),
                         items: [
                           const DropdownMenuItem<MovementType?>(
                             value: null,
-                            child: Text('Tüm Türler', style: TextStyle(fontSize: 13)),
+                            child: Text('Tüm Türler', style: TextStyle(fontSize: 13, color: kTextPrimary)),
                           ),
                           ...MovementType.values.map(
                             (t) => DropdownMenuItem<MovementType?>(
                               value: t,
-                              child: Text(t.label, style: const TextStyle(fontSize: 13)),
+                              child: Text(t.label, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
                             ),
                           ),
                         ],
@@ -1413,13 +1512,14 @@ class _EmployeeMovementManagementScreenState
                           const Text('Sırala: ', style: TextStyle(fontSize: 12, color: kTextSecondary)),
                           DropdownButton<String>(
                             value: _movSortField,
+                            dropdownColor: Colors.white,
                             underline: const SizedBox.shrink(),
                             style: const TextStyle(fontSize: 12.5, color: kTextPrimary, fontWeight: FontWeight.w600),
                             items: const [
-                              DropdownMenuItem(value: 'timestamp', child: Text('Tarih ve Saat')),
-                              DropdownMenuItem(value: 'sicilNo', child: Text('Sicil Numarası')),
-                              DropdownMenuItem(value: 'employeeName', child: Text('Ad Soyad')),
-                              DropdownMenuItem(value: 'type', child: Text('Hareket Türü')),
+                              DropdownMenuItem(value: 'timestamp', child: Text('Tarih ve Saat', style: TextStyle(color: kTextPrimary))),
+                              DropdownMenuItem(value: 'sicilNo', child: Text('Sicil Numarası', style: TextStyle(color: kTextPrimary))),
+                              DropdownMenuItem(value: 'employeeName', child: Text('Ad Soyad', style: TextStyle(color: kTextPrimary))),
+                              DropdownMenuItem(value: 'type', child: Text('Hareket Türü', style: TextStyle(color: kTextPrimary))),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -1478,18 +1578,27 @@ class _EmployeeMovementManagementScreenState
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                      headingTextStyle: const TextStyle(
+                        color: kTextPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                      dataTextStyle: const TextStyle(
+                        color: kTextPrimary,
+                        fontSize: 13,
+                      ),
                       columnSpacing: 18,
                       columns: const [
-                        DataColumn(label: Text('Tarih ve Saat', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Sicil Numarası', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Vardiya', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Hareket Türü', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Cihaz / Kapı', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Kaynak', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('Açıklama', style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text('İşlemler', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('Tarih ve Saat', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Sicil Numarası', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Vardiya', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Hareket Türü', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Cihaz / Kapı', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Kaynak', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('Açıklama', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                        DataColumn(label: Text('İşlemler', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
                       ],
                       rows: pageItems.map((mov) {
                         final isSelected = _selectedMovementForDetail?.id == mov.id;
@@ -1499,7 +1608,7 @@ class _EmployeeMovementManagementScreenState
                             DataCell(
                               Text(
                                 MovementCalculationEngine.formatDateTime(mov.timestamp),
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: kTextPrimary),
                               ),
                             ),
                             DataCell(
@@ -1509,19 +1618,20 @@ class _EmployeeMovementManagementScreenState
                                   fontFamily: 'monospace',
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12.5,
+                                  color: kTextPrimary,
                                 ),
                               ),
                             ),
                             DataCell(
                               Text(
                                 mov.employeeName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: kTextPrimary),
                               ),
                             ),
-                            DataCell(Text(mov.department, style: const TextStyle(fontSize: 12.5))),
-                            DataCell(Text(mov.shiftName, style: const TextStyle(fontSize: 12))),
+                            DataCell(Text(mov.department, style: const TextStyle(fontSize: 12.5, color: kTextPrimary))),
+                            DataCell(Text(mov.shiftName, style: const TextStyle(fontSize: 12, color: kTextPrimary))),
                             DataCell(_buildStatusBadge(mov.type.label, mov.type.color)),
-                            DataCell(Text(mov.deviceDoor, style: const TextStyle(fontSize: 12.5))),
+                            DataCell(Text(mov.deviceDoor, style: const TextStyle(fontSize: 12.5, color: kTextPrimary))),
                             DataCell(_buildStatusBadge(mov.source.label, mov.source.color)),
                             DataCell(
                               ConstrainedBox(
@@ -1580,11 +1690,13 @@ class _EmployeeMovementManagementScreenState
                           const Text('Sayfa başına: ', style: TextStyle(fontSize: 12, color: kTextSecondary)),
                           DropdownButton<int>(
                             value: _movPageSize,
+                            dropdownColor: Colors.white,
+                            style: const TextStyle(fontSize: 12.5, color: kTextPrimary, fontWeight: FontWeight.bold),
                             underline: const SizedBox.shrink(),
                             items: const [
-                              DropdownMenuItem(value: 10, child: Text('10')),
-                              DropdownMenuItem(value: 20, child: Text('20')),
-                              DropdownMenuItem(value: 50, child: Text('50')),
+                              DropdownMenuItem(value: 10, child: Text('10', style: TextStyle(color: kTextPrimary))),
+                              DropdownMenuItem(value: 20, child: Text('20', style: TextStyle(color: kTextPrimary))),
+                              DropdownMenuItem(value: 50, child: Text('50', style: TextStyle(color: kTextPrimary))),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -1602,7 +1714,7 @@ class _EmployeeMovementManagementScreenState
                         children: [
                           Text(
                             'Sayfa $safePage / $totalPages',
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextPrimary),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
@@ -1749,7 +1861,7 @@ class _EmployeeMovementManagementScreenState
                             children: [
                               Text(
                                 MovementCalculationEngine.formatDateTime(corr.correctedAt),
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: kTextPrimary),
                               ),
                               _buildStatusBadge(
                                 corr.approvalStatus.label,
@@ -1893,6 +2005,7 @@ class _EmployeeMovementManagementScreenState
                       width: 260,
                       child: TextField(
                         controller: _empSearchCtrl,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                         decoration: const InputDecoration(
                           labelText: 'Personel Adı veya Sicil No Ara',
                           prefixIcon: Icon(Icons.search_rounded, size: 18),
@@ -1907,11 +2020,13 @@ class _EmployeeMovementManagementScreenState
                             ? _empFilterDepartment
                             : 'Tümü',
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Departman'),
                         items: departments
                             .map((d) => DropdownMenuItem(
                                   value: d,
-                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
                                 ))
                             .toList(),
                         onChanged: (val) => setState(() => _empFilterDepartment = val ?? 'Tümü'),
@@ -1921,11 +2036,13 @@ class _EmployeeMovementManagementScreenState
                       width: 150,
                       child: DropdownButtonFormField<String>(
                         value: _empFilterActive,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Aktiflik Durumu'),
                         items: const [
-                          DropdownMenuItem(value: 'Tümü', child: Text('Tümü', style: TextStyle(fontSize: 13))),
-                          DropdownMenuItem(value: 'Aktif', child: Text('Aktif', style: TextStyle(fontSize: 13))),
-                          DropdownMenuItem(value: 'Pasif', child: Text('Pasif', style: TextStyle(fontSize: 13))),
+                          DropdownMenuItem(value: 'Tümü', child: Text('Tümü', style: TextStyle(fontSize: 13, color: kTextPrimary))),
+                          DropdownMenuItem(value: 'Aktif', child: Text('Aktif', style: TextStyle(fontSize: 13, color: kTextPrimary))),
+                          DropdownMenuItem(value: 'Pasif', child: Text('Pasif', style: TextStyle(fontSize: 13, color: kTextPrimary))),
                         ],
                         onChanged: (val) => setState(() => _empFilterActive = val ?? 'Tümü'),
                       ),
@@ -1962,14 +2079,23 @@ class _EmployeeMovementManagementScreenState
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                headingTextStyle: const TextStyle(
+                  color: kTextPrimary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+                dataTextStyle: const TextStyle(
+                  color: kTextPrimary,
+                  fontSize: 13,
+                ),
                 columns: const [
-                  DataColumn(label: Text('Sicil Numarası', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Unvan', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Vardiya', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Aktiflik Durumu', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('İşlemler', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Sicil Numarası', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Unvan', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Vardiya', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Aktiflik Durumu', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('İşlemler', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
                 ],
                 rows: filteredEmployees.map((emp) {
                   final shift = pdks.getShiftForEmployee(emp.id);
@@ -1982,17 +2108,18 @@ class _EmployeeMovementManagementScreenState
                           style: const TextStyle(
                             fontFamily: 'monospace',
                             fontWeight: FontWeight.bold,
+                            color: kTextPrimary,
                           ),
                         ),
                       ),
                       DataCell(
                         Text(
                           emp.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary),
                         ),
                       ),
-                      DataCell(Text(emp.department)),
-                      DataCell(Text(emp.title)),
+                      DataCell(Text(emp.department, style: const TextStyle(color: kTextPrimary))),
+                      DataCell(Text(emp.title, style: const TextStyle(color: kTextPrimary))),
                       DataCell(
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -2002,7 +2129,7 @@ class _EmployeeMovementManagementScreenState
                                 padding: EdgeInsets.only(right: 4),
                                 child: Icon(Icons.nights_stay_rounded, size: 15, color: Color(0xFF6366F1)),
                               ),
-                            Text(shift.name, style: const TextStyle(fontSize: 12.5)),
+                            Text(shift.name, style: const TextStyle(fontSize: 12.5, color: kTextPrimary)),
                           ],
                         ),
                       ),
@@ -2190,7 +2317,7 @@ class _EmployeeMovementManagementScreenState
                             children: [
                               Text(
                                 MovementCalculationEngine.formatDateTime(m.timestamp),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: kTextPrimary),
                               ),
                               Text(
                                 '${m.deviceDoor} • ${m.source.label}',
@@ -2265,6 +2392,7 @@ class _EmployeeMovementManagementScreenState
                       width: 240,
                       child: TextField(
                         controller: _sumSearchCtrl,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                         decoration: const InputDecoration(
                           labelText: 'Personel veya Sicil Ara',
                           prefixIcon: Icon(Icons.search_rounded, size: 18),
@@ -2277,16 +2405,18 @@ class _EmployeeMovementManagementScreenState
                       child: DropdownButtonFormField<DailyAttendanceStatus?>(
                         value: _sumFilterStatus,
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Durum Filtresi'),
                         items: [
                           const DropdownMenuItem<DailyAttendanceStatus?>(
                             value: null,
-                            child: Text('Tüm Durumlar', style: TextStyle(fontSize: 13)),
+                            child: Text('Tüm Durumlar', style: TextStyle(fontSize: 13, color: kTextPrimary)),
                           ),
                           ...DailyAttendanceStatus.values.map(
                             (st) => DropdownMenuItem<DailyAttendanceStatus?>(
                               value: st,
-                              child: Text(st.label, style: const TextStyle(fontSize: 13)),
+                              child: Text(st.label, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
                             ),
                           ),
                         ],
@@ -2300,11 +2430,13 @@ class _EmployeeMovementManagementScreenState
                             ? _sumFilterDepartment
                             : 'Tümü',
                         isExpanded: true,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(color: kTextPrimary, fontSize: 13, fontWeight: FontWeight.w600),
                         decoration: const InputDecoration(labelText: 'Departman'),
                         items: departments
                             .map((d) => DropdownMenuItem(
                                   value: d,
-                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                                  child: Text(d, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: kTextPrimary)),
                                 ))
                             .toList(),
                         onChanged: (val) => setState(() => _sumFilterDepartment = val ?? 'Tümü'),
@@ -2312,9 +2444,10 @@ class _EmployeeMovementManagementScreenState
                     ),
                     FilterChip(
                       selected: _sumOnlyLate,
+                      backgroundColor: const Color(0xFFF1F5F9),
                       selectedColor: const Color(0xFFFEF3C7),
                       checkmarkColor: const Color(0xFFB45309),
-                      label: const Text('Sadece Geç Kalanlar'),
+                      label: const Text('Sadece Geç Kalanlar', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600)),
                       onSelected: (val) => setState(() => _sumOnlyLate = val),
                     ),
                     if (_sumFilterStatus != null || _sumOnlyLate || _sumFilterDepartment != 'Tümü' || _sumSearchCtrl.text.isNotEmpty)
@@ -2367,18 +2500,27 @@ class _EmployeeMovementManagementScreenState
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                headingTextStyle: const TextStyle(
+                  color: kTextPrimary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+                dataTextStyle: const TextStyle(
+                  color: kTextPrimary,
+                  fontSize: 13,
+                ),
                 columnSpacing: 18,
                 columns: const [
-                  DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Planlanan Vardiya', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('İlk Giriş', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Son Çıkış', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Toplam Mola', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Net Çalışma Süresi', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Geç Kalma', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Erken Çıkış', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('İnceleme Bekleyen Fazla Süre', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Durum', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Personel', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Planlanan Vardiya', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('İlk Giriş', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Son Çıkış', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Toplam Mola', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Net Çalışma Süresi', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Geç Kalma', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Erken Çıkış', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('İnceleme Bekleyen Fazla Süre', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                  DataColumn(label: Text('Durum', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
                 ],
                 rows: filtered.map((s) {
                   return DataRow(
@@ -2390,7 +2532,7 @@ class _EmployeeMovementManagementScreenState
                           children: [
                             Text(
                               s.employeeName,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: kTextPrimary),
                             ),
                             Text(
                               '${s.sicilNo} • ${s.department}',
@@ -2402,7 +2544,7 @@ class _EmployeeMovementManagementScreenState
                       DataCell(
                         Text(
                           '${s.plannedShift.name}\n(Tolerans: ${s.plannedShift.lateToleranceMinutes} dk)',
-                          style: const TextStyle(fontSize: 11.5),
+                          style: const TextStyle(fontSize: 11.5, color: kTextPrimary),
                         ),
                       ),
                       DataCell(
@@ -2410,7 +2552,7 @@ class _EmployeeMovementManagementScreenState
                           s.firstCheckIn != null
                               ? MovementCalculationEngine.formatDateTime(s.firstCheckIn!)
                               : '-',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextPrimary),
                         ),
                       ),
                       DataCell(
@@ -2418,13 +2560,13 @@ class _EmployeeMovementManagementScreenState
                           s.lastCheckOut != null
                               ? MovementCalculationEngine.formatDateTime(s.lastCheckOut!)
                               : '-',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextPrimary),
                         ),
                       ),
                       DataCell(
                         Text(
                           MovementCalculationEngine.formatDuration(s.totalBreakDuration),
-                          style: const TextStyle(fontSize: 12.5),
+                          style: const TextStyle(fontSize: 12.5, color: kTextPrimary),
                         ),
                       ),
                       DataCell(
@@ -2646,22 +2788,33 @@ class _EmployeeMovementManagementScreenState
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
                     headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                    headingTextStyle: const TextStyle(
+                      color: kTextPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                    dataTextStyle: const TextStyle(
+                      color: kTextPrimary,
+                      fontSize: 13,
+                    ),
                     columns: const [
-                      DataColumn(label: Text('Sicil No', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Atanmış Vardiya Seçimi', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Sicil No', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                      DataColumn(label: Text('Ad Soyad', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                      DataColumn(label: Text('Departman', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                      DataColumn(label: Text('Atanmış Vardiya Seçimi', style: TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
                     ],
                     rows: pdks.employees.map((emp) {
                       final currentShift = pdks.getShiftForEmployee(emp.id);
                       return DataRow(
                         cells: [
-                          DataCell(Text(emp.displaySicilNo, style: const TextStyle(fontWeight: FontWeight.bold))),
-                          DataCell(Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold))),
-                          DataCell(Text(emp.department)),
+                          DataCell(Text(emp.displaySicilNo, style: const TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                          DataCell(Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.bold, color: kTextPrimary))),
+                          DataCell(Text(emp.department, style: const TextStyle(color: kTextPrimary))),
                           DataCell(
                             DropdownButton<int>(
                               value: currentShift.id,
+                              dropdownColor: Colors.white,
+                              style: const TextStyle(color: kTextPrimary, fontSize: 12.5, fontWeight: FontWeight.w600),
                               underline: const SizedBox.shrink(),
                               items: shifts
                                   .map(
@@ -2669,7 +2822,7 @@ class _EmployeeMovementManagementScreenState
                                       value: s.id,
                                       child: Text(
                                         '${s.name} (Mola: ${s.plannedBreakMinutes}dk, Tol: ${s.lateToleranceMinutes}dk)',
-                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextPrimary),
                                       ),
                                     ),
                                   )
@@ -2737,14 +2890,16 @@ class _EmployeeMovementManagementScreenState
                   runSpacing: 8,
                   children: [
                     ChoiceChip(
-                      label: const Text('Tümü'),
+                      label: const Text('Tümü', style: TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600)),
+                      backgroundColor: const Color(0xFFF1F5F9),
                       selected: _anomFilterCategory == null,
                       selectedColor: kTurquoiseLight,
                       onSelected: (_) => setState(() => _anomFilterCategory = null),
                     ),
                     ...AnomalyCategory.values.map((cat) {
                       return ChoiceChip(
-                        label: Text(cat.label),
+                        label: Text(cat.label, style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.w600)),
+                        backgroundColor: const Color(0xFFF1F5F9),
                         selected: _anomFilterCategory == cat,
                         selectedColor: cat.color.withOpacity(0.18),
                         onSelected: (_) => setState(() => _anomFilterCategory = cat),
@@ -2762,7 +2917,7 @@ class _EmployeeMovementManagementScreenState
                     ),
                     const Text(
                       'Onaylanan / Reddedilenleri de Göster',
-                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: kTextPrimary),
                     ),
                   ],
                 ),
@@ -2961,14 +3116,17 @@ class _EmployeeMovementManagementScreenState
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                isEdit ? 'Hareket Kaydını Düzelt' : 'Yeni Çalışan Hareketi Ekle',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-              ),
+        return Theme(
+          data: _buildPanelTheme(),
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text(
+                  isEdit ? 'Hareket Kaydını Düzelt' : 'Yeni Çalışan Hareketi Ekle',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: kTextPrimary),
+                ),
               content: SingleChildScrollView(
                 child: SizedBox(
                   width: 460,
@@ -3187,6 +3345,7 @@ class _EmployeeMovementManagementScreenState
               ],
             );
           },
+          ),
         );
       },
     );
@@ -3221,14 +3380,17 @@ class _EmployeeMovementManagementScreenState
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                isEdit ? 'Personel Bilgilerini Düzenle' : 'Yeni Personel Ekle',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-              ),
+        return Theme(
+          data: _buildPanelTheme(),
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text(
+                  isEdit ? 'Personel Bilgilerini Düzenle' : 'Yeni Personel Ekle',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: kTextPrimary),
+                ),
               content: SingleChildScrollView(
                 child: SizedBox(
                   width: 440,
@@ -3365,6 +3527,7 @@ class _EmployeeMovementManagementScreenState
               ],
             );
           },
+          ),
         );
       },
     );
@@ -3391,14 +3554,17 @@ class _EmployeeMovementManagementScreenState
     showDialog(
       context: context,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                existingShift != null ? 'Vardiyayı Düzenle' : 'Yeni Vardiya Tanımla',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-              ),
+        return Theme(
+          data: _buildPanelTheme(),
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text(
+                  existingShift != null ? 'Vardiyayı Düzenle' : 'Yeni Vardiya Tanımla',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: kTextPrimary),
+                ),
               content: SingleChildScrollView(
                 child: SizedBox(
                   width: 420,
@@ -3498,6 +3664,7 @@ class _EmployeeMovementManagementScreenState
               ],
             );
           },
+          ),
         );
       },
     );
@@ -3515,14 +3682,17 @@ class _EmployeeMovementManagementScreenState
     showDialog(
       context: context,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text(
-                'Kaydı Gerekçe İle Reddet',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-              ),
+        return Theme(
+          data: _buildPanelTheme(),
+          child: StatefulBuilder(
+            builder: (ctx, setDialogState) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text(
+                  'Kaydı Gerekçe İle Reddet',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: kTextPrimary),
+                ),
               content: SizedBox(
                 width: 420,
                 child: Column(
@@ -3578,6 +3748,7 @@ class _EmployeeMovementManagementScreenState
               ],
             );
           },
+          ),
         );
       },
     );

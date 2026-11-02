@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdks_flutter/core/services/database_service.dart';
+import 'package:pdks_flutter/core/theme/app_theme.dart';
 import 'package:pdks_flutter/core/utils/movement_calculation_engine.dart';
 import 'package:pdks_flutter/models/employee.dart';
 import 'package:pdks_flutter/models/employee_movement.dart';
@@ -451,8 +452,11 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<PdksState>(
           create: (_) => PdksState(),
-          child: const MaterialApp(
-            home: EmployeeMovementManagementScreen(),
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.dark,
+            home: const EmployeeMovementManagementScreen(),
           ),
         ),
       );
@@ -463,11 +467,13 @@ void main() {
       expect(find.text('Genel Bakış'), findsWidgets);
       expect(find.text('Toplam Personel'), findsOneWidget);
 
-      // Çalışan Hareketleri sekmesine geçiş
+      // Çalışan Hareketleri sekmesine geçiş ve koyu temada bile tablo metinlerinin koyu renk (#0F172A) olduğunun doğrulanması
       await tester.tap(find.text('Çalışan Hareketleri').first);
       await tester.pumpAndSettle();
       expect(find.textContaining('Yeni Hareket Ekle'), findsWidgets);
       expect(find.textContaining('CSV İndir'), findsOneWidget);
+      final headerText = tester.widget<Text>(find.text('Sicil Numarası').first);
+      expect(headerText.style?.color, const Color(0xFF0F172A));
 
       // Günlük Devam Özeti sekmesine geçiş
       await tester.tap(find.text('Günlük Devam Özeti').first);

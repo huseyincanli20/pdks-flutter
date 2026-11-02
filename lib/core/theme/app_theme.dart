@@ -146,6 +146,20 @@ class AppTheme {
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+        headingTextStyle: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+        dataTextStyle: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+        dividerThickness: 1,
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        textStyle: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+      ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
         displayMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
@@ -301,6 +315,20 @@ class AppTheme {
         secondaryLabelStyle: const TextStyle(color: Color(0xFF090D16), fontSize: 13, fontWeight: FontWeight.bold),
         side: const BorderSide(color: AppColors.darkBorder),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStateProperty.all(const Color(0xFF1E293B)),
+        headingTextStyle: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold, fontSize: 13),
+        dataTextStyle: const TextStyle(color: AppColors.darkTextPrimary, fontSize: 13),
+        dividerThickness: 1,
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        textStyle: TextStyle(color: AppColors.darkTextPrimary, fontSize: 13),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+        textStyle: TextStyle(color: AppColors.darkTextPrimary, fontSize: 13),
       ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold),
