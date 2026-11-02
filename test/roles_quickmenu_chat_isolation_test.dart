@@ -51,19 +51,19 @@ void main() {
       expect(pdks.quickMenuItems.length, greaterThanOrEqualTo(15));
 
       // Menü gizleme testi
-      final profileMenu = pdks.quickMenuItems.firstWhere((m) => m.actionType == 'profile');
-      expect(profileMenu.isVisible, isTrue);
+      final chatMenu = pdks.quickMenuItems.firstWhere((m) => m.actionType == 'chat');
+      expect(chatMenu.isVisible, isTrue);
 
-      final toggleRes = pdks.toggleQuickMenuItemVisibility(profileMenu.id);
+      final toggleRes = pdks.toggleQuickMenuItemVisibility(chatMenu.id);
       expect(toggleRes.success, isTrue);
 
-      final updatedProfile = pdks.quickMenuItems.firstWhere((m) => m.id == profileMenu.id);
-      expect(updatedProfile.isVisible, isFalse);
+      final updatedChat = pdks.quickMenuItems.firstWhere((m) => m.id == chatMenu.id);
+      expect(updatedChat.isVisible, isFalse);
 
       // Sıfırlama testi
       final resetRes = pdks.resetQuickMenuItemsToDefault();
       expect(resetRes.success, isTrue);
-      expect(pdks.quickMenuItems.firstWhere((m) => m.actionType == 'profile').isVisible, isTrue);
+      expect(pdks.quickMenuItems.firstWhere((m) => m.actionType == 'chat').isVisible, isTrue);
     });
   });
 

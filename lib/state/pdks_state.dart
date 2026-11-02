@@ -2631,13 +2631,11 @@ class PdksState extends ChangeNotifier {
       _todayMenu = _db.getTodayMenu()!;
     }
 
-    // 13. Hızlı Menü & Sayfa Düzenlemeleri
+    // 13. Hızlı Menü & Sayfa Düzenlemeleri (Kullanıcının talep ettiği 5 temel modül: Mesajlaşma, Bordro, Yemekhane, Kişiler, İzin Talebi)
     _quickMenuItems = List.from(_db.getAllQuickMenuItems());
-    final currentIds = _quickMenuItems.map((e) => e.id).toSet();
-    final bool hasNewMods = currentIds.contains('qm_shuttle') &&
-        currentIds.contains('qm_shift_swap') &&
-        currentIds.contains('qm_doctor');
-    if (!hasNewMods) {
+    const fiveCoreIds = {'qm_chat', 'qm_payroll', 'qm_cafeteria', 'qm_contacts', 'qm_leave'};
+    final currentVisibleIds = _quickMenuItems.where((e) => e.isVisible).map((e) => e.id).toSet();
+    if (currentVisibleIds.length != 5 || !currentVisibleIds.containsAll(fiveCoreIds)) {
       _quickMenuItems.clear();
       _quickMenuItems.addAll(DatabaseService.defaultQuickMenuItems());
       _db.saveQuickMenuItems(_quickMenuItems);

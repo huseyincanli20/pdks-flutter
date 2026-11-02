@@ -347,17 +347,16 @@ class DatabaseService {
       }
     }
 
-    // Otomatik Hızlı Menü Senkronizasyonu (11 kurumsal modülü garanti ekle)
-    final existingIds = _quickMenuItems.map((e) => e.id).toSet();
-    final bool hasNewModules = existingIds.contains('qm_shuttle') &&
-        existingIds.contains('qm_shift_swap') &&
-        existingIds.contains('qm_helpdesk') &&
-        existingIds.contains('qm_doctor');
-    if (!hasNewModules || _quickMenuItems.isEmpty) {
+    // Otomatik Hızlı Menü Senkronizasyonu (Kullanıcının talep ettiği 5 temel işlem: Mesajlaşma, Bordro, Yemekhane, Kişiler, İzin Talebi)
+    const String migrationKey = 'pdks_quickmenu_five_core_v3';
+    final bool migratedFive = prefs.getBool(migrationKey) ?? false;
+    if (!migratedFive || _quickMenuItems.isEmpty) {
       _quickMenuItems.clear();
       _quickMenuItems.addAll(defaultQuickMenuItems());
       saveQuickMenuItems(_quickMenuItems);
+      prefs.setBool(migrationKey, true);
     } else {
+      final existingIds = _quickMenuItems.map((e) => e.id).toSet();
       final missing = defaultQuickMenuItems().where((d) => !existingIds.contains(d.id)).toList();
       if (missing.isNotEmpty) {
         _quickMenuItems.addAll(missing);
@@ -1673,13 +1672,13 @@ class DatabaseService {
 
   static List<QuickMenuItem> defaultQuickMenuItems() => const [
     QuickMenuItem(
-      id: 'qm_profile',
-      title: 'Profil',
-      subtitle: 'Kişisel bilgiler & izin bakiyesi',
-      iconCode: 0xe491,
-      colorValue: 0xFF2563EB,
+      id: 'qm_chat',
+      title: 'Mesajlaşma',
+      subtitle: 'Şirket içi kanallar & 1-e-1 sohbet',
+      iconCode: 0xe153,
+      colorValue: 0xFF0284C7,
       isVisible: true,
-      actionType: 'profile',
+      actionType: 'chat',
     ),
     QuickMenuItem(
       id: 'qm_payroll',
@@ -1691,15 +1690,6 @@ class DatabaseService {
       actionType: 'payroll',
     ),
     QuickMenuItem(
-      id: 'qm_chat',
-      title: 'Mesajlaşma',
-      subtitle: 'Şirket içi kanallar & 1-e-1 sohbet',
-      iconCode: 0xe153,
-      colorValue: 0xFF0284C7,
-      isVisible: true,
-      actionType: 'chat',
-    ),
-    QuickMenuItem(
       id: 'qm_cafeteria',
       title: 'Yemekhane Menüsü',
       subtitle: 'Günün menüsü & 2 haftalık çizelge',
@@ -1707,105 +1697,6 @@ class DatabaseService {
       colorValue: 0xFFEA580C,
       isVisible: true,
       actionType: 'cafeteria',
-    ),
-    QuickMenuItem(
-      id: 'qm_shuttle',
-      title: 'Servis Saatleri',
-      subtitle: 'Maslak, Levent, Kadıköy güzergahları',
-      iconCode: 0xe1d5,
-      colorValue: 0xFF3B82F6,
-      isVisible: true,
-      actionType: 'shuttle',
-    ),
-    QuickMenuItem(
-      id: 'qm_holidays',
-      title: 'Resmi Tatiller',
-      subtitle: '2026 resmi tatil takvimi & köprüler',
-      iconCode: 0xe122,
-      colorValue: 0xFF6366F1,
-      isVisible: true,
-      actionType: 'holidays',
-    ),
-    QuickMenuItem(
-      id: 'qm_doctor',
-      title: 'Revir & Hekim',
-      subtitle: 'İş yeri hekimi, oda & acil hatlar',
-      iconCode: 0xe3e3,
-      colorValue: 0xFFEF4444,
-      isVisible: true,
-      actionType: 'doctor',
-    ),
-    QuickMenuItem(
-      id: 'qm_shift_swap',
-      title: 'Vardiya & Takas',
-      subtitle: 'Vardiya takas talebi & boş vardiyalar',
-      iconCode: 0xe627,
-      colorValue: 0xFF059669,
-      isVisible: true,
-      actionType: 'shift_swap',
-    ),
-    QuickMenuItem(
-      id: 'qm_helpdesk',
-      title: 'Destek & Arıza',
-      subtitle: 'Teknik arıza ve IT destek talepleri',
-      iconCode: 0xf5dd,
-      colorValue: 0xFFEA580C,
-      isVisible: true,
-      actionType: 'helpdesk',
-    ),
-    QuickMenuItem(
-      id: 'qm_near_miss',
-      title: 'İSG Ramak Kala',
-      subtitle: '6331 İSG ve tehlike bildirimi',
-      iconCode: 0xe2eb,
-      colorValue: 0xFFDC2626,
-      isVisible: true,
-      actionType: 'near_miss',
-    ),
-    QuickMenuItem(
-      id: 'qm_digital_docs',
-      title: '5070 E-İmza & ERP',
-      subtitle: 'Zaman damgası ve bordro onaylama',
-      iconCode: 0xe204,
-      colorValue: 0xFF7C3AED,
-      isVisible: true,
-      actionType: 'digital_docs',
-    ),
-    QuickMenuItem(
-      id: 'qm_ptt_radio',
-      title: 'Saha Telsizi (PTT)',
-      subtitle: 'Anlık bas-konuş sesli telsiz kanalı',
-      iconCode: 0xe500,
-      colorValue: 0xFF0D9488,
-      isVisible: true,
-      actionType: 'ptt_radio',
-    ),
-    QuickMenuItem(
-      id: 'qm_hybrid_desk',
-      title: 'Hibrit & Masa',
-      subtitle: 'Masa ve toplantı odası rezervasyonu',
-      iconCode: 0xf69b,
-      colorValue: 0xFF2563EB,
-      isVisible: true,
-      actionType: 'hybrid_desk',
-    ),
-    QuickMenuItem(
-      id: 'qm_training',
-      title: 'Akademi & Eğitim',
-      subtitle: 'Eğitim videoları ve yetkinlik sınavı',
-      iconCode: 0xe559,
-      colorValue: 0xFF8B5CF6,
-      isVisible: true,
-      actionType: 'training',
-    ),
-    QuickMenuItem(
-      id: 'qm_okr',
-      title: 'Hedef & OKR',
-      subtitle: 'Bireysel ve kurumsal hedefler',
-      iconCode: 0xe673,
-      colorValue: 0xFFD97706,
-      isVisible: true,
-      actionType: 'okr',
     ),
     QuickMenuItem(
       id: 'qm_contacts',
@@ -1817,15 +1708,6 @@ class DatabaseService {
       actionType: 'contacts',
     ),
     QuickMenuItem(
-      id: 'qm_notifications',
-      title: 'Bildirimler',
-      subtitle: 'Duyurular & onay bildirimleri',
-      iconCode: 0xe44f,
-      colorValue: 0xFF8B5CF6,
-      isVisible: true,
-      actionType: 'notifications',
-    ),
-    QuickMenuItem(
       id: 'qm_leave',
       title: 'İzin Talebi',
       subtitle: 'Yıllık izin veya mazeret talebi oluşturun',
@@ -1835,12 +1717,129 @@ class DatabaseService {
       actionType: 'leave',
     ),
     QuickMenuItem(
+      id: 'qm_profile',
+      title: 'Profil',
+      subtitle: 'Kişisel bilgiler & izin bakiyesi',
+      iconCode: 0xe491,
+      colorValue: 0xFF2563EB,
+      isVisible: false,
+      actionType: 'profile',
+    ),
+    QuickMenuItem(
+      id: 'qm_shuttle',
+      title: 'Servis Saatleri',
+      subtitle: 'Maslak, Levent, Kadıköy güzergahları',
+      iconCode: 0xe1d5,
+      colorValue: 0xFF3B82F6,
+      isVisible: false,
+      actionType: 'shuttle',
+    ),
+    QuickMenuItem(
+      id: 'qm_holidays',
+      title: 'Resmi Tatiller',
+      subtitle: '2026 resmi tatil takvimi & köprüler',
+      iconCode: 0xe122,
+      colorValue: 0xFF6366F1,
+      isVisible: false,
+      actionType: 'holidays',
+    ),
+    QuickMenuItem(
+      id: 'qm_doctor',
+      title: 'Revir & Hekim',
+      subtitle: 'İş yeri hekimi, oda & acil hatlar',
+      iconCode: 0xe3e3,
+      colorValue: 0xFFEF4444,
+      isVisible: false,
+      actionType: 'doctor',
+    ),
+    QuickMenuItem(
+      id: 'qm_shift_swap',
+      title: 'Vardiya & Takas',
+      subtitle: 'Vardiya takas talebi & boş vardiyalar',
+      iconCode: 0xe627,
+      colorValue: 0xFF059669,
+      isVisible: false,
+      actionType: 'shift_swap',
+    ),
+    QuickMenuItem(
+      id: 'qm_helpdesk',
+      title: 'Destek & Arıza',
+      subtitle: 'Teknik arıza ve IT destek talepleri',
+      iconCode: 0xf5dd,
+      colorValue: 0xFFEA580C,
+      isVisible: false,
+      actionType: 'helpdesk',
+    ),
+    QuickMenuItem(
+      id: 'qm_near_miss',
+      title: 'İSG Ramak Kala',
+      subtitle: '6331 İSG ve tehlike bildirimi',
+      iconCode: 0xe2eb,
+      colorValue: 0xFFDC2626,
+      isVisible: false,
+      actionType: 'near_miss',
+    ),
+    QuickMenuItem(
+      id: 'qm_digital_docs',
+      title: '5070 E-İmza & ERP',
+      subtitle: 'Zaman damgası ve bordro onaylama',
+      iconCode: 0xe204,
+      colorValue: 0xFF7C3AED,
+      isVisible: false,
+      actionType: 'digital_docs',
+    ),
+    QuickMenuItem(
+      id: 'qm_ptt_radio',
+      title: 'Saha Telsizi (PTT)',
+      subtitle: 'Anlık bas-konuş sesli telsiz kanalı',
+      iconCode: 0xe500,
+      colorValue: 0xFF0D9488,
+      isVisible: false,
+      actionType: 'ptt_radio',
+    ),
+    QuickMenuItem(
+      id: 'qm_hybrid_desk',
+      title: 'Hibrit & Masa',
+      subtitle: 'Masa ve toplantı odası rezervasyonu',
+      iconCode: 0xf69b,
+      colorValue: 0xFF2563EB,
+      isVisible: false,
+      actionType: 'hybrid_desk',
+    ),
+    QuickMenuItem(
+      id: 'qm_training',
+      title: 'Akademi & Eğitim',
+      subtitle: 'Eğitim videoları ve yetkinlik sınavı',
+      iconCode: 0xe559,
+      colorValue: 0xFF8B5CF6,
+      isVisible: false,
+      actionType: 'training',
+    ),
+    QuickMenuItem(
+      id: 'qm_okr',
+      title: 'Hedef & OKR',
+      subtitle: 'Bireysel ve kurumsal hedefler',
+      iconCode: 0xe673,
+      colorValue: 0xFFD97706,
+      isVisible: false,
+      actionType: 'okr',
+    ),
+    QuickMenuItem(
+      id: 'qm_notifications',
+      title: 'Bildirimler',
+      subtitle: 'Duyurular & onay bildirimleri',
+      iconCode: 0xe44f,
+      colorValue: 0xFF8B5CF6,
+      isVisible: false,
+      actionType: 'notifications',
+    ),
+    QuickMenuItem(
       id: 'qm_business_card',
       title: 'Kartvizit',
       subtitle: 'Dijital QR kodlu şirket kartı',
       iconCode: 0xf04ee,
       colorValue: 0xFF0D9488,
-      isVisible: true,
+      isVisible: false,
       actionType: 'business_card',
     ),
     QuickMenuItem(
@@ -1858,7 +1857,7 @@ class DatabaseService {
       subtitle: 'Geçmiş devam ve yoklama kayıtları',
       iconCode: 0xe314,
       colorValue: 0xFF2563EB,
-      isVisible: true,
+      isVisible: false,
       actionType: 'records',
     ),
     QuickMenuItem(
@@ -1867,7 +1866,7 @@ class DatabaseService {
       subtitle: 'Saha görevi ve anlık konum bildirimi',
       iconCode: 0xe425,
       colorValue: 0xFF10B981,
-      isVisible: true,
+      isVisible: false,
       actionType: 'field_work',
     ),
     QuickMenuItem(
@@ -1876,7 +1875,7 @@ class DatabaseService {
       subtitle: 'Ek mesai saat talebi bildirin',
       iconCode: 0xe40f,
       colorValue: 0xFF9333EA,
-      isVisible: true,
+      isVisible: false,
       actionType: 'overtime',
     ),
     QuickMenuItem(
@@ -1885,7 +1884,7 @@ class DatabaseService {
       subtitle: 'Şirket havuz araçları ve filo kiralama',
       iconCode: 0xe1d7,
       colorValue: 0xFF059669,
-      isVisible: true,
+      isVisible: false,
       actionType: 'vehicle_request',
     ),
     QuickMenuItem(
@@ -1894,7 +1893,7 @@ class DatabaseService {
       subtitle: 'Tema, bildirim ve sistem tercihleri',
       iconCode: 0xe57f,
       colorValue: 0xFF475569,
-      isVisible: true,
+      isVisible: false,
       actionType: 'settings',
     ),
     QuickMenuItem(
@@ -1903,7 +1902,7 @@ class DatabaseService {
       subtitle: 'Sürüm 1.0.0 & sistem güvenliği',
       iconCode: 0xe33d,
       colorValue: 0xFF0284C7,
-      isVisible: true,
+      isVisible: false,
       actionType: 'about',
     ),
     QuickMenuItem(
@@ -1912,7 +1911,7 @@ class DatabaseService {
       subtitle: 'Merkezi bulut senkronizasyonu',
       iconCode: 0xe87a,
       colorValue: 0xFFFF5722,
-      isVisible: true,
+      isVisible: false,
       actionType: 'cloud_db',
     ),
   ];

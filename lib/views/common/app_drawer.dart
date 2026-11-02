@@ -574,36 +574,253 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // Dinamik Hızlı Menü Öğeleri Listesi (Tüm Kurumsal ve Servis Modülleri)
+            // Dinamik Hızlı Menü ve Kurumsal Hizmetler
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                children: pdks.visibleQuickMenuItems.map((item) {
-                  int? badge;
-                  if (item.actionType == 'chat') badge = pdks.unreadChatCount;
-                  if (item.actionType == 'notifications') badge = pdks.unreadNotificationsCount;
+                children: [
+                  // 1. Hızlı İşlemler (Kullanıcının Seçtiği 5 Temel Modül)
+                  ...pdks.visibleQuickMenuItems.map((item) {
+                    int? badge;
+                    if (item.actionType == 'chat') badge = pdks.unreadChatCount;
+                    if (item.actionType == 'notifications') badge = pdks.unreadNotificationsCount;
 
-                  String sub = item.subtitle;
-                  if (item.actionType == 'leave') {
-                    sub = 'Kalan: ${user.remainingLeaveDays} Gün';
-                  } else if (item.actionType == 'payroll') {
-                    sub = (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
-                        ? 'Aylık maaş hesaplama, icmal & ödemeler'
-                        : 'Aylık e-bordro pusulası & net kazanç';
-                  } else if (item.actionType == 'settings') {
-                    sub = 'Tema (${pdks.themeModeName}), bildirim & izinler';
-                  }
+                    String sub = item.subtitle;
+                    if (item.actionType == 'leave') {
+                      sub = 'Kalan: ${user.remainingLeaveDays} Gün';
+                    } else if (item.actionType == 'payroll') {
+                      sub = (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                          ? 'Aylık maaş hesaplama, icmal & ödemeler'
+                          : 'Aylık e-bordro pusulası & net kazanç';
+                    } else if (item.actionType == 'settings') {
+                      sub = 'Tema (${pdks.themeModeName}), bildirim & izinler';
+                    }
 
-                  return _buildDrawerTile(
+                    return _buildDrawerTile(
+                      context,
+                      icon: item.icon,
+                      color: item.color,
+                      title: item.title,
+                      subtitle: sub,
+                      badgeCount: badge,
+                      onTapCustom: () => _handleDrawerAction(context, item, user, pdks),
+                    );
+                  }),
+
+                  const SizedBox(height: 14),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: Text(
+                      'KURUMSAL HİZMETLER & SERVİSLER',
+                      style: TextStyle(fontSize: 10.5, letterSpacing: 1.1, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                    ),
+                  ),
+
+                  // 2. Kurumsal & Saha Modülleri
+                  _buildDrawerTile(
                     context,
-                    icon: item.icon,
-                    color: item.color,
-                    title: item.title,
-                    subtitle: sub,
-                    badgeCount: badge,
-                    onTapCustom: () => _handleDrawerAction(context, item, user, pdks),
-                  );
-                }).toList(),
+                    icon: Icons.directions_bus_rounded,
+                    color: const Color(0xFF3B82F6),
+                    title: 'Servis Saatleri',
+                    subtitle: 'Maslak, Levent, Kadıköy güzergahları',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_shuttle', title: 'Servis Saatleri', subtitle: '', iconCode: 0xe1d5, colorValue: 0xFF3B82F6, actionType: 'shuttle'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.calendar_month_rounded,
+                    color: const Color(0xFF6366F1),
+                    title: 'Resmi Tatiller',
+                    subtitle: '2026 resmi tatil takvimi & köprüler',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_holidays', title: 'Resmi Tatiller', subtitle: '', iconCode: 0xe122, colorValue: 0xFF6366F1, actionType: 'holidays'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.medical_services_outlined,
+                    color: const Color(0xFFEF4444),
+                    title: 'Revir & Hekim',
+                    subtitle: 'İş yeri hekimi, oda & acil hatlar',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_doctor', title: 'Revir & Hekim', subtitle: '', iconCode: 0xe3e3, colorValue: 0xFFEF4444, actionType: 'doctor'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.swap_horiz_rounded,
+                    color: const Color(0xFF059669),
+                    title: 'Vardiya & Takas',
+                    subtitle: 'Vardiya takas talebi & açık vardiyalar',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_shift_swap', title: 'Vardiya & Takas', subtitle: '', iconCode: 0xe627, colorValue: 0xFF059669, actionType: 'shift_swap'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.support_agent_rounded,
+                    color: const Color(0xFFEA580C),
+                    title: 'Destek & Arıza',
+                    subtitle: 'Teknik arıza ve IT destek talepleri',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_helpdesk', title: 'Destek & Arıza', subtitle: '', iconCode: 0xf5dd, colorValue: 0xFFEA580C, actionType: 'helpdesk'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.warning_amber_rounded,
+                    color: const Color(0xFFDC2626),
+                    title: 'İSG Ramak Kala',
+                    subtitle: '6331 İSG ve tehlike bildirimi',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_near_miss', title: 'İSG Ramak Kala', subtitle: '', iconCode: 0xe2eb, colorValue: 0xFFDC2626, actionType: 'near_miss'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.history_edu_rounded,
+                    color: const Color(0xFF7C3AED),
+                    title: '5070 E-İmza & ERP',
+                    subtitle: 'Zaman damgası ve bordro onaylama',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_digital_docs', title: '5070 E-İmza & ERP', subtitle: '', iconCode: 0xe204, colorValue: 0xFF7C3AED, actionType: 'digital_docs'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.radio_rounded,
+                    color: const Color(0xFF0D9488),
+                    title: 'Saha Telsizi (PTT)',
+                    subtitle: 'Anlık bas-konuş sesli telsiz kanalı',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_ptt_radio', title: 'Saha Telsizi (PTT)', subtitle: '', iconCode: 0xe500, colorValue: 0xFF0D9488, actionType: 'ptt_radio'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.desk_rounded,
+                    color: const Color(0xFF2563EB),
+                    title: 'Hibrit & Masa',
+                    subtitle: 'Masa ve toplantı odası rezervasyonu',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_hybrid_desk', title: 'Hibrit & Masa', subtitle: '', iconCode: 0xf69b, colorValue: 0xFF2563EB, actionType: 'hybrid_desk'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.school_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    title: 'Akademi & Eğitim',
+                    subtitle: 'Eğitim videoları ve yetkinlik sınavı',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_training', title: 'Akademi & Eğitim', subtitle: '', iconCode: 0xe559, colorValue: 0xFF8B5CF6, actionType: 'training'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.track_changes_rounded,
+                    color: const Color(0xFFD97706),
+                    title: 'Hedef & OKR',
+                    subtitle: 'Bireysel ve kurumsal hedefler',
+                    onTapCustom: () => _handleDrawerAction(
+                      context,
+                      const QuickMenuItem(id: 'qm_okr', title: 'Hedef & OKR', subtitle: '', iconCode: 0xe673, colorValue: 0xFFD97706, actionType: 'okr'),
+                      user,
+                      pdks,
+                    ),
+                  ),
+                  if (pdks.hasPagePermission('vehicle_request'))
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.directions_car_rounded,
+                      color: const Color(0xFF059669),
+                      title: 'Araç Talebi & Filo',
+                      subtitle: 'Şirket havuz araçları ve filo takibi',
+                      destination: const VehicleRequestScreen(),
+                    ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.camera_front_rounded,
+                    color: const Color(0xFF10B981),
+                    title: 'Kiosk Turnike Modu',
+                    subtitle: 'Yüz tanıma ve turnike geçiş terminali',
+                    destination: const KioskTerminalScreen(),
+                  ),
+
+                  const SizedBox(height: 14),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: Text(
+                      'HESAP VE AYARLAR',
+                      style: TextStyle(fontSize: 10.5, letterSpacing: 1.1, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                    ),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.person_outline_rounded,
+                    color: const Color(0xFF2563EB),
+                    title: 'Profil',
+                    subtitle: 'Kişisel bilgiler & izin bakiyesi',
+                    destination: const ProfileScreen(),
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.notifications_none_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    title: 'Bildirimler',
+                    subtitle: pdks.unreadNotificationsCount > 0 ? '${pdks.unreadNotificationsCount} yeni bildirim' : 'Duyurular & onaylar',
+                    destination: const NotificationsScreen(),
+                    badgeCount: pdks.unreadNotificationsCount,
+                  ),
+                  _buildDrawerTile(
+                    context,
+                    icon: Icons.settings_outlined,
+                    color: const Color(0xFF475569),
+                    title: 'Ayarlar',
+                    subtitle: 'Tema (${pdks.themeModeName}), bildirim & sistem',
+                    destination: const SettingsScreen(),
+                  ),
+                  if (user.role == UserRole.admin || user.role == UserRole.boss)
+                    _buildDrawerTile(
+                      context,
+                      icon: Icons.local_fire_department_rounded,
+                      color: const Color(0xFFFF5722),
+                      title: 'Firebase Bulut DB',
+                      subtitle: pdks.isFirebaseConnected ? 'Merkezi bulut eşitlendi' : 'Yerel ve bulut senkronizasyonu',
+                      onTapCustom: () => showFirebaseConfigDialog(context),
+                    ),
+                ],
               ),
             ),
 
