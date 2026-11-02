@@ -147,7 +147,7 @@ class _HrShellState extends State<HrShell> {
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: AppColors.primary),
+            selectedIcon: Icon(Icons.dashboard),
             label: 'Özet',
           ),
           NavigationDestination(
@@ -162,24 +162,24 @@ class _HrShellState extends State<HrShell> {
                 ? Badge(
                     label: Text('${pdks.pendingApprovalsCount}'),
                     backgroundColor: const Color(0xFFF59E0B),
-                    child: const Icon(Icons.people, color: AppColors.primary),
+                    child: const Icon(Icons.people),
                   )
-                : const Icon(Icons.people, color: AppColors.primary),
+                : const Icon(Icons.people),
             label: 'Personel',
           ),
           const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month, color: AppColors.primary),
+            selectedIcon: Icon(Icons.calendar_month),
             label: 'Vardiya',
           ),
           const NavigationDestination(
             icon: Icon(Icons.beach_access_outlined),
-            selectedIcon: Icon(Icons.beach_access, color: AppColors.primary),
+            selectedIcon: Icon(Icons.beach_access),
             label: 'İzinler',
           ),
           const NavigationDestination(
             icon: Icon(Icons.assessment_outlined),
-            selectedIcon: Icon(Icons.assessment, color: AppColors.primary),
+            selectedIcon: Icon(Icons.assessment),
             label: 'Puantaj',
           ),
         ],

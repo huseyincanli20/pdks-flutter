@@ -84,11 +84,95 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 );
               },
             ),
+          if (allNotifications.isNotEmpty)
+            IconButton(
+              tooltip: 'Tüm Bildirimleri Sil',
+              icon: const Icon(Icons.delete_sweep_rounded, size: 22, color: Color(0xFFEF4444)),
+              onPressed: () => _confirmClearAllNotifications(context, pdks),
+            ),
         ],
       ),
       body: _isAppleLockScreenMode
           ? _buildAppleLockScreenView(context, filtered, pdks)
           : _buildStandardListView(context, filtered, allNotifications, messageAndApprovalNotifications, pdks, isDark),
+    );
+  }
+
+  void _confirmClearAllNotifications(BuildContext context, PdksState pdks) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_sweep_rounded, color: Color(0xFFEF4444)),
+            SizedBox(width: 8),
+            Text('Tüm Bildirimleri Sil'),
+          ],
+        ),
+        content: const Text(
+          'Tüm bildirim geçmişiniz kalıcı olarak silinecektir. Devam etmek istediğinize emin misiniz?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Vazgeç'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              pdks.clearAllNotifications();
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tüm bildirimler silindi.'),
+                  backgroundColor: Color(0xFFEF4444),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Tümünü Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirmDeleteDialog(BuildContext context, AppNotification item) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+            SizedBox(width: 8),
+            Text('Bildirimi Sil'),
+          ],
+        ),
+        content: Text(
+          '"${item.title}" bildirimini silmek istediğinize emin misiniz?',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Vazgeç'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -683,7 +767,41 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final item = filtered[index];
-                    return _buildNotificationCard(context, item, isDark, pdks);
+                    return Dismissible(
+                      key: Key('notif_${item.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Sil',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            SizedBox(width: 6),
+                            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+                          ],
+                        ),
+                      ),
+                      confirmDismiss: (_) => _showConfirmDeleteDialog(context, item),
+                      onDismissed: (_) {
+                        pdks.deleteNotification(item.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('"${item.title}" bildirimi silindi.'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: _buildNotificationCard(context, item, isDark, pdks),
+                    );
                   },
                 ),
           ),
@@ -864,15 +982,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          DateFormat('dd MMM yyyy • HH:mm').format(item.timestamp),
-                          style: TextStyle(fontSize: 10, color: AppColors.textSub(context).withOpacity(0.8)),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              DateFormat('dd MMM yyyy • HH:mm').format(item.timestamp),
+                              style: TextStyle(fontSize: 10, color: AppColors.textSub(context).withOpacity(0.8)),
+                            ),
+                            if (item.type == NotificationType.cafeteria) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '• Menüyü Gör ›',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: item.color),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (item.type == NotificationType.cafeteria)
-                          Text(
-                            'Menüyü Gör ›',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: item.color),
+                        InkWell(
+                          onTap: () async {
+                            final confirmed = await _showConfirmDeleteDialog(context, item);
+                            if (confirmed == true) {
+                              pdks.deleteNotification(item.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('"${item.title}" bildirimi silindi.'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 15,
+                                  color: Colors.red.shade400,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Sil',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.red.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ),
                       ],
                     ),
                   ],

@@ -1476,6 +1476,11 @@ class DatabaseService {
     }
   }
 
+  Future<void> deleteNotification(String id) async {
+    _notifications.removeWhere((n) => n.id == id);
+    await _persistNotifications();
+  }
+
   Future<void> clearAllNotifications() async {
     _notifications.clear();
     await _persistNotifications();

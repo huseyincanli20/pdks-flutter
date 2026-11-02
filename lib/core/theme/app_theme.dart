@@ -5,41 +5,38 @@ import 'app_theme_type.dart';
 class AppTheme {
   static ThemeData getThemeData(AppThemeType type) {
     switch (type) {
-      case AppThemeType.system:
       case AppThemeType.light:
         return lightTheme;
       case AppThemeType.dark:
         return darkTheme;
-      case AppThemeType.navy:
-        return navyTheme;
-      case AppThemeType.emerald:
-        return emeraldTheme;
-      case AppThemeType.purple:
-        return purpleTheme;
-      case AppThemeType.amber:
-        return amberTheme;
     }
   }
 
-  // 1. AYDINLIK (LIGHT) TEMA
+  // ==========================================================
+  // 1. AYDINLIK (LIGHT) TEMA - YÜKSEK KONTRASTLI / FERAH BEYAZ
+  // ==========================================================
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
+      cardColor: Colors.white,
       fontFamily: 'Roboto',
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surface,
         error: AppColors.danger,
+        onPrimary: Colors.white,
+        onSurface: AppColors.textPrimary,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
+        surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
           fontSize: 18,
@@ -55,22 +52,51 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         indicatorColor: AppColors.primary.withOpacity(0.12),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary, size: 24);
+          }
+          return const IconThemeData(color: AppColors.textSecondary, size: 24);
+        }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary);
           }
-          return const TextStyle(fontSize: 11, color: AppColors.textSecondary);
+          return const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary);
         }),
+      ),
+      tabBarTheme: const TabBarTheme(
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
       ),
       dialogTheme: DialogTheme(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titleTextStyle: const TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 14,
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -139,130 +165,106 @@ class AppTheme {
     );
   }
 
-  // 2. KOYU (DARK / AMOLED MIDNIGHT) TEMA
+  // ==========================================================
+  // 2. KOYU (DARK / AMOLED GECE) TEMA - YÜKSEK ZITLIKLI NET ARAYÜZ
+  // ==========================================================
   static ThemeData get darkTheme {
-    return _buildCustomDarkTheme(
-      scaffoldBg: const Color(0xFF0B0F19),
-      surfaceColor: const Color(0xFF1E293B),
-      borderColor: const Color(0xFF334155),
-      primaryColor: const Color(0xFF3B82F6),
-      accentColor: const Color(0xFF60A5FA),
-    );
-  }
+    const primaryColor = Color(0xFF38BDF8); // Electric Sky Blue
+    const accentColor = Color(0xFF7DD3FC);  // Light Sky Blue
 
-  // 3. DERİN LACİVERT (NAVY OCEAN) TEMA
-  static ThemeData get navyTheme {
-    return _buildCustomDarkTheme(
-      scaffoldBg: const Color(0xFF0A192F),
-      surfaceColor: const Color(0xFF112240),
-      borderColor: const Color(0xFF233554),
-      primaryColor: const Color(0xFF38BDF8),
-      accentColor: const Color(0xFF7DD3FC),
-    );
-  }
-
-  // 4. ZÜMRÜT YEŞİLİ (EMERALD FINANS) TEMA
-  static ThemeData get emeraldTheme {
-    return _buildCustomDarkTheme(
-      scaffoldBg: const Color(0xFF041E15),
-      surfaceColor: const Color(0xFF0B382A),
-      borderColor: const Color(0xFF165B43),
-      primaryColor: const Color(0xFF10B981),
-      accentColor: const Color(0xFF34D399),
-    );
-  }
-
-  // 5. KRALİYET MORU (PURPLE NEBULA) TEMA
-  static ThemeData get purpleTheme {
-    return _buildCustomDarkTheme(
-      scaffoldBg: const Color(0xFF0F0B1E),
-      surfaceColor: const Color(0xFF1E1738),
-      borderColor: const Color(0xFF332759),
-      primaryColor: const Color(0xFFA855F7),
-      accentColor: const Color(0xFFC084FC),
-    );
-  }
-
-  // 6. SICAK KEHRİBAR (AMBER GOLD) TEMA
-  static ThemeData get amberTheme {
-    return _buildCustomDarkTheme(
-      scaffoldBg: const Color(0xFF14120E),
-      surfaceColor: const Color(0xFF262118),
-      borderColor: const Color(0xFF3D3425),
-      primaryColor: const Color(0xFFF59E0B),
-      accentColor: const Color(0xFFFBBF24),
-    );
-  }
-
-  static ThemeData _buildCustomDarkTheme({
-    required Color scaffoldBg,
-    required Color surfaceColor,
-    required Color borderColor,
-    required Color primaryColor,
-    required Color accentColor,
-  }) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: primaryColor,
-      scaffoldBackgroundColor: scaffoldBg,
-      cardColor: surfaceColor,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      cardColor: AppColors.darkSurface,
       fontFamily: 'Roboto',
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: primaryColor,
         secondary: accentColor,
-        surface: surfaceColor,
+        surface: AppColors.darkSurface,
         error: AppColors.danger,
+        onPrimary: Color(0xFF090D16),
         onSurface: AppColors.darkTextPrimary,
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: scaffoldBg,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkBackground,
         foregroundColor: AppColors.darkTextPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: const TextStyle(
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
           color: AppColors.darkTextPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
-        iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+        iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
       ),
       cardTheme: CardTheme(
-        color: surfaceColor,
+        color: AppColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: borderColor, width: 1),
+          side: const BorderSide(color: AppColors.darkBorder, width: 1),
         ),
       ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: Color(0xFF0E1522),
+        surfaceTintColor: Colors.transparent,
+      ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: scaffoldBg,
+        backgroundColor: const Color(0xFF0E1522),
+        surfaceTintColor: Colors.transparent,
         indicatorColor: primaryColor.withOpacity(0.2),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: primaryColor, size: 24);
+          }
+          return const IconThemeData(color: AppColors.darkTextMuted, size: 24);
+        }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentColor);
+            return const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: primaryColor);
           }
-          return const TextStyle(fontSize: 11, color: AppColors.darkTextSecondary);
+          return const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.darkTextSecondary);
         }),
       ),
-      dialogTheme: DialogTheme(
-        backgroundColor: surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      tabBarTheme: const TabBarTheme(
+        labelColor: primaryColor,
+        unselectedLabelColor: AppColors.darkTextMuted,
+        indicatorColor: primaryColor,
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surfaceColor,
-        shape: const RoundedRectangleBorder(
+      dialogTheme: DialogTheme(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titleTextStyle: const TextStyle(
+          color: AppColors.darkTextPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: const TextStyle(
+          color: AppColors.darkTextSecondary,
+          fontSize: 14,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
-      dividerTheme: DividerThemeData(
-        color: borderColor,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.darkBorder,
         thickness: 1,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
+          foregroundColor: const Color(0xFF090D16),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -270,34 +272,34 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceColor,
+        fillColor: AppColors.darkSurface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: primaryColor, width: 1.5),
+          borderSide: const BorderSide(color: primaryColor, width: 1.5),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: surfaceColor,
+        backgroundColor: AppColors.darkSurface,
         selectedColor: primaryColor,
-        disabledColor: surfaceColor.withOpacity(0.5),
+        disabledColor: AppColors.darkSurface.withOpacity(0.5),
         labelStyle: const TextStyle(color: AppColors.darkTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
-        secondaryLabelStyle: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-        side: BorderSide(color: borderColor),
+        secondaryLabelStyle: const TextStyle(color: Color(0xFF090D16), fontSize: 13, fontWeight: FontWeight.bold),
+        side: const BorderSide(color: AppColors.darkBorder),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       textTheme: const TextTheme(

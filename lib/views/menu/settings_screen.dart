@@ -94,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '7 farklı renk ve mod seçeneğiyle tarzınızı yansıtın',
+                          'Aydınlık ve koyu tema arasında geçiş yapın',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,

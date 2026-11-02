@@ -370,22 +370,22 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Ana Sayfa',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_rounded),
-            selectedIcon: Icon(Icons.history_toggle_off_rounded, color: AppColors.primary),
+            selectedIcon: Icon(Icons.history_toggle_off_rounded),
             label: 'Hareketler',
           ),
           NavigationDestination(
             icon: Icon(Icons.beach_access_outlined),
-            selectedIcon: Icon(Icons.beach_access_rounded, color: AppColors.primary),
+            selectedIcon: Icon(Icons.beach_access_rounded),
             label: 'İzinlerim',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profilim',
           ),
         ],
@@ -639,7 +639,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   child: Row(
                     children: pdks.visibleQuickMenuItems.map((item) {
                       return Container(
-                        width: 130,
+                        width: 135,
                         margin: const EdgeInsets.only(right: 10),
                         child: _buildQuickActionCard(
                           icon: item.icon,
@@ -1339,7 +1339,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        height: 152,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.cardBg(context),
           borderRadius: BorderRadius.circular(20),
@@ -1363,10 +1364,22 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               ),
               child: Icon(icon, color: color, size: 20),
             ),
-            const SizedBox(height: 12),
-            Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context))),
-            const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(color: AppColors.textSub(context), fontSize: 11)),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.text(context)),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: Text(
+                subtitle,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: AppColors.textSub(context), fontSize: 11, height: 1.25),
+              ),
+            ),
           ],
         ),
       ),

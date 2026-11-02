@@ -10,13 +10,13 @@ class AppColors {
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
 
-  // Dark Theme Colors
-  static const Color darkBackground = Color(0xFF0B0F19); // Deep AMOLED Midnight
-  static const Color darkSurface = Color(0xFF1E293B);    // Slate Surface
-  static const Color darkBorder = Color(0xFF334155);     // Dark Border
+  // Dark Theme Colors (Yüksek Zıtlık / High Contrast)
+  static const Color darkBackground = Color(0xFF090D16); // Deep AMOLED Midnight Obsidian
+  static const Color darkSurface = Color(0xFF131B2A);    // Rich Dark Slate
+  static const Color darkBorder = Color(0xFF28364A);     // High Contrast Dark Border
   static const Color darkDivider = Color(0xFF1E293B);
-  static const Color darkTextPrimary = Color(0xFFFFFFFF); // Kristal Beyaz (Yüksek Zıtlık / Kontrast)
-  static const Color darkTextSecondary = Color(0xFFE2E8F0); // Açık Gümüş Slate (Net Okunabilir Zıt Renk)
+  static const Color darkTextPrimary = Color(0xFFFFFFFF); // Kristal Beyaz (Maksimum Zıtlık)
+  static const Color darkTextSecondary = Color(0xFFCBD5E1); // Parlak Gümüş Slate (Net Okunabilir Zıt Renk)
   static const Color darkTextMuted = Color(0xFF94A3B8);
 
   // Status Colors
@@ -57,10 +57,10 @@ class AppColors {
       isDark(context) ? darkTextSecondary : textSecondary;
 
   static Color subtle(BuildContext context) =>
-      isDark(context) ? (Theme.of(context).cardTheme.color?.withOpacity(0.5) ?? const Color(0xFF131B2E)) : const Color(0xFFF1F5F9);
+      isDark(context) ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
 
   static Color inputBg(BuildContext context) =>
-      Theme.of(context).inputDecorationTheme.fillColor ?? (isDark(context) ? const Color(0xFF131B2E) : const Color(0xFFF8FAFC));
+      Theme.of(context).inputDecorationTheme.fillColor ?? (isDark(context) ? darkSurface : const Color(0xFFFFFFFF));
 
   // Gradient accents
   static const LinearGradient primaryGradient = LinearGradient(

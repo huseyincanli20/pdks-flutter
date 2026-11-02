@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/app_theme_type.dart';
 import 'core/services/ios_notification_service.dart';
 import 'core/services/database_service.dart';
 import 'models/employee.dart';
@@ -32,16 +31,14 @@ class PdksApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pdks = context.watch<PdksState>();
-    final themeData = pdks.activeThemeData;
-    final themeMode = pdks.themeMode;
 
     return MaterialApp(
       navigatorKey: IosNotificationService.navigatorKey,
       title: 'PDKS - Personel Devam Kontrol Sistemi',
       debugShowCheckedModeBanner: false,
-      theme: pdks.currentTheme == AppThemeType.system ? AppTheme.lightTheme : themeData,
-      darkTheme: pdks.currentTheme == AppThemeType.system ? AppTheme.darkTheme : themeData,
-      themeMode: themeMode,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: pdks.themeMode,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

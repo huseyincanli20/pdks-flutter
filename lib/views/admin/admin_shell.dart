@@ -177,22 +177,22 @@ class _AdminShellState extends State<AdminShell> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.manage_accounts_outlined),
-            selectedIcon: Icon(Icons.manage_accounts, color: AppColors.primary),
+            selectedIcon: Icon(Icons.manage_accounts),
             label: 'Roller',
           ),
           NavigationDestination(
             icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on, color: AppColors.primary),
+            selectedIcon: Icon(Icons.location_on),
             label: 'Geofence',
           ),
           NavigationDestination(
             icon: Icon(Icons.security_outlined),
-            selectedIcon: Icon(Icons.security, color: AppColors.primary),
+            selectedIcon: Icon(Icons.security),
             label: 'Güvenlik',
           ),
           NavigationDestination(
             icon: Icon(Icons.tablet_outlined),
-            selectedIcon: Icon(Icons.tablet, color: AppColors.primary),
+            selectedIcon: Icon(Icons.tablet),
             label: 'Kiosk',
           ),
         ],

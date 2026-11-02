@@ -191,9 +191,9 @@ class PdksState extends ChangeNotifier {
   String? _activeFieldWorkTitle;
   String? _activeFieldWorkAddress;
 
-  // Görünüm Teması: Sistem, Aydınlık, Koyu, Lacivert, Zümrüt, Mor, Kehribar
-  ThemeMode _themeMode = ThemeMode.system;
-  AppThemeType _currentTheme = AppThemeType.system;
+  // Görünüm Teması: Sadece 2 Seçenek (Aydınlık ve Koyu Tema)
+  ThemeMode _themeMode = ThemeMode.light;
+  AppThemeType _currentTheme = AppThemeType.light;
 
   // Getters
   Employee get currentUser => _currentUser;
@@ -220,32 +220,20 @@ class PdksState extends ChangeNotifier {
 
   void setTheme(AppThemeType theme) {
     _currentTheme = theme;
-    if (theme == AppThemeType.system) {
-      _themeMode = ThemeMode.system;
-    } else if (theme == AppThemeType.light) {
-      _themeMode = ThemeMode.light;
-    } else {
-      _themeMode = ThemeMode.dark;
-    }
+    _themeMode = theme == AppThemeType.dark ? ThemeMode.dark : ThemeMode.light;
     _db.saveThemeType(theme.name);
     notifyListeners();
   }
 
   void setThemeMode(ThemeMode mode) {
     _themeMode = mode;
-    if (mode == ThemeMode.system) {
-      _currentTheme = AppThemeType.system;
-    } else if (mode == ThemeMode.light) {
-      _currentTheme = AppThemeType.light;
-    } else {
-      _currentTheme = AppThemeType.dark;
-    }
+    _currentTheme = mode == ThemeMode.dark ? AppThemeType.dark : AppThemeType.light;
     _db.saveThemeType(_currentTheme.name);
     notifyListeners();
   }
 
   void toggleTheme() {
-    if (_currentTheme.isDarkTheme) {
+    if (_currentTheme == AppThemeType.dark) {
       setTheme(AppThemeType.light);
     } else {
       setTheme(AppThemeType.dark);
@@ -948,6 +936,12 @@ class PdksState extends ChangeNotifier {
   void markAllNotificationsAsRead() {
     _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
     _db.markAllNotificationsAsRead();
+    notifyListeners();
+  }
+
+  void deleteNotification(String id) {
+    _notifications.removeWhere((n) => n.id == id);
+    _db.deleteNotification(id);
     notifyListeners();
   }
 
@@ -2512,20 +2506,20 @@ class PdksState extends ChangeNotifier {
     _companies.addAll(_db.getAllCompanies());
     _activeCompanyId = _db.getActiveCompanyId() ?? (_companies.isNotEmpty ? _companies.first.id : 'cmp_acme');
 
-    // 2. Tercih Edilen Tema
+    // 2. Tercih Edilen Tema (Sadece Aydınlık veya Koyu)
     final savedTheme = _db.getThemeType();
     if (savedTheme != null) {
       try {
-        final t = AppThemeType.values.firstWhere((e) => e.name == savedTheme);
+        final t = AppThemeType.values.firstWhere(
+          (e) => e.name == savedTheme,
+          orElse: () => AppThemeType.light,
+        );
         _currentTheme = t;
-        if (t == AppThemeType.system) {
-          _themeMode = ThemeMode.system;
-        } else if (t == AppThemeType.light) {
-          _themeMode = ThemeMode.light;
-        } else {
-          _themeMode = ThemeMode.dark;
-        }
-      } catch (_) {}
+        _themeMode = t == AppThemeType.dark ? ThemeMode.dark : ThemeMode.light;
+      } catch (_) {
+        _currentTheme = AppThemeType.light;
+        _themeMode = ThemeMode.light;
+      }
     }
 
     // 3. Roller ve İzinler
