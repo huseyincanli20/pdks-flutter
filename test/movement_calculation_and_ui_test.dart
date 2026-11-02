@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdks_flutter/core/services/database_service.dart';
+import 'package:pdks_flutter/core/services/location_service.dart';
 import 'package:pdks_flutter/core/theme/app_theme.dart';
 import 'package:pdks_flutter/core/utils/movement_calculation_engine.dart';
+import 'package:pdks_flutter/models/attendance_record.dart';
 import 'package:pdks_flutter/models/employee.dart';
 import 'package:pdks_flutter/models/employee_movement.dart';
 import 'package:pdks_flutter/models/leave_request.dart';
@@ -490,6 +492,75 @@ void main() {
       await tester.tap(find.text('Kontrol Bekleyenler').first);
       await tester.pumpAndSettle();
       expect(find.text('Onayla'), findsWidgets);
+    });
+
+    test('10. Mesaiye Gir ve Mesaiden Çık işlemleri Çalışan Hareket Yönetimi listesine ve günlük özete anında işlenir', () async {
+      final state = PdksState();
+      addTearDown(state.dispose);
+
+      final geofence = GeofenceResult(
+        isInside: true,
+        distanceMeters: 12.0,
+        allowedRadiusMeters: 150.0,
+        latitude: 41.0082,
+        longitude: 28.9784,
+      );
+
+      // 1) Mesaiye Gir
+      await state.performCheckInOut(
+        type: AttendanceType.checkIn,
+        method: VerificationMethod.geofenceGps,
+        geofence: geofence,
+        note: 'Canlı mesai girişi testi',
+      );
+
+      final today = DateTime.now();
+      final userMovementsAfterIn = state.employeeMovements
+          .where((m) =>
+              m.employeeId == state.currentUser.id &&
+              m.timestamp.year == today.year &&
+              m.timestamp.month == today.month &&
+              m.timestamp.day == today.day)
+          .toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      expect(userMovementsAfterIn, isNotEmpty);
+      expect(userMovementsAfterIn.last.type, MovementType.checkIn);
+      expect(userMovementsAfterIn.last.note, contains('Canlı mesai girişi testi'));
+
+      final summariesAfterIn = state.getDailySummariesForDate(today);
+      final userSummaryIn = summariesAfterIn.firstWhere((s) => s.employeeId == state.currentUser.id);
+      expect(userSummaryIn.status, DailyAttendanceStatus.working);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      // 2) Mesaiden Çık
+      await state.performCheckInOut(
+        type: AttendanceType.checkOut,
+        method: VerificationMethod.geofenceGps,
+        geofence: geofence,
+        note: 'Canlı mesai çıkışı testi',
+      );
+
+      final userMovementsAfterOut = state.employeeMovements
+          .where((m) =>
+              m.employeeId == state.currentUser.id &&
+              m.timestamp.year == today.year &&
+              m.timestamp.month == today.month &&
+              m.timestamp.day == today.day)
+          .toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      expect(userMovementsAfterOut.any((m) => m.type == MovementType.checkIn), isTrue);
+      expect(userMovementsAfterOut.any((m) => m.type == MovementType.checkOut), isTrue);
+      expect(
+        userMovementsAfterOut.any((m) => m.note.contains('Canlı mesai çıkışı testi')),
+        isTrue,
+      );
+
+      final summariesAfterOut = state.getDailySummariesForDate(today);
+      final userSummaryOut = summariesAfterOut.firstWhere((s) => s.employeeId == state.currentUser.id);
+      expect(userSummaryOut.status, DailyAttendanceStatus.completed);
     });
   });
 }

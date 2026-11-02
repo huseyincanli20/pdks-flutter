@@ -2786,6 +2786,9 @@ class PdksState extends ChangeNotifier {
         }
       }
     }
+
+    // Mesaiye Gir / Mesaiden Çık kayıtlarını Çalışan Hareket Yönetimi tablosuyla senkronize et
+    _syncAttendanceRecordsToEmployeeMovements();
   }
 
   // Giriş Yapma: VERİTABANI KONTROLÜ VE İK ONAYI İLE BİRLİKTE (SRS 3.1 Brute Force Korumalı)
@@ -3506,6 +3509,7 @@ class PdksState extends ChangeNotifier {
 
     _records.insert(0, newRecord);
     _db.insertAttendanceRecord(newRecord);
+    _recordLiveAttendanceToMovement(newRecord);
     if (_firebase.isEnabled) {
       _firebase.pushAttendanceToCloud(newRecord);
     }
@@ -3565,6 +3569,7 @@ class PdksState extends ChangeNotifier {
 
     _records.insert(0, exitRecord);
     _db.insertAttendanceRecord(exitRecord);
+    _recordLiveAttendanceToMovement(exitRecord);
     if (_firebase.isEnabled) {
       _firebase.pushAttendanceToCloud(exitRecord);
     }
@@ -3848,6 +3853,8 @@ class PdksState extends ChangeNotifier {
     } else {
       _isCheckedIn = false;
     }
+
+    await _recordLiveAttendanceToMovement(newRecord);
 
     notifyListeners();
     return response;
@@ -5067,6 +5074,7 @@ class PdksState extends ChangeNotifier {
 
     _records.insert(0, newRec);
     await _db.insertAttendanceRecord(newRec);
+    await _recordLiveAttendanceToMovement(newRec);
 
     await logAudit(
       actionType: 'Kiosk Yüz Tanıma Geçişi (${nextType == AttendanceType.checkIn ? "Giriş" : "Çıkış"})',
@@ -5482,11 +5490,176 @@ class PdksState extends ChangeNotifier {
     );
 
     await _db.saveEmployeeMovement(record);
+
+    final now = DateTime.now();
+    if (emp.id == _currentUser.id &&
+        timestamp.year == now.year &&
+        timestamp.month == now.month &&
+        timestamp.day == now.day) {
+      if (type == MovementType.checkIn) {
+        _isCheckedIn = true;
+        _lastCheckInTime = timestamp;
+      } else if (type == MovementType.checkOut) {
+        _isCheckedIn = false;
+      }
+    }
+
     notifyListeners();
     return (
       success: true,
       message: '${emp.fullName} için "${type.label}" hareketi başarıyla eklendi.',
     );
+  }
+
+  /// Mobil/Web "Mesaiye Gir" ve "Mesaiden Çık" (AttendanceRecord) işlemlerini
+  /// Çalışan Hareket Yönetimi (EmployeeMovementRecord) sistemine anında işler.
+  Future<void> _recordLiveAttendanceToMovement(AttendanceRecord attRecord) async {
+    final emp = _employees.where((e) => e.id == attRecord.employeeId).firstOrNull ?? _currentUser;
+    final shift = getShiftForEmployee(emp.id);
+    final movType = attRecord.type == AttendanceType.checkIn
+        ? MovementType.checkIn
+        : MovementType.checkOut;
+
+    String doorLabel;
+    switch (attRecord.verificationMethod) {
+      case VerificationMethod.geofenceGps:
+        doorLabel = 'Mobil GPS Konum Doğrulama';
+        break;
+      case VerificationMethod.qrCode:
+        doorLabel = 'Mobil QR Turnike Okuyucu';
+        break;
+      case VerificationMethod.wifiIp:
+        doorLabel = 'Kurumsal Wi-Fi Geçişi';
+        break;
+      case VerificationMethod.biometricKiosk:
+        doorLabel = attRecord.deviceInfo ?? 'Biyometrik Kiosk Turnike';
+        break;
+    }
+
+    final currentList = List<EmployeeMovementRecord>.from(_db.getAllEmployeeMovements());
+    final movId = 'mov_att_${attRecord.id}_${attRecord.timestamp.millisecondsSinceEpoch}';
+
+    // Aynı kayıt zaten işlenmişse tekrar ekleme
+    final alreadyExists = currentList.any(
+      (m) =>
+          m.id == movId ||
+          (m.employeeId == emp.id &&
+              m.type == movType &&
+              m.timestamp.difference(attRecord.timestamp).abs().inSeconds <= 2),
+    );
+    if (alreadyExists) return;
+
+    bool isSameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+
+    if (movType == MovementType.checkIn) {
+      // Kullanıcı gerçek bir "Mesaiye Gir" yaptığında, aynı gün için başlangıçta üretilmiş
+      // açık/örnek seed hareketleri (mov_1xx) varsa çakışmayı önlemek için temizle
+      final hasRealMovementsToday = currentList.any(
+        (m) =>
+            m.employeeId == emp.id &&
+            isSameDay(m.timestamp, attRecord.timestamp) &&
+            !m.id.startsWith('mov_1'),
+      );
+      if (!hasRealMovementsToday) {
+        currentList.removeWhere(
+          (m) =>
+              m.employeeId == emp.id &&
+              isSameDay(m.timestamp, attRecord.timestamp) &&
+              m.id.startsWith('mov_1'),
+        );
+      }
+    } else if (movType == MovementType.checkOut) {
+      // Kullanıcı "Mesaiden Çık" yaptığında, eğer aynı günde örnek seed kapanışı (örn. mov_110) varsa kaldır
+      currentList.removeWhere(
+        (m) =>
+            m.employeeId == emp.id &&
+            isSameDay(m.timestamp, attRecord.timestamp) &&
+            m.id.startsWith('mov_1') &&
+            m.type == MovementType.checkOut,
+      );
+
+      // Eğer personelin bugün henüz açık bir giriş hareketi yoksa ve _lastCheckInTime mevcutsa önce girişi ekle
+      final todayEmpMovs = currentList
+          .where((m) => m.employeeId == emp.id && isSameDay(m.timestamp, attRecord.timestamp))
+          .toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      final hasOpenCheckIn =
+          todayEmpMovs.isNotEmpty && todayEmpMovs.last.type != MovementType.checkOut;
+
+      if (!hasOpenCheckIn &&
+          _lastCheckInTime != null &&
+          isSameDay(_lastCheckInTime!, attRecord.timestamp) &&
+          _lastCheckInTime!.isBefore(attRecord.timestamp)) {
+        final inTime = _lastCheckInTime!;
+        final autoIn = EmployeeMovementRecord(
+          id: 'mov_att_in_${emp.id}_${inTime.millisecondsSinceEpoch}',
+          companyId: emp.companyId,
+          employeeId: emp.id,
+          sicilNo: emp.displaySicilNo,
+          employeeName: emp.fullName,
+          department: emp.department,
+          shiftId: shift.id,
+          shiftName: shift.name,
+          type: MovementType.checkIn,
+          timestamp: inTime,
+          deviceDoor: doorLabel,
+          source: MovementSource.device,
+          note: 'Mesaiye giriş yapıldı (${attRecord.methodLabel})',
+          rawDeviceSnapshot: RawDeviceMovementSnapshot(
+            type: MovementType.checkIn,
+            timestamp: inTime,
+            deviceDoor: doorLabel,
+            source: MovementSource.device,
+            note: 'Mesaiye giriş yapıldı (${attRecord.methodLabel})',
+          ),
+        );
+        currentList.insert(0, autoIn);
+      }
+    }
+
+    final movNote = (attRecord.note != null && attRecord.note!.trim().isNotEmpty)
+        ? attRecord.note!.trim()
+        : (movType == MovementType.checkIn
+            ? 'Mesaiye giriş yapıldı (${attRecord.methodLabel})'
+            : 'Mesaiden çıkış yapıldı (${attRecord.methodLabel})');
+
+    final movRecord = EmployeeMovementRecord(
+      id: movId,
+      companyId: emp.companyId,
+      employeeId: emp.id,
+      sicilNo: emp.displaySicilNo,
+      employeeName: emp.fullName,
+      department: emp.department,
+      shiftId: shift.id,
+      shiftName: shift.name,
+      type: movType,
+      timestamp: attRecord.timestamp,
+      deviceDoor: doorLabel,
+      source: MovementSource.device,
+      note: movNote,
+      rawDeviceSnapshot: RawDeviceMovementSnapshot(
+        type: movType,
+        timestamp: attRecord.timestamp,
+        deviceDoor: doorLabel,
+        source: MovementSource.device,
+        note: movNote,
+      ),
+    );
+
+    currentList.insert(0, movRecord);
+    await _db.saveAllEmployeeMovements(currentList);
+  }
+
+  /// Mevcut oturumda yapılmış olan Mesaiye Gir / Mesaiden Çık kayıtlarını Çalışan Hareket Yönetimi'ne aktarır.
+  void _syncAttendanceRecordsToEmployeeMovements() {
+    if (_records.isEmpty) return;
+    final chronological = List<AttendanceRecord>.from(_records)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    for (final rec in chronological) {
+      _recordLiveAttendanceToMovement(rec);
+    }
   }
 
   /// Mevcut hareketi düzeltir (Ham cihaz kaydını korur ve izlenebilir düzeltme geçmişi ekler)

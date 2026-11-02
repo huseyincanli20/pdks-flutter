@@ -655,11 +655,6 @@ class MovementCalculationEngine {
     required EmployeeMovementRecord? openCheckIn,
   }) {
     if (openCheckIn == null) return false;
-    // Eğer açık hareketin açıklamasında açıkça vardiya sonu unutulan çıkış / geçmiş vardiya belirtilmişse
-    // veya hareket zamanı şu andan 11 saatten daha eskiyse vardiya kapanmış kabul edilir.
-    if (now.difference(openCheckIn.timestamp).inHours >= 11) {
-      return false;
-    }
     if (openCheckIn.note.toLowerCase().contains('çıkış unutuldu') ||
         openCheckIn.note.toLowerCase().contains('eksik çıkış')) {
       return false;
@@ -667,6 +662,9 @@ class MovementCalculationEngine {
     final todayDay = DateTime(now.year, now.month, now.day);
     if (targetDay == todayDay) {
       return true;
+    }
+    if (now.difference(openCheckIn.timestamp).inHours >= 11) {
+      return false;
     }
     return now.isBefore(shiftEnd.add(const Duration(hours: 2)));
   }
