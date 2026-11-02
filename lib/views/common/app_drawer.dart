@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/employee.dart';
+import '../../models/quick_menu_item.dart';
 import '../../state/pdks_state.dart';
 import '../menu/profile_screen.dart';
 import '../menu/contacts_screen.dart';
 import '../menu/business_card_screen.dart';
 import '../menu/settings_screen.dart';
 import '../menu/about_screen.dart';
+import '../menu/favorites_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../cafeteria/cafeteria_menu_view_screen.dart';
 import '../payroll/my_payrolls_screen.dart';
@@ -15,11 +17,243 @@ import '../payroll/payroll_management_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../vehicle/vehicle_request_screen.dart';
 import '../kiosk/kiosk_terminal_screen.dart';
+import '../enterprise/enterprise_hub_screen.dart';
+import '../mobile/leave_request_screen.dart';
+import 'field_work_dialog.dart';
 import 'firebase_config_dialog.dart';
 import 'quick_menu_manager_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
+
+  void _handleDrawerAction(BuildContext context, QuickMenuItem item, Employee user, PdksState pdks) {
+    if (!pdks.hasPagePermission(item.actionType)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yetki Sınırı: Bu modüle erişim için rol yetkiniz bulunmamaktadır.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    switch (item.actionType) {
+      case 'profile':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+        break;
+      case 'payroll':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                ? const PayrollManagementScreen()
+                : const MyPayrollsScreen(),
+          ),
+        );
+        break;
+      case 'chat':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatListScreen()));
+        break;
+      case 'contacts':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()));
+        break;
+      case 'notifications':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+        break;
+      case 'cafeteria':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CafeteriaMenuViewScreen()));
+        break;
+      case 'business_card':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessCardScreen()));
+        break;
+      case 'favorites':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
+        break;
+      case 'leave':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+        break;
+      case 'records':
+        Navigator.pop(context);
+        break;
+      case 'field_work':
+        FieldWorkDialog.show(context);
+        break;
+      case 'overtime':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fazla mesai talebiniz yöneticinize iletildi.')),
+        );
+        break;
+      case 'vehicle_request':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleRequestScreen()));
+        break;
+      case 'shift_swap':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 1)));
+        break;
+      case 'helpdesk':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 2)));
+        break;
+      case 'announcements':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 3)));
+        break;
+      case 'onboarding':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 4)));
+        break;
+      case 'training':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 5)));
+        break;
+      case 'okr':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 6)));
+        break;
+      case 'visitors':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 7)));
+        break;
+      case 'hybrid_desk':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 8)));
+        break;
+      case 'branches':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 9)));
+        break;
+      case 'feedback':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 10)));
+        break;
+      case 'calibration':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 12)));
+        break;
+      case 'pdks_ai':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 14)));
+        break;
+      case 'kiosk_face':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const KioskTerminalScreen()));
+        break;
+      case 'digital_docs':
+      case 'digital_signature':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 16)));
+        break;
+      case 'near_miss':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 17)));
+        break;
+      case 'ptt_radio':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen(initialTabIndex: 18)));
+        break;
+      case 'shuttle':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.directions_bus_rounded, color: Color(0xFF3B82F6), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('Şirket Servis Saatleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              'Akşam Çıkış Servisleri (Kalkış: 18:15):\n\n'
+              '1. Maslak - Levent - Zincirlikuyu - Kadıköy\n'
+              '2. Maslak - Çağlayan - Mecidiyeköy - Bakırköy\n'
+              '3. Maslak - Kozyatağı - Ataşehir - Ümraniye\n'
+              '4. Maslak - Kağıthane - Eyüp - Gaziosmanpaşa\n\n'
+              'Servis Sorumlusu İletişim: 0532 000 11 22',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'holidays':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.calendar_month_rounded, color: Color(0xFF6366F1), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('2026 Resmi Tatiller', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              '• 1 Ocak (Perşembe): Yılbaşı\n'
+              '• 23 Nisan (Perşembe): Ulusal Egemenlik ve Çocuk Bayramı\n'
+              '• 1 Mayıs (Cuma): Emek ve Dayanışma Günü\n'
+              '• 19 Mayıs (Salı): Atatürk\'ü Anma, Gençlik ve Spor Bayramı\n'
+              '• 15 Temmuz (Çarşamba): Demokrasi ve Milli Birlik Günü\n'
+              '• 30 Ağustos (Pazar): Zafer Bayramı\n'
+              '• 29 Ekim (Perşembe): Cumhuriyet Bayramı',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'doctor':
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.medical_services_outlined, color: Color(0xFFEF4444), size: 22),
+                SizedBox(width: 8),
+                Expanded(child: Text('İş Yeri Hekimi & Revir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: const Text(
+              'İş Yeri Hekimi: Dr. Mehmet Yılmaz\n'
+              'Çalışma Saatleri: Hafta içi 09:00 - 17:30\n'
+              'Konum: B Blok, Giriş Kat, Oda No: 104\n\n'
+              'Acil Dahili Hatlar:\n'
+              '• Revir: Dahili 1044\n'
+              '• İK Masası: Dahili 1002\n'
+              '• Güvenlik Masası: Dahili 1000\n'
+              '• Genel Acil Çağrı: 112',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+      case 'enterprise_hub':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const EnterpriseHubScreen()));
+        break;
+      case 'settings':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+        break;
+      case 'about':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+        break;
+      case 'cloud_db':
+        showFirebaseConfigDialog(context);
+        break;
+      case 'info_dialog':
+      default:
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Icon(item.icon, color: item.color, size: 22),
+                const SizedBox(width: 8),
+                Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              ],
+            ),
+            content: Text(item.customContent ?? item.subtitle, style: const TextStyle(fontSize: 13, height: 1.5)),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
+            ],
+          ),
+        );
+        break;
+    }
+  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -340,123 +574,36 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
-            // Menü Öğeleri Listesi
+            // Dinamik Hızlı Menü Öğeleri Listesi (Tüm Kurumsal ve Servis Modülleri)
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                children: [
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.person_outline_rounded,
-                    color: const Color(0xFF2563EB),
-                    title: 'Profil',
-                    subtitle: 'Kişisel bilgiler & izin bakiyesi',
-                    destination: const ProfileScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.receipt_long_rounded,
-                    color: const Color(0xFF10B981),
-                    title: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
-                        ? 'Bordro & Maaş Yönetimi'
-                        : 'Maaş & Bordrolarım',
-                    subtitle: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
+                children: pdks.visibleQuickMenuItems.map((item) {
+                  int? badge;
+                  if (item.actionType == 'chat') badge = pdks.unreadChatCount;
+                  if (item.actionType == 'notifications') badge = pdks.unreadNotificationsCount;
+
+                  String sub = item.subtitle;
+                  if (item.actionType == 'leave') {
+                    sub = 'Kalan: ${user.remainingLeaveDays} Gün';
+                  } else if (item.actionType == 'payroll') {
+                    sub = (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
                         ? 'Aylık maaş hesaplama, icmal & ödemeler'
-                        : 'Aylık e-bordro pusulası & net kazanç',
-                    destination: (user.role == UserRole.hr || user.role == UserRole.boss || user.role == UserRole.admin)
-                        ? const PayrollManagementScreen()
-                        : const MyPayrollsScreen(),
-                  ),
-                  _buildDrawerTile(
+                        : 'Aylık e-bordro pusulası & net kazanç';
+                  } else if (item.actionType == 'settings') {
+                    sub = 'Tema (${pdks.themeModeName}), bildirim & izinler';
+                  }
+
+                  return _buildDrawerTile(
                     context,
-                    icon: Icons.chat_bubble_outline_rounded,
-                    color: const Color(0xFF0284C7),
-                    title: 'Mesajlaşma',
-                    subtitle: pdks.unreadChatCount > 0
-                        ? '${pdks.unreadChatCount} yeni mesaj'
-                        : 'Şirket içi kanallar & 1-e-1 sohbet',
-                    destination: const ChatListScreen(),
-                    badgeCount: pdks.unreadChatCount,
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.people_alt_outlined,
-                    color: const Color(0xFF4F46E5),
-                    title: 'Kişiler',
-                    subtitle: 'Şirket rehberi & mesai arkadaşları',
-                    destination: const ContactsScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.notifications_none_rounded,
-                    color: const Color(0xFF8B5CF6),
-                    title: 'Bildirimler',
-                    subtitle: pdks.unreadNotificationsCount > 0 ? '${pdks.unreadNotificationsCount} yeni bildirim' : 'Duyurular & onaylar',
-                    destination: const NotificationsScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.restaurant_rounded,
-                    color: const Color(0xFFEA580C),
-                    title: 'Yemekhane Menüsü',
-                    subtitle: 'Günün menüsü & 2 haftalık çizelge',
-                    destination: const CafeteriaMenuViewScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.badge_outlined,
-                    color: const Color(0xFF0D9488),
-                    title: 'Kartvizit',
-                    subtitle: 'Dijital QR kodlu şirket kartı',
-                    destination: const BusinessCardScreen(),
-                  ),
-                  if (pdks.hasPagePermission('vehicle_request'))
-                    _buildDrawerTile(
-                      context,
-                      icon: Icons.directions_car_rounded,
-                      color: const Color(0xFF059669),
-                      title: 'Araç Talebi & Filo',
-                      subtitle: (user.role == UserRole.vehicleRentalManager || user.role == UserRole.boss || user.role == UserRole.admin)
-                          ? 'Filo yönetimi & araç tahsis'
-                          : 'Şirket havuz araçları ve talep takibi',
-                      destination: const VehicleRequestScreen(),
-                    ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.camera_front_rounded,
-                    color: const Color(0xFF10B981),
-                    title: 'Kiosk & Tablet Turnike Modu',
-                    subtitle: 'Yüz tanıma, canlılık (liveness) ve TCP/IP turnike rölesi',
-                    destination: const KioskTerminalScreen(),
-                  ),
-                  if (user.role == UserRole.admin || user.role == UserRole.boss)
-                    _buildDrawerTile(
-                      context,
-                      icon: Icons.local_fire_department_rounded,
-                      color: const Color(0xFFFF5722),
-                      title: 'Firebase Bulut DB',
-                      subtitle: pdks.isFirebaseConnected
-                          ? 'Merkezi bulut eşitlendi (Online)'
-                          : 'Yerel ve bulut senkronizasyonu',
-                      onTapCustom: () => showFirebaseConfigDialog(context),
-                    ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.settings_outlined,
-                    color: const Color(0xFF475569),
-                    title: 'Ayarlar',
-                    subtitle: 'Tema (${pdks.themeModeName}), bildirim & izinler',
-                    destination: const SettingsScreen(),
-                  ),
-                  _buildDrawerTile(
-                    context,
-                    icon: Icons.info_outline_rounded,
-                    color: const Color(0xFF0284C7),
-                    title: 'Hakkımda',
-                    subtitle: 'Sürüm 1.0.0 & sistem güvenliği',
-                    destination: const AboutScreen(),
-                  ),
-                ],
+                    icon: item.icon,
+                    color: item.color,
+                    title: item.title,
+                    subtitle: sub,
+                    badgeCount: badge,
+                    onTapCustom: () => _handleDrawerAction(context, item, user, pdks),
+                  );
+                }).toList(),
               ),
             ),
 
