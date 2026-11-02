@@ -462,8 +462,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Başlık ve Demo Modu rozeti görünmeli
-      expect(find.textContaining('Demo Modu'), findsWidgets);
+      // Başlık ve Ana Sayfaya Dön butonu görünmeli (Demo Modu kaldırılmış olmalı)
+      expect(find.textContaining('Demo Modu'), findsNothing);
+      expect(find.text('Ana Sayfaya Dön'), findsWidgets);
       expect(find.text('Genel Bakış'), findsWidgets);
       expect(find.text('Toplam Personel'), findsOneWidget);
 

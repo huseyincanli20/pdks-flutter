@@ -439,76 +439,43 @@ class _EmployeeMovementManagementScreenState
               ],
             ),
           ),
-          // Demo Modu & Saat Dilimi Bilgi Kartı
-          Container(
-            margin: const EdgeInsets.all(14),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: kNavySecondary,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kTurquoise.withOpacity(0.4)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.info_outline_rounded, color: Color(0xFF2DD4BF), size: 16),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Demo Modu Aktif',
-                        style: TextStyle(
-                          color: Color(0xFF2DD4BF),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+          // Ana Sayfaya / Portala Dön Butonu
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kNavySecondary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  side: BorderSide(color: kTurquoise.withOpacity(0.5)),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Veriler yerel depoda (localStorage) kalıcı saklanır. Gerçek turnike cihazı bağlantısı yoktur.',
-                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.35),
+                icon: const Icon(Icons.arrow_back_rounded, size: 17, color: Color(0xFF2DD4BF)),
+                label: const Text(
+                  'Ana Sayfaya Dön',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Saat Dilimi: Europe/Istanbul',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (widget.onBackToPortal != null || Navigator.canPop(context)) ...[
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white24),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      icon: const Icon(Icons.arrow_back_rounded, size: 15),
-                      label: const Text('Ana Portala Dön', style: TextStyle(fontSize: 11.5)),
-                      onPressed: () {
-                        if (widget.onBackToPortal != null) {
-                          widget.onBackToPortal!();
-                        } else if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ],
+                onPressed: _returnToMainPortal,
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _returnToMainPortal() {
+    if (widget.onBackToPortal != null) {
+      widget.onBackToPortal!();
+      return;
+    }
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (nav.canPop()) {
+      nav.popUntil((route) => route.isFirst);
+    }
   }
 
   // ===========================================================================
@@ -539,6 +506,11 @@ class _EmployeeMovementManagementScreenState
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: kTextPrimary),
+                tooltip: 'Ana Sayfaya Dön',
+                onPressed: _returnToMainPortal,
+              ),
               if (!isDesktop)
                 Builder(
                   builder: (ctx) => IconButton(
@@ -571,31 +543,6 @@ class _EmployeeMovementManagementScreenState
             spacing: 10,
             runSpacing: 8,
             children: [
-              // Demo Modu Rozeti
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.4)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.science_outlined, size: 15, color: Color(0xFFB45309)),
-                    SizedBox(width: 5),
-                    Text(
-                      'Demo Modu (Yerel Depolama)',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFB45309),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               // Tarih Seçici (gg.aa.yyyy)
               Container(
                 decoration: BoxDecoration(
